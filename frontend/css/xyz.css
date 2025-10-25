@@ -1,0 +1,381 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;700;900&family=Noto+Sans:wght@400;500;700;900&display=swap');
+:root {
+  --primary-blue: #13a4ec;
+  --accent-green: #22c55e;
+}
+body {
+  background: #f9fafb;
+  font-family: 'Poppins', Inter, 'Noto Sans', sans-serif;
+}
+.layout-container {
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(6px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 1rem 2.5rem;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+header .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--primary-blue);
+}
+header h2 {
+  color: #111618;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+}
+nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+nav a {
+  color: #4b5563;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+nav a:hover {
+  color: #111618;
+}
+header .flex.items-center.gap-4 a {
+  color: #4b5563;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+header .flex.items-center.gap-4 a:hover {
+  color: #111618;
+}
+header button, main button {
+  min-width: 84px;
+  max-width: 480px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  height: 40px;
+  padding: 0 1.5rem;
+  background: var(--primary-blue);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(19,164,236,0.08);
+  border: none;
+  transition: background 0.3s, transform 0.2s;
+}
+header button:hover, main button:hover {
+  background: #0e8ed0;
+  transform: scale(1.05);
+}
+main {
+  flex: 1;
+}
+section {
+  padding: 4rem 1rem;
+}
+section.text-center {
+  text-align: center;
+}
+section h1, section h2 {
+  color: #111618;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+section h1 {
+  font-size: 2.5rem;
+}
+section h2 {
+  font-size: 2rem;
+}
+section p {
+  color: #4b5563;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+section .flex {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+section .flex button {
+  height: 48px;
+  padding: 0 2rem;
+  font-size: 1.125rem;
+}
+.grid {
+  display: grid;
+  gap: 2rem;
+}
+.grid-cols-1 {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.bg-white {
+  background: #fff;
+}
+.bg-gray-50 {
+  background: #f9fafb;
+}
+.bg-blue-100 {
+  background: #e0f2fe;
+}
+.bg-green-100 {
+  background: #dcfce7;
+}
+.text-gray-900 {
+  color: #111618;
+}
+.text-gray-600 {
+  color: #4b5563;
+}
+.text-base {
+  font-size: 1rem;
+}
+.text-lg {
+  font-size: 1.125rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+}
+.text-2xl {
+  font-size: 1.5rem;
+}
+.text-3xl {
+  font-size: 1.875rem;
+}
+.text-4xl {
+  font-size: 2.25rem;
+}
+.font-bold {
+  font-weight: 700;
+}
+.font-extrabold {
+  font-weight: 800;
+}
+.rounded-2xl {
+  border-radius: 1rem;
+}
+.rounded-full {
+  border-radius: 9999px;
+}
+.shadow-lg {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+.shadow-md {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.shadow-sm {
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+.hover\:shadow-xl:hover {
+  box-shadow: 0 16px 48px rgba(19,164,236,0.12);
+}
+.transition-shadow {
+  transition: box-shadow 0.3s;
+}
+.transform {
+  transition: transform 0.3s;
+}
+.hover\:-translate-y-2:hover {
+  transform: translateY(-8px);
+}
+.max-w-7xl {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+.max-w-4xl {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+.p-8 {
+  padding: 2rem;
+}
+.p-10 {
+  padding: 2.5rem;
+}
+.p-16 {
+  padding: 4rem;
+}
+.py-12 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+.py-20 {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+.sm\:px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.lg\:px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+.lg\:px-12 {
+  padding-left: 3rem;
+  padding-right: 3rem;
+}
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+.mb-16 {
+  margin-bottom: 4rem;
+}
+.mt-4 {
+  margin-top: 1rem;
+}
+.mt-8 {
+  margin-top: 2rem;
+}
+.space-x-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-left: 1.5rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+.gap-8 {
+  gap: 2rem;
+}
+.leading-tight {
+  line-height: 1.15;
+}
+.tracking-tight {
+  letter-spacing: -0.01em;
+}
+.tracking-wide {
+  letter-spacing: 0.05em;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.sticky {
+  position: sticky;
+}
+.top-0 {
+  top: 0;
+}
+.z-50 {
+  z-index: 50;
+}
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
+}
+.inset-0 {
+  top: 0; right: 0; bottom: 0; left: 0;
+}
+.bg-cover {
+  background-size: cover;
+}
+.bg-center {
+  background-position: center;
+}
+.opacity-10 {
+  opacity: 0.1;
+}
+.hidden {
+  display: none;
+}
+.md\:flex {
+  display: flex;
+}
+.md\:items-center {
+  align-items: center;
+}
+.md\:justify-between {
+  justify-content: space-between;
+}
+.md\:order-2 {
+  order: 2;
+}
+.md\:order-1 {
+  order: 1;
+}
+.md\:mt-0 {
+  margin-top: 0;
+}
+.border-t {
+  border-top: 1px solid #374151;
+}
+.border-gray-700 {
+  border-color: #374151;
+}
+.text-white {
+  color: #fff;
+}
+.text-gray-400 {
+  color: #9ca3af;
+}
+.bg-gray-800 {
+  background: #1f2937;
+}
+@media (max-width: 768px) {
+  header {
+    padding: 1rem 1rem;
+  }
+  section {
+    padding: 2rem 0.5rem;
+  }
+}
+@media (max-width: 480px) {
+  header h2 {
+    font-size: 1.2rem;
+  }
+  section h1 {
+    font-size: 1.5rem;
+  }
+  section h2 {
+    font-size: 1.2rem;
+  }
+}
