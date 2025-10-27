@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Properties - Flatery</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/properties.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar Component -->
+    <div id="navbar-container" data-component="components/navbar.html"></div>
+
+    <!-- Properties Listing Section -->
+    <section class="properties-section">
+        <div class="container">
+            <!-- Header -->
+            <div class="properties-header">
+                <h1>Available Properties</h1>
+                <p>Find your perfect home</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="filterPropertyType">Property Type</label>
+                    <select id="filterPropertyType">
+                        <option value="">All Types</option>
+                        <option value="PG">PG</option>
+                        <option value="FLAT">Flat</option>
+                        <option value="APARTMENT">Apartment</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterBHK">BHK</label>
+                    <select id="filterBHK">
+                        <option value="">All</option>
+                        <option value="1">1 BHK</option>
+                        <option value="2">2 BHK</option>
+                        <option value="3">3 BHK</option>
+                        <option value="4">4 BHK</option>
+                        <option value="4+">4+ BHK</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterCity">City</label>
+                    <input type="text" id="filterCity" placeholder="Enter city">
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterMaxRent">Max Rent</label>
+                    <input type="number" id="filterMaxRent" placeholder="e.g., 20000">
+                </div>
+
+                <button class="btn-filter" onclick="applyFilters()">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+                
+                <button class="btn-clear" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+
+            <!-- Properties Grid -->
+            <div id="propertiesGrid" class="properties-grid">
+                <!-- Property cards will be dynamically inserted here -->
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading properties...</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="page-btn" onclick="previousPage()"><i class="fas fa-chevron-left"></i> Previous</button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="page-btn" onclick="nextPage()">Next <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Component -->
+    <div id="footer-container" data-component="components/footer.html"></div>
+
+    <!-- Modals Component -->
+    <div id="modals-container" data-component="components/modals.html"></div>
+
+    <!-- Scripts -->
+    <script src="Javascript/api.js"></script>
+    <script src="Javascript/component-loader.js"></script>
+    <script src="Javascript/main.js"></script>
+    <script src="Javascript/properties.js"></script>
+</body>
+</html>

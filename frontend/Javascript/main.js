@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Call setupLoginButtonListeners early to ensure buttons are functional
   setupLoginButtonListeners();
+  
+  // Setup list property button listener
+  setupListPropertyButton();
 
   /**
    * ✅ Check authentication state on page load
@@ -160,8 +163,39 @@ function setupLoginButtonListeners() {
     }
 }
 
+// Function to set up list property button
+function setupListPropertyButton() {
+    const listPropertyBtn = document.getElementById('listPropertyBtn');
+    
+    if (listPropertyBtn) {
+        listPropertyBtn.removeEventListener('click', handleListPropertyClick);
+        listPropertyBtn.addEventListener('click', handleListPropertyClick);
+    }
+}
+
+// Handle list property button click
+function handleListPropertyClick(e) {
+    e.preventDefault();
+    
+    // Check if user is authenticated
+    if (typeof apiService !== 'undefined' && apiService.isAuthenticated()) {
+        // User is logged in, redirect to add-property page
+        window.location.href = 'add-property.html';
+    } else {
+        // User is not logged in, show login modal
+        document.getElementById('loginModal')?.classList.add('active');
+        
+        // Show notification
+        if (typeof showNotification === 'function') {
+            showNotification('Please login to list your property', 'info');
+        }
+    }
+}
+
 // Make functions globally available for component loader
 window.setupLoginButtonListeners = setupLoginButtonListeners;
+window.setupListPropertyButton = setupListPropertyButton;
+window.handleListPropertyClick = handleListPropertyClick;
 window.setupProfileDropdown = setupProfileDropdown;
 window.openLoginModal = openLoginModal;
 window.closeLoginModal = closeLoginModal;

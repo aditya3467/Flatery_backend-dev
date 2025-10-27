@@ -46,6 +46,11 @@ class ComponentLoader {
             setupLoginButtonListeners();
         }
         
+        // Re-setup list property button listener
+        if (typeof setupListPropertyButton === 'function') {
+            setupListPropertyButton();
+        }
+        
         // Re-setup form handlers
         this.setupFormHandlers();
         
