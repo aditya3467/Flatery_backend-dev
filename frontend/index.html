@@ -9,66 +9,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!--===== Main CSS =====-->
     <link rel="stylesheet" href="css/style.css">
+    <script src="Javascript/component-loader.js" defer></script>
     <script src="Javascript/api.js" defer></script>
     <script src="Javascript/main.js" defer></script>
 </head>
 
 <body>
-    <!--===== Navbar Start =====-->
-    <nav class="navbar">
-        <div class="container-nav">
-            <div class="row justify-content-between">
-                <div class="logo"><a href="index.html">Flat<span>ery</span></a></div>
-                <div class="options">
-                    <a class="nav-link" href="#services">Features</a>
-                    <a class="nav-link" href="#how-it-works">How It Works</a>
-                    <a class="nav-link" href="#why-choose-us">Why Choose Us</a>
-                </div>
-                <div class="menu">
-                    <div class="user-actions">
-                        <div class="nav-item"><a href="#home" class="nav-link list-property-btn">List Property</a></div>
-                        <!-- Login button, visible when logged out -->
-                        <div class="nav-item" id="loginNavItem"><button id="mainLoginBtn" class="btn-1">Login</button></div>
-                        <!-- Profile dropdown, visible when logged in -->
-                        <div class="nav-item profile-section" id="profileSection" style="display: none;">
-                            <i class="fas fa-user-circle profile-icon" id="profileIcon"></i>
-                            <div class="profile-dropdown" id="profileDropdown">
-                                <div class="dropdown-header">Hi, <span id="dropdownUsername">User</span>!</div>
-                                <a href="profile-settings.html"><i class="fas fa-cog"></i> Profile Settings</a>
-                                <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="hamburger">
-                    <input type="checkbox" id="burger-toggle">
-                    <!-- Burger Icon -->
-                    <label for="burger-toggle" class="burger-container">
-                        <div class="burger-line"></div> 
-                        <div class="burger-line"></div>
-                        <div class="burger-line"></div>
-                    </label>
-                    <!-- Navigation Menu -->
-                    <div class="nav-menu">
-                        <ul>
-                            <li><a href="#Dashboard">Dashboard</a></li>
-                            <li><a href="#about">About</a></li>
-                            <li><a href="#services">Services</a></li>
-                            <li><a href="#portfolio">Request a call back</a></li>
-                            <li><a href="Tenant Policies">Tenant Policies</a></li>
-                            <li><a href="#Owner Policies">Owner Policies</a></li>
-                            <li><a href="#Terms and conditions">Terms and conditions</a></li>
-                            <li><a href="#FAQs">FAQs</a></li>
-                            <li><button class="logout-btn" style="display: none;">Logout</button></li> 
-                        </ul>
-                        <div id="burgerLoginBtn" class="burger-btn">Login</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!--===== Navbar End =====-->
+    <!--===== Navbar Component =====-->
+    <div id="navbar-container" data-component="components/navbar.html"></div>
 
     
     <!--===== Home Section Start =====-->
@@ -314,55 +262,8 @@
     <!--===== Footer End =====-->
 
 
-    <!-- login -->
-    <div class="login-modal" id="loginModal">
-        <div class="login-box">
-            <button class="close-btn" onclick="closeLoginModal()">&times;</button>
-            <h2>Login to Flatery</h2>
-            <form>
-                <input type="text" name="username" placeholder="Username or Email" required>
-                <input type="password" name="password" placeholder="Password (min 6 characters)" required minlength="6" maxlength="100">
-                <button type="submit" class="login-btn">Login</button>
-            </form>
-            <div class="signup-link">
-                Not registered? <a href="#">Sign up</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="signup-modal" id="signupModal">
-        <div class="signup-box">
-            <button class="close-btn" onclick="closeSignupModal()">&times;</button>
-            <h2>Sign Up for Flatery</h2>
-            <form>
-                <div class="name-row">
-                    <input type="text" name="firstName" placeholder="First name" required>
-                    <input type="text" name="lastName" placeholder="Last name" required>
-                </div>
-                <input type="text" name="username" placeholder="Username" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="text" name="phoneNumber" placeholder="Phone (optional)">
-                <input type="password" name="password" placeholder="Password (min 6 characters)" required minlength="6" maxlength="100">
-                <fieldset class="role-selection">
-                    <legend>Sign up as a:</legend>
-                    <div class="role-options">
-                        <label>
-                            <input type="radio" name="role" value="USER" checked> Tenant
-                        </label>
-                        <label>
-                            <input type="radio" name="role" value="ADMIN"> Owner
-                        </label>
-                    </div>
-                </fieldset>
-                <button type="submit" class="signup-btn">Sign Up</button>
-            </form>
-            <div class="login-link">
-                Already have an account? <a href="#" id="showLogin">Login</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- login -->
+    <!--===== Modals Component =====-->
+    <div id="modals-container" data-component="components/modals.html"></div>
 
 
 </body>

@@ -125,6 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
     profileIcon.addEventListener('click', (e) => {
       e.stopPropagation(); // Prevent click from closing the dropdown immediately
       profileDropdown.classList.toggle('active');
+      console.log('Profile dropdown toggled:', profileDropdown.classList.contains('active'));
     });
 
     // Close dropdown if clicking outside
@@ -133,6 +134,8 @@ document.addEventListener('DOMContentLoaded', function () {
         profileDropdown.classList.remove('active');
       }
     });
+  } else {
+    console.log('Profile icon or dropdown not found on initial load');
   }
 
 });
@@ -154,6 +157,48 @@ function setupLoginButtonListeners() {
     if (burgerLoginBtn) {
         burgerLoginBtn.removeEventListener('click', openLoginModal);
         burgerLoginBtn.addEventListener('click', openLoginModal);
+    }
+}
+
+// Make functions globally available for component loader
+window.setupLoginButtonListeners = setupLoginButtonListeners;
+window.setupProfileDropdown = setupProfileDropdown;
+window.openLoginModal = openLoginModal;
+window.closeLoginModal = closeLoginModal;
+window.closeSignupModal = closeSignupModal;
+window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
+window.handleLogout = handleLogout;
+window.updateUIForLoggedInUser = updateUIForLoggedInUser;
+
+// Function to set up profile dropdown
+function setupProfileDropdown() {
+    const profileIcon = document.getElementById('profileIcon');
+    const profileDropdown = document.getElementById('profileDropdown');
+
+    if (profileIcon && profileDropdown) {
+        // Remove old listener by cloning
+        const newProfileIcon = profileIcon.cloneNode(true);
+        profileIcon.parentNode.replaceChild(newProfileIcon, profileIcon);
+        
+        newProfileIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('active');
+            console.log('Profile dropdown active:', profileDropdown.classList.contains('active'));
+        });
+
+        // Setup click outside listener
+        const handleOutsideClick = (e) => {
+            if (!profileDropdown.contains(e.target) && !newProfileIcon.contains(e.target)) {
+                profileDropdown.classList.remove('active');
+            }
+        };
+        
+        document.addEventListener('click', handleOutsideClick);
+        
+        console.log('Profile dropdown handlers setup complete');
+    } else {
+        console.warn('Profile icon or dropdown not found');
     }
 }
 
@@ -368,6 +413,12 @@ function updateUIForLoggedInUser() {
     if (dropdownUsername) {
       dropdownUsername.textContent = `${firstName}`;
     }
+    // Setup profile dropdown handlers after showing the profile section
+    setTimeout(() => {
+      if (typeof setupProfileDropdown === 'function') {
+        setupProfileDropdown();
+      }
+    }, 100);
   }
 
   // Hide hamburger login button
