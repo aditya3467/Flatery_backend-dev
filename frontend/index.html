@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flatery</title>
+    <!--===== Font Awesome =====-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!--===== Main CSS =====-->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="Javascript/api.js" defer></script>
+    <script src="Javascript/main.js" defer></script>
+</head>
+
+<body>
+    <!--===== Navbar Start =====-->
+    <nav class="navbar">
+        <div class="container-nav">
+            <div class="row justify-content-between">
+                <div class="logo"><a href="index.html">Flat<span>ery</span></a></div>
+                <div class="options">
+                    <a class="nav-link" href="#services">Features</a>
+                    <a class="nav-link" href="#how-it-works">How It Works</a>
+                    <a class="nav-link" href="#why-choose-us">Why Choose Us</a>
+                </div>
+                <div class="menu">
+                    <div class="nav-item"><a href="#home" class="nav-link">List Property</a></div>
+                    <div class="nav-item"><button href="#home" class="btn-1" >Login</button></div>
+                    <div class="nav-item"><button class="logout-btn" style="display: none;">Logout</button></div>
+                </div>
+                <div class="hamburger">
+                    <input type="checkbox" id="burger-toggle">
+                    <!-- Burger Icon -->
+                    <label for="burger-toggle" class="burger-container">
+                        <div class="burger-line"></div>
+                        <div class="burger-line"></div>
+                        <div class="burger-line"></div>
+                    </label>
+                    <!-- Navigation Menu -->
+                    <div class="nav-menu">
+                        <ul>
+                            <li><a href="">Dashboard</a></li>
+                            <li><a href="#about">About</a></li>
+                            <li><a href="#services">Services</a></li>
+                            <li><a href="#portfolio">Request a call back</a></li>
+                            <li><a href="Tenant Policies">Tenant Policies</a></li>
+                            <li><a href="#Owner Policies">Owner Policies</a></li>
+                            <li><a href="#Terms and conditions">Terms and conditions</a></li>
+                            <li><a href="#FAQs">FAQs</a></li>
+                            <li><button class="logout-btn" style="display: none;">Logout</button></li>
+                        </ul>
+                        <div class="burger-btn" onclick="document.getElementById('loginModal').classList.add('active')">Login</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!--===== Navbar End =====-->
+
+    
+    <!--===== Home Section Start =====-->
+
+    <section class="home  section-padding">
+        <div class="abstract" aria-hidden="true">
+            <span class="blob b1"></span>
+            <span class="blob b2"></span>
+            <span class="blob b3"></span>
+        </div>
+
+        <div class="container">
+
+            <div class="hero">
+                <div class="hero-text align-items-center">
+                    <h2>A complete housing solution</h2>
+                    <span>Discover</span>
+                </div>
+                <div class="hero-bar row">
+                    <div class="location">
+
+
+                        <select name="cars" id="cars">
+                            <option value="volvo">Noida</option>
+                            <option value="saab">Delhi</option>
+                            <option value="mercedes">Mohali</option>
+                            <option value="audi">Chandigarh</option>
+                        </select>
+                    </div>
+                    <div class="search-bar">
+                        <div class="wrap">
+                            <div class="search">
+                                <input type="text" class="searchTerm" placeholder="What are you looking for?">
+                                <button type="submit" class="searchButton">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="search-btn"></div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img loading="lazy"
+                    src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60"
+                    alt="Modern living room interior">
+
+            </div>
+
+        </div>
+    </section>
+    <!-- home section ends -->
+
+    <!-- Recommended Property Section starts -->
+    <section class="recc-properties">
+        <div class="container">
+            <div class="row">
+                <div class="section-title">
+                    <h2>Recommended Properties</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="./img/properties/1.jpeg" alt="Property Image">
+                    </div>
+                    <div class="property-details">
+                        <h3>Modern Apartment</h3>
+                        <p>2 Beds • 2 Baths • 1200 sqft</p>
+                        <p>$1500/month</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="./img/properties/1.jpeg" alt="Property Image">
+                    </div>
+                    <div class="property-details">
+                        <h3>Cozy Cottage</h3>
+                        <p>3 Beds • 2 Baths • 1500 sqft</p>
+                        <p>$2000/month</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="./img/properties/1.jpeg" alt="Property Image">
+                    </div>
+                    <div class="property-details">
+                        <h3>Luxury Villa</h3>
+                        <p>4 Beds • 3 Baths • 3000 sqft</p>
+                        <p>$5000/month</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Recommended Property Section ends -->
+    <!-- Owner section starts -->
+    <section class="owner">
+        <div class="container">
+            <h2>Are you a Property Owner?</h2>
+            <p>List your properties here and let us help you managing them.</p>
+            <button class="btn-2">List Your Property</button>
+
+        </div>
+    </section>
+
+    <!-- Owner section ends -->
+
+
+
+
+
+
+
+
+    <!-- Services Section Starts -->
+
+    <section class="services" id="services">
+        <div class="container">
+            <div class="row">
+                <div class="section-title">
+                    <h2>Our Services</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="service-card">
+                    <i class="fas fa-home"></i>
+                    <h3>Property Listings</h3>
+                    <p>Browse through a wide range of properties to find your perfect home.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-user-tie"></i>
+                    <h3>Owner Dashboard</h3>
+                    <p>Manage your property listings and track inquiries easily.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-users"></i>
+                    <h3>Tenant Support</h3>
+                    <p>Get assistance with rental agreements, maintenance, and more.</p>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- How it works starts -->
+
+    <section class="process section-padding" id="how-it-works">
+        <div class="process-container">
+            <h2>A simple, 3-step process</h2>
+            <p class="subtitle">We've simplified property management for you.</p>
+
+            <ul class="timeline">
+                <li class="timeline-item">
+                    <div class="timeline-dot dot-blue">1</div>
+                    <div class="timeline-content">
+                        <h3>Tenant Raises Request</h3>
+                        <p>Tenants can easily submit maintenance or service requests through the intuitive Flatery app
+                            or web portal.</p>
+                    </div>
+                </li>
+
+                <li class="timeline-item">
+                    <div class="timeline-dot dot-green">2</div>
+                    <div class="timeline-content">
+                        <h3>Owner Approves</h3>
+                        <p>You receive an instant notification, review the details, and approve the request with a
+                            single tap.</p>
+                    </div>
+                </li>
+
+                <li class="timeline-item">
+                    <div class="timeline-dot dot-blue">3</div>
+                    <div class="timeline-content">
+                        <h3>Service Provider Resolves</h3>
+                        <p>The assigned service provider is notified, resolves the issue, and marks the request as
+                            complete. Everyone stays in the loop.</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+    </section>
+
+
+
+
+    <!-- How it works ends -->
+    <!--===== Footer Start =====-->
+
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="footer-details-col">
+                    <h3>Flatery</h3>
+                    <p>Your trusted platform for finding the perfect home.</p>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis cumque reprehenderit ullam
+                        soluta earum praesentium doloribus ex, numquam optio accusantium sed natus sint quod architecto
+                        nostrum illo nihil veritatis facere!</p>
+                </div>
+                <div class="links">
+                    <div class="footer-links-col">
+                        <h3>Quick Links</h3>
+                        <ul>
+                            <li><a href="#">Home</a></li>
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="#">Services</a></li>
+                            <li><a href="#">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-owner-col">
+                        <h3>owner
+                        </h3>
+                        <ul>
+                            <li><a href="#">List Property</a></li>
+                            <li><a href="#">Manage Listings</a></li>
+                            <li><a href="#">Owner Dashboard</a></li>
+                            <li><a href="#">Support</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-tenant-col">
+                        <h3>Tenant</h3>
+                        <ul>
+                            <li><a href="#">Browse Properties</a></li>
+                            <li><a href="#">My Favorites</a></li>
+                            <li><a href="#">Tenant Dashboard</a></li>
+                            <li><a href="#">Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <hr>
+            <p class="copyright">Copyright &copy; 2024 Flatery. All rights reserved.</p>
+        </div>
+    </footer>
+    <!--===== Footer End =====-->
+
+
+    <!-- login -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-box">
+            <button class="close-btn" onclick="closeLoginModal()">&times;</button>
+            <h2>Login to Flatery</h2>
+            <form onsubmit="handleLogin(event)">
+                <input type="text" placeholder="Username or Email" required>
+                <input type="password" placeholder="Password" required>
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+            <div class="signup-link">
+                Not registered? <a href="#">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="signup-modal" id="signupModal">
+        <div class="signup-box">
+            <button class="close-btn" onclick="closeSignupModal()">&times;</button>
+            <h2>Sign Up for Flatery</h2>
+            <form onsubmit="handleSignup(event)">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="tel" name="phoneNumber" placeholder="Phone Number (optional)" pattern="[0-9+\-() ]{7,15}" />
+                <input type="password" name="password" placeholder="Password" required>
+                <!-- flatery-db supports roles: ADMIN, SUPERADMIN, USER. Public signup should default to USER -->
+                <input type="hidden" name="role" value="USER">
+                <button type="submit" class="signup-btn">Sign Up</button>
+            </form>
+            <div class="login-link">
+                Already have an account? <a href="#" id="showLogin">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- login -->
+
+
+</body>
+
+</html>

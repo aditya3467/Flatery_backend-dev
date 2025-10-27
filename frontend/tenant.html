@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flatery</title>
+    <!--===== Font Awesome =====-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!--===== Main CSS =====-->
+    <link rel="stylesheet" href="css/style.css">
+    <script src="Javascript/main.js" defer></script>
+</head>
+
+<body>
+    <!--===== Navbar Start =====-->
+    <nav class="navbar">
+        <div class="container-nav">
+            <div class="row justify-content-between">
+                <div class="logo"><a href="index.html">Flat<span>ery</span></a></div>
+                <div class="options">
+                    <a class="nav-link" href="#services">Features</a>
+                    <a class="nav-link" href="#how-it-works">How It Works</a>
+                    <a class="nav-link" href="#why-choose-us">Why Choose Us</a>
+                </div>
+                <div class="menu">
+                        <div class="nav-item"><a href="#home" class="nav-link">List Property</a></div>
+                        <div class="nav-item"><button class="btn-1">Login</button></div>
+                        <div class="nav-item"><button class="logout-btn" style="display: none;">Logout</button></div>
+                </div>
+                <div class="hamburger">
+                    <input type="checkbox" id="burger-toggle">
+                    <!-- Burger Icon -->
+                    <label for="burger-toggle" class="burger-container">
+                        <div class="burger-line"></div>
+                        <div class="burger-line"></div>
+                        <div class="burger-line"></div>
+                    </label>
+                    <!-- Navigation Menu -->
+                    <div class="nav-menu">
+                        <ul>
+                            <li><a href="#Dashboard">Dashboard</a></li>
+                            <li><a href="#about">About</a></li>
+                            <li><a href="#services">Services</a></li>
+                            <li><a href="#portfolio">Request a call back</a></li>
+                            <li><a href="Tenant Policies">Tenant Policies</a></li>
+                            <li><a href="#Owner Policies">Owner Policies</a></li>
+                            <li><a href="#Terms and conditions">Terms and conditions</a></li>
+                            <li><a href="#FAQs">FAQs</a></li>
+                            <li><button class="logout-btn" style="display: none;">Logout</button></li>
+                        </ul>
+                        <div class="burger-btn" onclick="document.getElementById('loginModal').classList.add('active')">Login</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!--===== Navbar End =====-->
+
+
+
+    <!--===== Owner Dashboard Section Start =====-->
+    <section class="owner-dashboard">
+        <div class="dashboard-container">
+            <h2 class="dashboard-title">Tenant Dashboard</h2>
+            <p class="dashboard-subtitle">Welcome Back, XYZ</p>
+        </div>
+    </section>
+
+        <!--===== Service Requests Section Start =====-->
+        <section class="tenant-service-requests-section">
+            <div class="tenant-service-requests-container">
+                <h2 class="tenant-service-requests-title">Service Requests</h2>
+                <div class="tenant-service-requests-table-wrapper">
+                    <table class="tenant-service-requests-table">
+                        <thead>
+                            <tr>
+                                <th>REQUEST ID</th>
+                                <th>PROPERTY</th>
+                                <th>DATE CREATED</th>
+                                <th>SERVICE TYPE</th>
+                                <th>STATUS</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#12345</td>
+                                <td>Cozy Apartment in Downtown</td>
+                                <td>2025-09-01</td>
+                                <td>Plumbing</td>
+                                <td><span class="status-badge pending">Pending</span></td>
+                                <td><a href="#" class="view-link">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>#67890</td>
+                                <td>Spacious House with Garden</td>
+                                <td>2025-08-28</td>
+                                <td>Electrical</td>
+                                <td><span class="status-badge completed">Completed</span></td>
+                                <td><a href="#" class="view-link">View</a></td>
+                            </tr>
+                            <tr>
+                                <td>#11223</td>
+                                <td>Studio Flat near University</td>
+                                <td>2025-08-25</td>
+                                <td>Appliance Repair</td>
+                                <td><span class="status-badge pending">Pending</span></td>
+                                <td><a href="#" class="view-link">View</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="tenant-request-service-btn"><i class="fas fa-plus"></i> Request Service</button>
+            </div>
+        </section>
+        <!--===== Service Requests Section End =====-->
+    <!--===== Owner Dashboard Section End =====-->
+
+    <!--===== Properties Section Start =====-->
+
+    <section class="properties-dashboard">
+        <div class="properties-container">
+            <h2 class="">Properties</h2>
+            <div class="properties-row">
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60" alt="Cozy Apartment in Downtown">
+                    </div>
+                    <div class="property-details">
+                        <h3>Cozy Apartment in Downtown</h3>
+                        <p>Apartment</p>
+                        <p>123 Oak Street, Anytown</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=60" alt="Spacious House with Garden">
+                    </div>
+                    <div class="property-details">
+                        <h3>Spacious House with Garden</h3>
+                        <p>House</p>
+                        <p>456 Maple Avenue, Anytown</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=60" alt="Studio Flat near University">
+                    </div>
+                    <div class="property-details">
+                        <h3>Studio Flat near University</h3>
+                        <p>Studio</p>
+                        <p>789 Pine Lane, Anytown</p>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=1200&q=60" alt="Luxury Penthouse with City View">
+                    </div>
+                    <div class="property-details">
+                        <h3>Luxury Penthouse with City View</h3>
+                        <p>Penthouse</p>
+                        <p>101 Elm Road, Anytown</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    
+</body>
+</html>

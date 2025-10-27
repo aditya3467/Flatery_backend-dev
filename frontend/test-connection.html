@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Backend Connection - Flatery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Flatery Backend Connection Test</h1>
+        <p>This page helps you test the connection between your frontend and Spring Boot backend.</p>
+        
+        <div class="test-section">
+            <h3>1. Backend Status Check</h3>
+            <p>Check if your Spring Boot backend is running on port 8081</p>
+            <button class="test-button" onclick="testBackendStatus()">Test Backend Connection</button>
+            <div id="backendStatus" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Registration</h3>
+            <p>Test user registration with your backend</p>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="testUsername" placeholder="testuser123">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="testEmail" placeholder="test@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="testPassword" placeholder="password123">
+            </div>
+            <div class="form-group">
+                <label>Phone Number (optional):</label>
+                <input type="tel" id="testPhoneNumber" placeholder="+91-9999999999">
+            </div>
+            <button class="test-button" onclick="testRegistration()">Test Registration</button>
+            <div id="registrationResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test Login</h3>
+            <p>Test user login with your backend</p>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="loginUsername" placeholder="superadmin">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="loginPassword" placeholder="admin123">
+            </div>
+            <button class="test-button" onclick="testLogin()">Test Login</button>
+            <div id="loginResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. API Service Status</h3>
+            <button class="test-button" onclick="testApiService()">Check API Service</button>
+            <div id="apiServiceResult" class="result"></div>
+        </div>
+    </div>
+
+    <script src="Javascript/api.js"></script>
+    <script>
+        // Test functions
+        async function testBackendStatus() {
+            const resultDiv = document.getElementById('backendStatus');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:8081/api/auth');
+                if (response.status === 403) {
+                    resultDiv.innerHTML = '✅ Backend is running! (403 Forbidden is expected for unauthenticated requests)';
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `✅ Backend is running! Status: ${response.status}`;
+                    resultDiv.className = 'result success';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Backend connection failed: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testRegistration() {
+            const resultDiv = document.getElementById('registrationResult');
+            resultDiv.innerHTML = 'Testing registration...';
+            
+            const userData = {
+                username: document.getElementById('testUsername').value,
+                email: document.getElementById('testEmail').value,
+                password: document.getElementById('testPassword').value,
+                role: 'USER'
+            };
+            const phone = document.getElementById('testPhoneNumber')?.value;
+            if (phone) userData.phoneNumber = phone;
+            
+            try {
+                const response = await apiService.register(userData);
+                resultDiv.innerHTML = `✅ Registration successful! Response: ${JSON.stringify(response, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Registration failed: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.innerHTML = 'Testing login...';
+            
+            const credentials = {
+                username: document.getElementById('loginUsername').value,
+                password: document.getElementById('loginPassword').value
+            };
+            
+            try {
+                const response = await apiService.login(credentials);
+                resultDiv.innerHTML = `✅ Login successful! Response: ${JSON.stringify(response, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Login failed: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        function testApiService() {
+            const resultDiv = document.getElementById('apiServiceResult');
+            
+            if (typeof apiService !== 'undefined') {
+                resultDiv.innerHTML = `✅ API Service is loaded!<br>
+                    Base URL: ${apiService.baseURL}<br>
+                    Token: ${apiService.getToken() || 'No token'}<br>
+                    Authenticated: ${apiService.isAuthenticated()}`;
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.innerHTML = '❌ API Service not loaded!';
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', function() {
+            testApiService();
+            testBackendStatus();
+        });
+    </script>
+</body>
+</html>
