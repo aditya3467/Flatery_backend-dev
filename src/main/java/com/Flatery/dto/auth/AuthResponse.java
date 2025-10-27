@@ -9,4 +9,5 @@ public class AuthResponse {
     private String tokenType;
     private long expiresIn;
     private Set<String> roles;
+    private String firstName;
 }

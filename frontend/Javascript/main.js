@@ -1,48 +1,169 @@
-// API Integration for Flatery Backend
-// Include the API service
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize API service
+/**
+ * =======================================================
+ * 🌐 main.js — Auth & UI Logic for Arnar Tech Website
+ * =======================================================
+ *
+ * Handles:
+ *  - Signup & Login flow (frontend)
+ *  - API interactions via apiService
+ *  - UI updates based on authentication state
+ *  - Modal switching and basic navigation menu logic
+ *
+ * Dependencies:
+ *  - api.js (must define apiService with register, login, logout, isAuthenticated)
+ *  - HTML modals with .signup-modal and .login-modal classes
+ *  - Buttons with .btn-1 (login/logout) and .burger-btn (menu/user)
+ */
+
+document.addEventListener('DOMContentLoaded', function () {
+  /**
+   * ✅ Ensure API Service is loaded before proceeding
+   * apiService is a global object that handles network requests
+   */
   if (typeof apiService === 'undefined') {
     console.error('API Service not loaded. Make sure api.js is included before main.js');
+    return;
   }
 
-  // Check if user is already logged in
+  // Call setupLoginButtonListeners early to ensure buttons are functional
+  setupLoginButtonListeners();
+
+  /**
+   * ✅ Check authentication state on page load
+   * If a user session exists (e.g. stored in localStorage), update UI
+   */
   if (apiService.isAuthenticated()) {
     updateUIForLoggedInUser();
+  } else {
+    // If not authenticated, ensure logout buttons are hidden
+    document.querySelectorAll('.logout-btn').forEach(btn => btn.style.display = 'none');
   }
-  
-    // Ensure forms are wired to handlers even if inline onsubmit doesn't run
-    try {
-        const signupForm = document.querySelector('.signup-modal form');
-        if (signupForm) {
-            signupForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                console.log('signupForm submit listener triggered');
-                handleSignup(e);
-            });
-        }
 
-        const loginForm = document.querySelector('.login-modal form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                console.log('loginForm submit listener triggered');
-                handleLogin(e);
-            });
-        }
-    } catch (err) {
-        console.error('Error wiring auth form listeners', err);
+  // =========================
+  // 🔹 FORM HANDLERS SETUP
+  // =========================
+
+  /**
+   * Attach Signup form submit listener
+   * - Prevents default HTML submission
+   * - Calls handleSignup() for async registration
+   */
+  const signupForm = document.querySelector('.signup-modal form');
+  if (signupForm) {
+    signupForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleSignup(e);
+    });
+  }
+
+  /**
+   * Attach Login form submit listener
+   * - Prevents default HTML submission
+   * - Calls handleLogin() for async authentication
+   */
+  const loginForm = document.querySelector('.login-modal form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleLogin(e);
+    });
+  }
+
+  // =========================
+  // 🔹 MODAL TOGGLE HELPERS
+  // =========================
+
+  /**
+   * toggleModals()
+   * @param {string} hideId - ID of modal to close
+   * @param {string} showId - ID of modal to open
+   *
+   * Dynamically switches between login and signup modals
+   */
+  function toggleModals(hideId, showId) {
+    document.getElementById(hideId)?.classList.remove('active');
+    document.getElementById(showId)?.classList.add('active');
+  }
+
+  // Switch from login → signup
+  document.querySelector('.login-modal .signup-link a')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleModals('loginModal', 'signupModal');
+  });
+
+  // Switch from signup → login
+  document.getElementById('showLogin')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleModals('signupModal', 'loginModal');
+  });
+
+  // =========================
+  // 🔹 HAMBURGER MENU LOGIC
+  // =========================
+
+  /**
+   * Closes hamburger menu when clicking outside of it
+   */
+  document.addEventListener('click', function (event) {
+    const burgerMenu = document.querySelector('.burger-menu');
+    const burgerBtn = document.querySelector('.burger-btn');
+    const burgerToggle = document.getElementById('burger-toggle'); // Get the checkbox
+
+    // Check if the click is outside the burger menu and the toggle itself
+    if (burgerMenu && burgerToggle && burgerToggle.checked && !burgerMenu.contains(event.target) && !event.target.closest('.hamburger')) {
+      burgerToggle.checked = false; // Close the menu
     }
+  });
+
+  /**
+   * Handles profile dropdown toggle
+   */
+  const profileIcon = document.getElementById('profileIcon');
+  const profileDropdown = document.getElementById('profileDropdown');
+
+  if (profileIcon && profileDropdown) {
+    profileIcon.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent click from closing the dropdown immediately
+      profileDropdown.classList.toggle('active');
+    });
+
+    // Close dropdown if clicking outside
+    document.addEventListener('click', (e) => {
+      if (!profileDropdown.contains(e.target) && !profileIcon.contains(e.target)) {
+        profileDropdown.classList.remove('active');
+      }
+    });
+  }
+
 });
 
-// Login button event listeners
-document.querySelector('.btn-1').addEventListener('click', function(e) {
+// ========================================================
+// 🔸 GLOBAL FUNCTIONS (accessible outside DOMContentLoaded)
+// ========================================================
+
+// Function to set up login button event listeners
+function setupLoginButtonListeners() {
+    const mainLoginBtn = document.getElementById('mainLoginBtn');
+    const burgerLoginBtn = document.getElementById('burgerLoginBtn');
+
+    // Remove any existing listeners to prevent duplicates
+    if (mainLoginBtn) {
+        mainLoginBtn.removeEventListener('click', openLoginModal);
+        mainLoginBtn.addEventListener('click', openLoginModal);
+    }
+    if (burgerLoginBtn) {
+        burgerLoginBtn.removeEventListener('click', openLoginModal);
+        burgerLoginBtn.addEventListener('click', openLoginModal);
+    }
+}
+
+function openLoginModal(e) {
     e.preventDefault();
     // Only open login modal if user is NOT logged in
     if (!apiService.isAuthenticated()) {
         document.getElementById('loginModal').classList.add('active');
     }
-});
+}
 
 function closeLoginModal() {
     document.getElementById('loginModal').classList.remove('active');
@@ -51,284 +172,280 @@ function closeLoginModal() {
 function closeSignupModal() {
     document.getElementById('signupModal').classList.remove('active');
 }
-// Signup link in login modal
-// Use event delegation to ensure it works after DOM is loaded
-window.addEventListener('DOMContentLoaded', function() {
-  var signupLink = document.querySelector('.login-modal .signup-link a');
-  if (signupLink) {
-    signupLink.addEventListener('click', function(e) {
-      e.preventDefault();
-      document.getElementById('loginModal').classList.remove('active');
-      document.getElementById('signupModal').classList.add('active');
-    });
+
+// 🔸 AUTH HANDLERS
+// ========================================================
+
+/**
+ * handleSignup()
+ * @param {Event} e - form submit event
+ *
+ * Registers a new user via apiService, then auto-logs them in.
+ * Steps:
+ *  1. Extracts name/email/password
+ *  2. Shows loading state
+ *  3. Calls apiService.register()
+ *  4. On success → calls handleLogin() automatically
+ */
+async function handleSignup(e) {
+  const form = e.target;
+  const firstName = form.querySelector('input[name="firstName"]').value;
+  const lastName = form.querySelector('input[name="lastName"]').value;
+  const username = form.querySelector('input[name="username"]').value;
+  const email = form.querySelector('input[name="email"]').value;
+  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value;
+  const password = form.querySelector('input[name="password"]').value;
+  const role = form.querySelector('input[name="role"]:checked').value;
+
+  // Client-side validation
+  if (password.length < 6) {
+    showError('Password must be at least 6 characters long.');
+    return;
   }
-  var showLogin = document.getElementById('showLogin');
-  if (showLogin) {
-    showLogin.addEventListener('click', function(e) {
-      e.preventDefault();
-      document.getElementById('signupModal').classList.remove('active');
-      document.getElementById('loginModal').classList.add('active');
-    });
+  if (password.length > 100) {
+    showError('Password must be less than 100 characters.');
+    return;
   }
-});
+  if (username.length < 3) {
+    showError('Username must be at least 3 characters long.');
+    return;
+  }
+  if (firstName.length < 2) {
+    showError('First name must be at least 2 characters long.');
+    return;
+  }
+  if (lastName.length < 2) {
+    showError('Last name must be at least 2 characters long.');
+    return;
+  }
 
+  showLoading(form.querySelector('button[type="submit"]'));
 
-// Authentication Functions
-async function handleLogin(event) {
-    event.preventDefault();
-    
-    const form = event.target;
-    // Try to read by name attributes (preferred), fall back to type/placeholders used in index.html
-    const usernameEl = form.querySelector('input[name="username"]') || form.querySelector('input[placeholder="Username or Email"]') || form.querySelector('input[type="text"]');
-    const passwordEl = form.querySelector('input[name="password"]') || form.querySelector('input[placeholder="Password"]') || form.querySelector('input[type="password"]');
-    const username = usernameEl ? usernameEl.value : '';
-    const password = passwordEl ? passwordEl.value : '';
-    
-    try {
-        showLoading(form.querySelector('.login-btn'));
-        
-        const response = await apiService.login({
-            username: username,
-            password: password
-        });
-        
-        // Save username and roles locally so the UI can show the logged-in user
-        localStorage.setItem('username', username);
-        const roles = response.roles || [];
-        try {
-            localStorage.setItem('roles', JSON.stringify(Array.isArray(roles) ? roles : Array.from(roles)));
-        } catch (e) {
-            localStorage.setItem('roles', JSON.stringify([]));
-        }
-
-        showSuccess('Login successful!');
-        closeLoginModal();
-        updateUIForLoggedInUser();
-
-        // After login, redirect to homepage
-        window.location.href = 'index.html';
-        
-    } catch (error) {
-        const status = error.status ? ` (${error.status})` : '';
-        showError('Login failed' + status + ': ' + error.message);
-    } finally {
-        hideLoading(form.querySelector('.login-btn'));
-    }
+  try {
+    await apiService.register({ firstName, lastName, username, email, phoneNumber, password, roles: [role] });
+    showSuccess('Signup successful! Logging you in...');
+    // Automatically attempt to log in the new user
+    await handleLogin({ target: form, credentials: { username, password } }); // Pass credentials directly
+  } catch (error) {
+    showError(error.message || 'Signup failed. Try again.');
+  } finally {
+    hideLoading(form.querySelector('button[type="submit"]'));
+  }
 }
 
-async function handleSignup(event) {
-    event.preventDefault();
-    console.log('handleSignup invoked');
-    
-    // event.target might be the submit button; find the closest form as a robust fallback
-    let form = event.target;
-    if (form && form.closest) {
-        form = form.closest('form') || form;
-    }
-    if (!form || form.tagName !== 'FORM') {
-        form = document.querySelector('.signup-modal form') || document.querySelector('#signupModal form');
-    }
+/**
+ * handleLogin()
+ * @param {Event} e - form submit event
+ *
+ * Authenticates an existing user and updates UI accordingly.
+ * Steps:
+ *  1. Reads credentials
+ *  2. Calls apiService.login()
+ *  3. Stores user info in localStorage
+ *  4. Closes modal and updates UI
+ */
+async function handleLogin(e) { // e can be a form event or an object with credentials
+  let username, password, form;
+  
+  // Determine the source of credentials and the form to use for UI feedback
+  if (e.credentials && e.credentials.username) { // Prioritize credentials for auto-login
+    username = e.credentials.username;
+    password = e.credentials.password;
+    form = e.target; // The form is passed in the 'target' property from signup
+  } else if (e.target) { // Manual login from the login form
+    form = e.target;
+    username = form.querySelector('input[name="username"]').value;
+    password = form.querySelector('input[name="password"]').value;
+  } else {
+    showError('Login failed: Invalid call to handleLogin.');
+    return;
+  }
 
-    const usernameEl = form ? form.querySelector('input[name="username"]') : null;
-    const emailEl = form ? form.querySelector('input[name="email"]') : null;
-    const passwordEl = form ? form.querySelector('input[name="password"]') : null;
-    const phoneNumberInput = form ? form.querySelector('input[name="phoneNumber"]') : null;
-    const username = usernameEl ? usernameEl.value : '';
-    const email = emailEl ? emailEl.value : '';
-    const password = passwordEl ? passwordEl.value : '';
-    const phoneNumber = phoneNumberInput ? phoneNumberInput.value : null;
-    // Read role from any control named 'role' (select or hidden input)
-    const roleEl = form ? form.querySelector('[name="role"]') : null;
-    const userType = roleEl ? roleEl.value : null;
-    // If role is intentionally missing, backend will default; but validate presence for clarity
-    if (!userType) {
-        showError('Please select a user type');
-        return;
-    }
+  showLoading(form?.querySelector('button[type="submit"]'));
 
-    // Validate required fields
-    if (!username) { showError('Username is required'); return; }
-    if (!email) { showError('Email is required'); return; }
-    if (!password) { showError('Password is required'); return; }
-    
-    try {
-        showLoading(form.querySelector('.signup-btn'));
-        
-        const payload = {
-            username: username,
-            email: email,
-            password: password,
-            role: userType
-        };
-        console.log('Register payload:', payload);
-        if (phoneNumber) payload.phoneNumber = phoneNumber;
+  try {
+    const authResponse = await apiService.login({ username, password });
+    // Store user data in localStorage
+    localStorage.setItem('username', username);
+    localStorage.setItem('firstName', authResponse.firstName || username); // Store first name
+    localStorage.setItem('roles', JSON.stringify(authResponse.roles)); // Store roles for redirection
+    showSuccess('Login successful!');
+    updateUIForLoggedInUser();
+    document.getElementById('loginModal')?.classList.remove('active');
 
-        await apiService.register(payload);
-        // After successful registration, auto-login the new user
-        try {
-            const loginResp = await apiService.login({ username: username, password: password });
-            // store username and roles
-            localStorage.setItem('username', username);
-            const rolesResp = loginResp.roles || [];
-            try { localStorage.setItem('roles', JSON.stringify(Array.isArray(rolesResp) ? rolesResp : Array.from(rolesResp))); } catch (e) { localStorage.setItem('roles', JSON.stringify([])); }
-            showSuccess('Registration successful! Logged in.');
-            closeSignupModal();
-            updateUIForLoggedInUser();
-            window.location.href = 'index.html';
-            return;
-        } catch (e) {
-            // If auto-login fails, inform user to login manually
-            showSuccess('Registration successful! Please login.');
-            closeSignupModal();
-            return;
-        }
-        
-    } catch (error) {
-        const status = error.status ? ` (${error.status})` : '';
-        showError('Registration failed' + status + ': ' + error.message);
-    } finally {
-        hideLoading(form.querySelector('.signup-btn'), 'Sign Up');
+    // After login, also close the signup modal in case the flow started from there
+    document.getElementById('signupModal')?.classList.remove('active');
+
+    const roles = authResponse.roles || [];
+    if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
+        window.location.href = 'Owner.html';
     }
+  } catch (error) {
+    showError(error.message || 'Login failed. Please try again.');
+  } finally {
+    if (form) { // Ensure form exists before trying to hide loading
+      hideLoading(form.querySelector('button[type="submit"]'));
+    }
+  }
 }
 
-function updateUIForLoggedInUser() {
-    // Update login button to show user is logged in
-    const loginBtn = document.querySelector('.btn-1');
-    if (loginBtn) {
-        const username = localStorage.getItem('username');
-        loginBtn.textContent = username || 'Dashboard';
-        // When logged in, disable the button's link functionality
-        loginBtn.onclick = null;
-        loginBtn.classList.add('logged-in');
-    }
-    
-    // Also update hamburger/menu login control for mobile
-    const burgerBtn = document.querySelector('.nav-menu .burger-btn') || document.querySelector('.burger-btn');
-    if (burgerBtn) {
-        const username = localStorage.getItem('username');
-        burgerBtn.textContent = username || 'Login';
-        if (localStorage.getItem('username')) {
-            burgerBtn.onclick = null; // Disable click when logged in
-            burgerBtn.classList.add('logged-in');
-        } else {
-            burgerBtn.onclick = () => document.getElementById('loginModal').classList.add('active');
-        }
-    }
-
-    // Add logout functionality in both desktop and mobile menu
-    addLogoutButton();
-
-    // Update Dashboard link in hamburger menu based on user role
-
-}
-
-function addLogoutButton() {
-    // The logout buttons are now in the HTML, hidden by default.
-    // We just need to show them and attach the event handler.
-    const logoutBtns = document.querySelectorAll('.logout-btn');
-    logoutBtns.forEach(btn => {
-        btn.style.display = 'inline-block';
-        // Remove existing listener to avoid duplicates, then add it.
-        btn.removeEventListener('click', handleLogout);
-        btn.addEventListener('click', handleLogout);
-    });
-}
-
+/**
+ * handleLogout()
+ *
+ * Logs out the user:
+ *  - Clears localStorage
+ *  - Calls apiService.logout() if available
+ *  - Updates UI back to logged-out state
+ */
 async function handleLogout() {
-    try {
-        await apiService.logout();
-        showSuccess('Logged out successfully!');
-        
-        // Reset UI
-        const loginBtn = document.querySelector('.btn-1');
-        if (loginBtn) {
-            loginBtn.textContent = 'Login';
-            loginBtn.onclick = function() {
-                document.getElementById('loginModal').classList.add('active');
-            };
-            loginBtn.classList.remove('logged-in');
-        }
-        
-        // Also reset hamburger menu button
-        const burgerBtn = document.querySelector('.nav-menu .burger-btn') || document.querySelector('.burger-btn');
-        if (burgerBtn) {
-            burgerBtn.textContent = 'Login';
-            burgerBtn.onclick = function() {
-                document.getElementById('loginModal').classList.add('active');
-            };
-            burgerBtn.classList.remove('logged-in');
-        }
-        
-        // Remove logout button
-        const logoutBtns = document.querySelectorAll('.logout-btn');
-        logoutBtns.forEach(btn => {
-            btn.style.display = 'none';
-        });
-        // Clear stored user data
-        localStorage.removeItem('username');
-        localStorage.removeItem('roles');
-        
-    } catch (error) {
-        showError('Logout failed: ' + error.message);
+  try {
+    await apiService.logout();
+    localStorage.removeItem('authToken'); // Clear token
+    localStorage.removeItem('username');
+    localStorage.removeItem('firstName');
+    localStorage.removeItem('roles');
+
+    showSuccess('Logged out successfully.');
+    
+    // Reset UI elements
+    const loginNavItem = document.getElementById('loginNavItem');
+    const profileSection = document.getElementById('profileSection');
+    const burgerLoginBtn = document.getElementById('burgerLoginBtn');
+    const logoutBtns = document.querySelectorAll('.logout-btn');
+
+    // Show login button, hide profile section
+    if (loginNavItem) {
+      loginNavItem.style.display = '';
     }
-}
-
-// Utility functions
-function showLoading(button) {
-    button.disabled = true;
-    button.textContent = 'Loading...';
-}
-
-function hideLoading(button, originalText = 'Login') {
-    button.disabled = false;
-    button.textContent = originalText;
-}
-
-function showSuccess(message) {
-    showNotification(message, 'success');
-}
-
-function showError(message) {
-    showNotification(message, 'error');
-}
-
-function showNotification(message, type) {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    
-    // Style the notification
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 5px;
-        color: white;
-        font-weight: bold;
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
-        ${type === 'success' ? 'background-color: #4CAF50;' : 'background-color: #f44336;'}
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-// Closing hamburger if clicked outside
-document.addEventListener('click', function(e) {
-    const burgerToggle = document.getElementById('burger-toggle');
-    const navMenu = document.querySelector('.nav-menu');
-    const burgerContainer = document.querySelector('.burger-container');
-    // Only close if menu is open and click is outside both menu and burger icon
-    if (burgerToggle && burgerToggle.checked) {
-      if (!navMenu.contains(e.target) && !burgerContainer.contains(e.target) && e.target !== burgerToggle) {
-        burgerToggle.checked = false;
-      }
+    if (profileSection) {
+      profileSection.style.display = 'none';
     }
+
+    // Handle hamburger menu login/logout buttons
+    if (burgerLoginBtn) {
+        burgerLoginBtn.textContent = 'Login';
+        burgerLoginBtn.classList.remove('logged-in');
+        burgerLoginBtn.style.display = ''; // Show login button
+    }
+    logoutBtns.forEach(btn => btn.style.display = 'none'); // Hide logout buttons
+
+    // Re-setup login button listeners to make them active again
+    setupLoginButtonListeners();
+
+    // Redirect to home page after logout
+    window.location.href = 'index.html';
+
+  } catch (error) {
+    showError('Logout failed: ' + error.message);
+  }
+}
+
+// ========================================================
+// 🔸 UI HANDLERS
+// ========================================================
+
+/**
+ * updateUIForLoggedInUser() - Updates UI after login
+ *  - Hides login buttons
+ *  - Shows logout buttons with username and attaches handler
+ *  - Updates dashboard link based on user role
+ */
+function updateUIForLoggedInUser() {
+  const username = localStorage.getItem('username') || 'User';
+  const firstName = localStorage.getItem('firstName') || username;
+  const loginNavItem = document.getElementById('loginNavItem');
+  const profileSection = document.getElementById('profileSection');
+  const burgerLoginBtn = document.getElementById('burgerLoginBtn');
+  const logoutBtns = document.querySelectorAll('.logout-btn');
+
+  // Hide main login button and show profile section
+  if (loginNavItem) {
+    loginNavItem.style.display = 'none';
+  }
+  if (profileSection) {
+    profileSection.style.display = 'flex'; // Use flex to align icon
+    const dropdownUsername = document.getElementById('dropdownUsername');
+    if (dropdownUsername) {
+      dropdownUsername.textContent = `${firstName}`;
+    }
+  }
+
+  // Hide hamburger login button
+  if (burgerLoginBtn) {
+    burgerLoginBtn.style.display = 'none';
+  }
+
+  // Show logout buttons and attach handler
+  logoutBtns.forEach(btn => {
+    btn.style.display = ''; // Show the logout button
+    btn.removeEventListener('click', handleLogout); // Prevent duplicate listeners
+    btn.addEventListener('click', handleLogout);
   });
+
+  // Update Dashboard link in hamburger menu based on user role
+  const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+  const dashboardLink = document.querySelector('.nav-menu ul li a[href="#Dashboard"]'); // Assuming this is the dashboard link
+  if (dashboardLink) {
+      if (roles.includes('ADMIN')) {
+          dashboardLink.href = 'Owner.html';
+          dashboardLink.textContent = 'Owner Dashboard';
+      } else if (roles.includes('USER')) {
+          dashboardLink.href = 'tenant.html';
+          dashboardLink.textContent = 'Tenant Dashboard';
+      } else {
+          dashboardLink.href = 'index.html'; // Default or hide
+          dashboardLink.textContent = 'Dashboard';
+      }
+  }
+}
+
+// ========================================================
+// 🔸 UTILITIES
+// ========================================================
+
+/**
+ * showLoading()
+ * @param {HTMLElement} button - the button to disable
+ *
+ * Disables button during async operation to prevent duplicate clicks.
+ */
+function showLoading(button) {
+  if (button) button.disabled = true;
+}
+
+/**
+ * hideLoading()
+ * @param {HTMLElement} button - the button to re-enable
+ */
+function hideLoading(button) {
+  if (button) button.disabled = false;
+}
+
+/**
+ * showNotification()
+ * @param {string} message - text to display
+ * @param {'success'|'error'|'info'} type - notification style
+ *
+ * Displays a temporary notification box at the bottom of the screen.
+ */
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.classList.add('fade-out'); // Add fade-out class
+    notification.addEventListener('transitionend', () => notification.remove()); // Remove after transition
+  }, 3000);
+}
+
+/** Shortcut for success message */
+function showSuccess(msg) {
+  showNotification(msg, 'success');
+}
+
+/** Shortcut for error message */
+function showError(msg) {
+  showNotification(msg, 'error');
+}

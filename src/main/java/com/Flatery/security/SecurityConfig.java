@@ -39,6 +39,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests for CORS
                         .requestMatchers("/api/auth/**").permitAll() // Allow all auth endpoints
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
                         .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
@@ -59,6 +60,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // Cache preflight for 1 hour
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

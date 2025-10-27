@@ -25,8 +25,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         String key = username.trim().toLowerCase();
+        // Try to find user by username first, then by email
         User user = userRepo.findByUsername(key)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseGet(() -> userRepo.findByEmail(key)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found")));
 
         Set<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(r -> new SimpleGrantedAuthority("ROLE_" + r.name()))

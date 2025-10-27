@@ -42,6 +42,7 @@ public class AuthService {
         resp.setTokenType("Bearer");
         resp.setExpiresIn(expiresIn);
         resp.setRoles(roles);
+        resp.setFirstName(user.getFirstName());
         return resp;
     }
 
