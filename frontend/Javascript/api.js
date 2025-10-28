@@ -84,7 +84,8 @@ class ApiService {
             
             return response;
         } catch (error) {
-            throw new Error('Login failed: ' + error.message);
+            // Re-throw the original error to preserve status code and message
+            throw error;
         }
     }
 
@@ -98,7 +99,8 @@ class ApiService {
             
             return response;
         } catch (error) {
-            throw new Error('Registration failed: ' + error.message);
+            // Re-throw the original error
+            throw error;
         }
     }
 
