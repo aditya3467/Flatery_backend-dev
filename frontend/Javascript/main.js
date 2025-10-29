@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Call setupLoginButtonListeners early to ensure buttons are functional
   setupLoginButtonListeners();
+  
+  // Setup list property button listener
+  setupListPropertyButton();
 
   /**
    * ✅ Check authentication state on page load
@@ -125,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
     profileIcon.addEventListener('click', (e) => {
       e.stopPropagation(); // Prevent click from closing the dropdown immediately
       profileDropdown.classList.toggle('active');
+      console.log('Profile dropdown toggled:', profileDropdown.classList.contains('active'));
     });
 
     // Close dropdown if clicking outside
@@ -133,6 +137,8 @@ document.addEventListener('DOMContentLoaded', function () {
         profileDropdown.classList.remove('active');
       }
     });
+  } else {
+    console.log('Profile icon or dropdown not found on initial load');
   }
 
 });
@@ -154,6 +160,79 @@ function setupLoginButtonListeners() {
     if (burgerLoginBtn) {
         burgerLoginBtn.removeEventListener('click', openLoginModal);
         burgerLoginBtn.addEventListener('click', openLoginModal);
+    }
+}
+
+// Function to set up list property button
+function setupListPropertyButton() {
+    const listPropertyBtn = document.getElementById('listPropertyBtn');
+    
+    if (listPropertyBtn) {
+        listPropertyBtn.removeEventListener('click', handleListPropertyClick);
+        listPropertyBtn.addEventListener('click', handleListPropertyClick);
+    }
+}
+
+// Handle list property button click
+function handleListPropertyClick(e) {
+    e.preventDefault();
+    
+    // Check if user is authenticated
+    if (typeof apiService !== 'undefined' && apiService.isAuthenticated()) {
+        // User is logged in, redirect to add-property page
+        window.location.href = 'add-property.html';
+    } else {
+        // User is not logged in, show login modal
+        document.getElementById('loginModal')?.classList.add('active');
+        
+        // Show notification
+        if (typeof showNotification === 'function') {
+            showNotification('Please login to list your property', 'info');
+        }
+    }
+}
+
+// Make functions globally available for component loader
+window.setupLoginButtonListeners = setupLoginButtonListeners;
+window.setupListPropertyButton = setupListPropertyButton;
+window.handleListPropertyClick = handleListPropertyClick;
+window.setupProfileDropdown = setupProfileDropdown;
+window.openLoginModal = openLoginModal;
+window.closeLoginModal = closeLoginModal;
+window.closeSignupModal = closeSignupModal;
+window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
+window.handleLogout = handleLogout;
+window.updateUIForLoggedInUser = updateUIForLoggedInUser;
+
+// Function to set up profile dropdown
+function setupProfileDropdown() {
+    const profileIcon = document.getElementById('profileIcon');
+    const profileDropdown = document.getElementById('profileDropdown');
+
+    if (profileIcon && profileDropdown) {
+        // Remove old listener by cloning
+        const newProfileIcon = profileIcon.cloneNode(true);
+        profileIcon.parentNode.replaceChild(newProfileIcon, profileIcon);
+        
+        newProfileIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('active');
+            console.log('Profile dropdown active:', profileDropdown.classList.contains('active'));
+        });
+
+        // Setup click outside listener
+        const handleOutsideClick = (e) => {
+            if (!profileDropdown.contains(e.target) && !newProfileIcon.contains(e.target)) {
+                profileDropdown.classList.remove('active');
+            }
+        };
+        
+        document.addEventListener('click', handleOutsideClick);
+        
+        console.log('Profile dropdown handlers setup complete');
+    } else {
+        console.warn('Profile icon or dropdown not found');
     }
 }
 
@@ -189,15 +268,40 @@ function closeSignupModal() {
  */
 async function handleSignup(e) {
   const form = e.target;
-  const username = form.querySelector('input[name="username"]').value; // Fix: Use 'username'
+  const firstName = form.querySelector('input[name="firstName"]').value;
+  const lastName = form.querySelector('input[name="lastName"]').value;
+  const username = form.querySelector('input[name="username"]').value;
   const email = form.querySelector('input[name="email"]').value;
+  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value;
   const password = form.querySelector('input[name="password"]').value;
   const role = form.querySelector('input[name="role"]:checked').value;
+
+  // Client-side validation
+  if (password.length < 6) {
+    showError('Password must be at least 6 characters long.');
+    return;
+  }
+  if (password.length > 100) {
+    showError('Password must be less than 100 characters.');
+    return;
+  }
+  if (username.length < 3) {
+    showError('Username must be at least 3 characters long.');
+    return;
+  }
+  if (firstName.length < 2) {
+    showError('First name must be at least 2 characters long.');
+    return;
+  }
+  if (lastName.length < 2) {
+    showError('Last name must be at least 2 characters long.');
+    return;
+  }
 
   showLoading(form.querySelector('button[type="submit"]'));
 
   try {
-    await apiService.register({ username, email, password, role });
+    await apiService.register({ firstName, lastName, username, email, phoneNumber, password, roles: [role] });
     showSuccess('Signup successful! Logging you in...');
     // Automatically attempt to log in the new user
     await handleLogin({ target: form, credentials: { username, password } }); // Pass credentials directly
@@ -240,8 +344,9 @@ async function handleLogin(e) { // e can be a form event or an object with crede
 
   try {
     const authResponse = await apiService.login({ username, password });
-    // Per your request, using the username from the form for localStorage.
+    // Store user data in localStorage
     localStorage.setItem('username', username);
+    localStorage.setItem('firstName', authResponse.firstName || username); // Store first name
     localStorage.setItem('roles', JSON.stringify(authResponse.roles)); // Store roles for redirection
     showSuccess('Login successful!');
     updateUIForLoggedInUser();
@@ -276,6 +381,7 @@ async function handleLogout() {
     await apiService.logout();
     localStorage.removeItem('authToken'); // Clear token
     localStorage.removeItem('username');
+    localStorage.removeItem('firstName');
     localStorage.removeItem('roles');
 
     showSuccess('Logged out successfully.');
@@ -325,6 +431,7 @@ async function handleLogout() {
  */
 function updateUIForLoggedInUser() {
   const username = localStorage.getItem('username') || 'User';
+  const firstName = localStorage.getItem('firstName') || username;
   const loginNavItem = document.getElementById('loginNavItem');
   const profileSection = document.getElementById('profileSection');
   const burgerLoginBtn = document.getElementById('burgerLoginBtn');
@@ -338,8 +445,14 @@ function updateUIForLoggedInUser() {
     profileSection.style.display = 'flex'; // Use flex to align icon
     const dropdownUsername = document.getElementById('dropdownUsername');
     if (dropdownUsername) {
-      dropdownUsername.textContent = username;
+      dropdownUsername.textContent = `${firstName}`;
     }
+    // Setup profile dropdown handlers after showing the profile section
+    setTimeout(() => {
+      if (typeof setupProfileDropdown === 'function') {
+        setupProfileDropdown();
+      }
+    }, 100);
   }
 
   // Hide hamburger login button

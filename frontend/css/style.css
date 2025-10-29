@@ -471,6 +471,8 @@ img
     color: var(--main-color);
     cursor: pointer;
     transition: color 0.3s ease;
+    pointer-events: auto; /* Ensure icon is clickable */
+    user-select: none; /* Prevent text selection */
 }
 
 .profile-icon:hover {
@@ -492,12 +494,14 @@ img
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
     padding: 0.5rem 0;
     border: 1px solid #eee;
+    pointer-events: none; /* Disable pointer events when hidden */
 }
 
 .profile-dropdown.active {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    pointer-events: auto; /* Enable pointer events when visible */
 }
 
 .profile-dropdown .dropdown-header {

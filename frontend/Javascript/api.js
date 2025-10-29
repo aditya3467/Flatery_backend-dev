@@ -42,21 +42,27 @@ class ApiService {
             ...options
         };
 
+        console.log('Making API request:', { url, config });
+
         try {
             const response = await fetch(url, config);
+            console.log('Response received:', { status: response.status, statusText: response.statusText, headers: Object.fromEntries(response.headers.entries()) });
+            
             // Try parse JSON first
             let data = null;
             let text = null;
             try {
                 data = await response.json();
+                console.log('Response data:', data);
             } catch (e) {
                 // not JSON, capture raw text
                 try { text = await response.text(); } catch (e2) { text = null; }
+                console.log('Response text:', text);
             }
 
             if (!response.ok) {
                 const errBody = data || text;
-                const errMsg = (errBody && (typeof errBody === 'string' ? errBody : errBody.message)) || `HTTP error! status: ${response.status}`;
+                const errMsg = (errBody && (typeof errBody === 'string' ? errBody : (errBody.message || errBody.error))) || `HTTP error! status: ${response.status}`;
                 const error = new Error(errMsg);
                 error.status = response.status;
                 throw error;
