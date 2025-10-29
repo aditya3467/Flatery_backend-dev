@@ -1,9 +1,10 @@
-package com.Flatery.service.auth;
+package com.Flatery.service;
 
-import com.Flatery.dto.auth.AuthResponse;
-import com.Flatery.dto.auth.LoginRequest;
-import com.Flatery.model.auth.User;
-import com.Flatery.repository.auth.UserRepository;
+import com.Flatery.dto.RegisterRequest;
+import com.Flatery.dto.AuthResponse;
+import com.Flatery.dto.LoginRequest;
+import com.Flatery.model.User;
+import com.Flatery.repository.UserRepository;
 import com.Flatery.security.JwtService;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class AuthService {
         return resp;
     }
 
-    public void signup(com.Flatery.dto.auth.RegisterRequest registerRequest) {
+    public void signup(RegisterRequest registerRequest) {
         userService.register(registerRequest);
     }
 }

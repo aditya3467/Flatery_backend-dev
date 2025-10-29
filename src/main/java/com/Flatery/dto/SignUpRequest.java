@@ -1,4 +1,4 @@
-package com.Flatery.dto.auth;
+package com.Flatery.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

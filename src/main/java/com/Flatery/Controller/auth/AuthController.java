@@ -1,9 +1,9 @@
 package com.Flatery.Controller.auth;
 
-import com.Flatery.dto.auth.AuthResponse;
-import com.Flatery.dto.auth.LoginRequest;
-import com.Flatery.dto.auth.RegisterRequest;
-import com.Flatery.service.auth.AuthService;
+import com.Flatery.dto.AuthResponse;
+import com.Flatery.dto.LoginRequest;
+import com.Flatery.dto.RegisterRequest;
+import com.Flatery.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;

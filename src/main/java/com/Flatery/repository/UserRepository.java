@@ -1,6 +1,6 @@
-package com.Flatery.repository.auth;
+package com.Flatery.repository;
 
-import com.Flatery.model.auth.User;
+import com.Flatery.model.User;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

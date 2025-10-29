@@ -1,4 +1,4 @@
-package com.Flatery.dto.auth;
+package com.Flatery.dto;
 
 import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
