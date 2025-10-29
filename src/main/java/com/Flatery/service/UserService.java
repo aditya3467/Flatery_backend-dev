@@ -1,9 +1,9 @@
-package com.Flatery.service.auth;
+package com.Flatery.service;
 
-import com.Flatery.dto.auth.RegisterRequest;
-import com.Flatery.model.auth.RoleName;
-import com.Flatery.model.auth.User;
-import com.Flatery.repository.auth.UserRepository;
+import com.Flatery.dto.RegisterRequest;
+import com.Flatery.model.RoleName;
+import com.Flatery.model.User;
+import com.Flatery.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,10 +25,8 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         String key = username.trim().toLowerCase();
-        // Try to find user by username first, then by email
         User user = userRepo.findByUsername(key)
-                .orElseGet(() -> userRepo.findByEmail(key)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found")));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         Set<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(r -> new SimpleGrantedAuthority("ROLE_" + r.name()))
