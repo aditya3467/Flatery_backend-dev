@@ -4,6 +4,19 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Guard: Only authenticated ADMINs can access this page
+    try {
+        const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+        if (!roles.includes('ADMIN')) {
+            alert('Only owners (ADMIN) can list properties.');
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch (_) {
+        alert('Please login as owner to list properties.');
+        window.location.href = 'index.html';
+        return;
+    }
     const addPropertyForm = document.getElementById('addPropertyForm');
     const propertyTypeSelect = document.getElementById('propertyType');
     const bhkTypeGroup = document.getElementById('bhkTypeGroup');
@@ -18,6 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Store uploaded images
     let uploadedImages = [];
+
+    // Images are optional for now – remove required attribute if present
+    if (propertyImagesInput) {
+        propertyImagesInput.removeAttribute('required');
+    }
 
     // Toggle fields based on property type
     propertyTypeSelect.addEventListener('change', function() {
@@ -175,12 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
     addPropertyForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        // Validate images
-        if (uploadedImages.length === 0) {
-            showNotification('Please upload at least one property image', 'error');
-            return;
-        }
-
         // Validate custom time if selected
         const timeSlot = document.getElementById('timeSlot').value;
         if (timeSlot === 'Custom') {
@@ -204,30 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Collect form data
-        const formData = new FormData();
-
-        // Add all form fields
-        const formFields = new FormData(addPropertyForm);
-        for (let [key, value] of formFields.entries()) {
-            if (key !== 'propertyImages' && key !== 'amenities') {
-                formData.append(key, value);
-            }
-        }
-
-        // Add amenities as array
-        const amenities = Array.from(document.querySelectorAll('input[name="amenities"]:checked'))
-            .map(checkbox => checkbox.value);
-        formData.append('amenities', JSON.stringify(amenities));
-
-        // Add images
-        uploadedImages.forEach((file, index) => {
-            formData.append('propertyImages', file);
-        });
-
-        // Add posted date
-        formData.append('postedOn', new Date().toISOString());
-
         try {
             // Show loading state
             const submitBtn = addPropertyForm.querySelector('button[type="submit"]');
@@ -235,33 +223,41 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
-            // TODO: Replace with actual API call
-            // const response = await apiService.addProperty(formData);
+            // Build the property data object matching backend CreatePropertyRequest
+            const propertyData = buildPropertyData();
             
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Success
-            showNotification('Property listed successfully!', 'success');
+            // Make API call to create property
+            const response = await apiService.createProperty(propertyData);
             
-            // Reset form after 2 seconds
+            // Upload images if any
+            if (uploadedImages.length > 0) {
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading images...';
+                try {
+                    await apiService.uploadPropertyImages(response.id, uploadedImages);
+                    showNotification('Property and images uploaded successfully!', 'success');
+                } catch (imgError) {
+                    console.error('Image upload error:', imgError);
+                    showNotification('Property created but image upload failed: ' + imgError.message, 'warning');
+                }
+            } else {
+                showNotification('Property listed successfully!', 'success');
+            }
+            
+            // Reset form after 2 seconds and redirect
             setTimeout(() => {
                 addPropertyForm.reset();
                 uploadedImages = [];
                 imagePreviewContainer.innerHTML = '';
                 charCountSpan.textContent = '0';
                 
-                // Redirect to properties list or owner dashboard
-                // window.location.href = 'Owner.html';
+                // Redirect to owner dashboard
+                window.location.href = 'Owner.html';
             }, 2000);
-
-            // Reset button
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnContent;
 
         } catch (error) {
             console.error('Error submitting property:', error);
-            showNotification('Failed to submit property. Please try again.', 'error');
+            const errorMsg = error.message || 'Failed to submit property. Please try again.';
+            showNotification(errorMsg, 'error');
             
             // Reset button
             const submitBtn = addPropertyForm.querySelector('button[type="submit"]');
@@ -269,6 +265,175 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = '<i class="fas fa-check"></i> Submit Property';
         }
     });
+
+    // Function to build property data matching backend CreatePropertyRequest
+    function buildPropertyData() {
+        const propertyType = document.getElementById('propertyType').value;
+        
+        // Map form values to backend enum values
+        const data = {
+            type: propertyType, // PG, FLAT, APARTMENT
+            name: document.getElementById('propertyName').value || null,
+            currentFloor: parseInt(document.getElementById('currentFloor').value),
+            totalFloor: parseInt(document.getElementById('totalFloor').value),
+            age: mapPropertyAge(document.getElementById('propertyAge').value),
+            facing: mapFacing(document.getElementById('facing').value),
+            builtUpAreaSqft: parseInt(document.getElementById('builtUpArea').value),
+            bathrooms: parseInt(document.getElementById('bathrooms').value),
+            balcony: isBalconyChecked(),
+            amenities: getSelectedAmenities(),
+            locality: {
+                city: document.getElementById('city').value,
+                location: document.getElementById('location').value,
+                landmark: document.getElementById('landmark').value || null
+            },
+            rental: {
+                expectedRent: parseInt(document.getElementById('expectedRent').value),
+                expectedDeposit: parseInt(document.getElementById('expectedDeposit').value),
+                negotiable: document.getElementById('rentNegotiable').value === 'Yes',
+                monthlyMaintenance: parseInt(document.getElementById('monthlyMaintenance').value) || 0,
+                availableFrom: document.getElementById('availableFrom').value,
+                preferredTenants: [mapPreferredTenant(document.getElementById('preferredTenant').value)],
+                furnishing: document.getElementById('furnishing').value.toUpperCase().replace('-', '_'),
+                parking: document.getElementById('parking').value.toUpperCase(),
+                description: document.getElementById('propertyDescription').value
+            }
+        };
+
+        // Add BHK type or PG seater based on property type
+        if (propertyType === 'PG') {
+            data.pgSeater = parseInt(document.getElementById('seater').value);
+            data.bhkType = null;
+        } else {
+            data.bhkType = mapBhkType(document.getElementById('bhkType').value);
+            data.pgSeater = null;
+        }
+
+        // Add showing details if provided
+        const propertyShower = document.getElementById('propertyShower').value;
+        const propertyCondition = document.getElementById('propertyCondition').value;
+        if (propertyShower || propertyCondition) {
+            data.showing = {
+                whoShows: propertyShower ? mapWhoShows(propertyShower) : null,
+                currentCondition: propertyCondition ? mapCurrentCondition(propertyCondition) : null
+            };
+        }
+
+        // Add schedule if provided
+        const availability = document.getElementById('availability').value;
+        const timeSlotValue = document.getElementById('timeSlot').value;
+        if (availability) {
+            data.schedule = {
+                availability: availability.toUpperCase(),
+                allDay: timeSlotValue === 'All Day',
+                startTime: timeSlotValue === 'Custom' ? document.getElementById('startTime').value : null,
+                endTime: timeSlotValue === 'Custom' ? document.getElementById('endTime').value : null
+            };
+        }
+
+        return data;
+    }
+
+    // Helper functions to map form values to backend enum values
+    function mapPropertyAge(value) {
+        const mapping = {
+            '1-3': 'Y1_3',
+            '3-5': 'Y3_5',
+            '5-10': 'Y5_10',
+            '10+': 'Y10_PLUS'
+        };
+        return mapping[value] || value;
+    }
+
+    function mapBhkType(value) {
+        const mapping = {
+            '1': 'ONE',
+            '2': 'TWO',
+            '3': 'THREE',
+            '4': 'FOUR',
+            '4+': 'FOUR_PLUS'
+        };
+        return mapping[value] || value;
+    }
+
+    function mapPreferredTenant(value) {
+        const mapping = {
+            'Bachelors Male': 'BACHELORS_MALE',
+            'Bachelors Female': 'BACHELORS_FEMALE',
+            'Couple': 'COUPLE',
+            'Family': 'FAMILY',
+            'Married': 'MARRIED',
+            'Anyone': 'ANYONE'
+        };
+        return mapping[value] || value;
+    }
+
+    function mapFacing(value) {
+        const mapping = {
+            'North': 'NORTH',
+            'South': 'SOUTH',
+            'East': 'EAST',
+            'West': 'WEST'
+        };
+        // Only allow cardinal directions supported by backend; otherwise null
+        return mapping[value] || null;
+    }
+
+    function mapWhoShows(value) {
+        const mapping = {
+            'Myself': 'MYSELF',
+            'Neighbour': 'NEIGHBOUR',
+            'Tenant': 'TENANT',
+            'Friend/Family': 'FRIEND_FAMILY',
+            'Need Help': 'NEED_HELP',
+            'Others': 'OTHERS'
+        };
+        return mapping[value] || value;
+    }
+
+    function mapCurrentCondition(value) {
+        const mapping = {
+            'Newly Built': 'NEWLY_BUILT',
+            'Vacant': 'VACANT',
+            'Tenant on Notice Period': 'TENANT_NOTICE',
+            'Need Help to Manage': 'NEED_MANAGEMENT_HELP'
+        };
+        return mapping[value] || value;
+    }
+
+    function isBalconyChecked() {
+        const balconyCheckbox = document.querySelector('input[name="amenities"][value="Balcony"]');
+        return balconyCheckbox ? balconyCheckbox.checked : false;
+    }
+
+    function getSelectedAmenities() {
+        const allowed = new Set([
+            'HOUSEKEEPING', 'CCTV', 'KITCHEN', 'SELF_COOKING', 'GEYSER', 'REFRIGERATOR',
+            'SECURITY_24X7', 'TV', 'POWER_BACKUP', 'AC', 'WIFI', 'WASHING_MACHINE'
+            // 'BALCONY' handled separately as boolean
+        ]);
+        const mapping = {
+            'Housekeeping': 'HOUSEKEEPING',
+            'CCTV': 'CCTV',
+            'Kitchen': 'KITCHEN',
+            'Self Cooking': 'SELF_COOKING',
+            'Geyser': 'GEYSER',
+            'Refrigerator': 'REFRIGERATOR',
+            '24x7 Security': 'SECURITY_24X7',
+            'TV': 'TV',
+            'Power Backup': 'POWER_BACKUP',
+            'Air Conditioning': 'AC',
+            'Wi-Fi': 'WIFI',
+            'Washing Machine': 'WASHING_MACHINE',
+            'Balcony': 'BALCONY'
+        };
+
+        const selected = Array.from(document.querySelectorAll('input[name="amenities"]:checked'))
+            .map(cb => mapping[cb.value])
+            .filter(v => v && v !== 'BALCONY' && allowed.has(v));
+
+        return selected;
+    }
 
     // Notification function (if not already defined in main.js)
     function showNotification(message, type = 'info') {

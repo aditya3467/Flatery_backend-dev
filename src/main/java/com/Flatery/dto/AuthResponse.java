@@ -1,5 +1,4 @@
-package com.Flatery.dto.auth;
-
+package com.Flatery.dto;
 import lombok.Data;
 import java.util.Set;
 
@@ -9,5 +8,4 @@ public class AuthResponse {
     private String tokenType;
     private long expiresIn;
     private Set<String> roles;
-    private String firstName;
 }

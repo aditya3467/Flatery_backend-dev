@@ -107,13 +107,6 @@
 
 		<!-- Your jjwt dependencies for JwtService (already given) -->
 
-		<!-- Optional: lombok -->
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-
 	</dependencies>
 
 

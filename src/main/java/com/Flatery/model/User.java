@@ -1,4 +1,4 @@
-package com.Flatery.model.auth;
+package com.Flatery.model;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,16 +1,13 @@
 package com.Flatery.Controller.auth;
 
-import com.Flatery.dto.auth.AuthResponse;
-import com.Flatery.dto.auth.LoginRequest;
-import com.Flatery.dto.auth.RegisterRequest;
-import com.Flatery.service.auth.AuthService;
+import com.Flatery.dto.AuthResponse;
+import com.Flatery.dto.LoginRequest;
+import com.Flatery.dto.RegisterRequest;
+import com.Flatery.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -39,20 +36,7 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse(ex.getMessage()));
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse(ex.getMessage()));
         }
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> 
-            errors.put(error.getField(), error.getDefaultMessage())
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("Validation failed: " + errors.toString()));
     }
 
     record ErrorResponse(String error) {}

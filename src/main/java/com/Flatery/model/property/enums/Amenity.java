@@ -1,0 +1,6 @@
+package com.Flatery.model.property.enums;
+
+public enum Amenity {
+    HOUSEKEEPING, CCTV, KITCHEN, SELF_COOKING, GEYSER, REFRIGERATOR,
+    SECURITY_24X7, TV, POWER_BACKUP, AC, WIFI, WASHING_MACHINE, BALCONY
+}

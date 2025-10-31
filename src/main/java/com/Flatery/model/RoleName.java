@@ -1,4 +1,4 @@
-package com.Flatery.model.auth;
+package com.Flatery.model;
 
 public enum RoleName {
     USER,

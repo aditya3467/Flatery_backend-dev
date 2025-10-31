@@ -135,12 +135,96 @@ class ApiService {
 
     async createProperty(propertyData) {
         try {
-            return await this.makeRequest('/properties', {
+            return await this.makeRequest('/admin/properties', {
                 method: 'POST',
                 body: JSON.stringify(propertyData)
             });
         } catch (error) {
-            throw new Error('Failed to create property: ' + error.message);
+            throw error; // Re-throw original error to preserve status and message
+        }
+    }
+
+    async getMyProperties(all = false, page = 0, size = 10) {
+        try {
+            const params = new URLSearchParams({ all: all.toString(), page: page.toString(), size: size.toString() });
+            return await this.makeRequest(`/admin/properties?${params}`);
+        } catch (error) {
+            throw new Error('Failed to fetch my properties: ' + error.message);
+        }
+    }
+
+    async updateProperty(id, propertyData) {
+        try {
+            return await this.makeRequest(`/admin/properties/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(propertyData)
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteProperty(id) {
+        try {
+            return await this.makeRequest(`/admin/properties/${id}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            throw new Error('Failed to delete property: ' + error.message);
+        }
+    }
+
+    // Upload images for a property
+    async uploadPropertyImages(propertyId, files) {
+        try {
+            if (!this.token) {
+                throw new Error('You are not authenticated. Please log in again.');
+            }
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+
+            const url = `${this.baseURL}/admin/properties/${propertyId}/images`;
+            console.log('Uploading images:', { propertyId, filesCount: files?.length });
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                    // Don't set Content-Type - browser will set it with boundary for multipart
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            throw error;
+        }
+    }
+
+    // Get images for a property
+    async getPropertyImages(propertyId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/images`);
+        } catch (error) {
+            throw new Error('Failed to fetch property images: ' + error.message);
+        }
+    }
+
+    // Delete a property image
+    async deletePropertyImage(propertyId, imageId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/images/${imageId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            throw new Error('Failed to delete image: ' + error.message);
         }
     }
 
