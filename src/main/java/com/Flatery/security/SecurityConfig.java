@@ -43,6 +43,10 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
                         .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
                         .requestMatchers("/").permitAll() // Allow access to root
+                        .requestMatchers("/swagger-ui/**","/v3/api-docs/**","/swagger-resources/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/properties/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN","SUPERADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
