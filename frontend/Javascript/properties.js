@@ -20,14 +20,11 @@ async function loadProperties() {
     const propertiesGrid = document.getElementById('propertiesGrid');
     
     try {
-        // TODO: Replace with actual API call
-        // const response = await apiService.getProperties();
-        // allProperties = response.data;
+        // Call the public properties API
+        const response = await apiService.getProperties();
         
-        // Simulate API call with sample data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        allProperties = generateSampleProperties();
+        // Response is a Page object with content array
+        allProperties = response.content || [];
         filteredProperties = [...allProperties];
         
         displayProperties();
@@ -128,14 +125,20 @@ function displayProperties() {
  * Create property card HTML
  */
 function createPropertyCard(property) {
-    const title = property.propertyName || 
-                  `${property.bhkType ? property.bhkType + ' BHK' : property.seater + ' Seater'} ${property.propertyType}`;
+    // Handle API response format (PropertySummary)
+    const bhkType = property.bhkType || property.bhk;
+    const seater = property.pgSeater || property.seater;
+    const title = property.name || 
+                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
+    
+    // Use primaryImageUrl from API, fallback to placeholder
+    const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
     
     return `
         <div class="property-card" data-property-id="${property.id}">
             <div class="property-image">
-                <img src="${property.image}" alt="${title}" onerror="this.src='img/properties/default.jpg'">
-                <span class="property-badge">${property.propertyType}</span>
+                <img src="${imageUrl}" alt="${title}" onerror="this.src='img/properties/default.jpg'">
+                <span class="property-badge">${property.type}</span>
             </div>
             <div class="property-content">
                 <h3 class="property-title">${title}</h3>
@@ -144,17 +147,17 @@ function createPropertyCard(property) {
                     <span>${property.location}, ${property.city}</span>
                 </div>
                 <div class="property-details">
-                    ${property.bhkType ? `<div class="detail-item"><i class="fas fa-bed"></i> ${property.bhkType} BHK</div>` : ''}
-                    ${property.seater ? `<div class="detail-item"><i class="fas fa-users"></i> ${property.seater} Seater</div>` : ''}
-                    <div class="detail-item"><i class="fas fa-ruler-combined"></i> ${property.builtUpArea} sq.ft</div>
+                    ${bhkType ? `<div class="detail-item"><i class="fas fa-bed"></i> ${bhkType} BHK</div>` : ''}
+                    ${seater ? `<div class="detail-item"><i class="fas fa-users"></i> ${seater} Seater</div>` : ''}
+                    <div class="detail-item"><i class="fas fa-ruler-combined"></i> ${property.builtUpAreaSqft} sq.ft</div>
                     <div class="detail-item"><i class="fas fa-bath"></i> ${property.bathrooms} Bath</div>
                     <div class="detail-item"><i class="fas fa-couch"></i> ${property.furnishing}</div>
                 </div>
                 <div class="property-amenities">
-                    ${property.amenities.slice(0, 3).map(amenity => 
-                        `<span class="amenity-badge">${amenity}</span>`
-                    ).join('')}
-                    ${property.amenities.length > 3 ? `<span class="amenity-badge">+${property.amenities.length - 3} more</span>` : ''}
+                    ${property.amenities && property.amenities.length > 0 ? property.amenities.slice(0, 3).map(amenity => 
+                        `<span class="amenity-badge">${amenity.replace('_', ' ')}</span>`
+                    ).join('') : ''}
+                    ${property.amenities && property.amenities.length > 3 ? `<span class="amenity-badge">+${property.amenities.length - 3} more</span>` : ''}
                 </div>
                 <div class="property-footer">
                     <div class="property-price">
@@ -178,8 +181,8 @@ function applyFilters() {
     const maxRent = parseInt(document.getElementById('filterMaxRent').value) || Infinity;
     
     filteredProperties = allProperties.filter(property => {
-        const matchType = !propertyType || property.propertyType === propertyType;
-        const matchBHK = !bhk || property.bhkType === bhk;
+        const matchType = !propertyType || property.type === propertyType;
+        const matchBHK = !bhk || property.bhkType === bhk || property.bhk === bhk;
         const matchCity = !city || property.city.toLowerCase().includes(city);
         const matchRent = property.expectedRent <= maxRent;
         
