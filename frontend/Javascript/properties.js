@@ -327,13 +327,8 @@ function previousPage() {
  * View property details
  */
 function viewPropertyDetails(propertyId) {
-    // TODO: Navigate to property details page
     console.log('Viewing property:', propertyId);
-    // window.location.href = `property-details.html?id=${propertyId}`;
-    
-    if (typeof showNotification === 'function') {
-        showNotification('Property details page coming soon!', 'info');
-    }
+    window.location.href = `property-details.html?id=${propertyId}`;
 }
 
 /**

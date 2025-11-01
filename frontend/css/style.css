@@ -1716,14 +1716,11 @@ select:hover{
   }
 }
 
-/* Cards */
+/* Properties Dashboard Section */
 
 .properties-dashboard {
   background: #f7f9fb;
   padding: 48px;
-  margin-top: 70px;
-  /* display: flex; */
-
 }
 
 .properties-dashboard .container {
@@ -2096,8 +2093,6 @@ select:hover{
   padding: 2rem 0 2.5rem 0;
 }
 .tenant-service-requests-container {
-  /* max-width: 1200px; */
-  /* margin: 0 auto; */
   padding: 0 48px;
 }
 .tenant-service-requests-title {

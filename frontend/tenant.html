@@ -12,6 +12,102 @@
     <script src="Javascript/component-loader.js" defer></script>
     <script src="Javascript/api.js" defer></script>
     <script src="Javascript/main.js" defer></script>
+    <script>
+        // Load tenant dashboard data
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadTenantName();
+            await loadTenantProperties();
+        });
+
+        async function loadTenantName() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch('http://localhost:8081/api/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    const fullName = userData.fullName || userData.username || 'Tenant';
+                    document.getElementById('tenantName').textContent = fullName;
+                } else {
+                    document.getElementById('tenantName').textContent = 'Tenant';
+                }
+            } catch (error) {
+                console.error('Error loading tenant name:', error);
+                document.getElementById('tenantName').textContent = 'Tenant';
+            }
+        }
+
+        async function loadTenantProperties() {
+            const propertiesGrid = document.getElementById('tenantPropertiesGrid');
+            
+            try {
+                // Fetch properties from API (limit to 4 for dashboard)
+                const response = await apiService.getProperties();
+                const properties = response.content || [];
+                
+                if (properties.length === 0) {
+                    propertiesGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <i class="fas fa-home fa-3x" style="color: #ccc; margin-bottom: 15px;"></i>
+                            <p style="color: #666;">No properties available at the moment.</p>
+                            <a href="properties.html" style="color: #007bff; text-decoration: none; margin-top: 10px; display: inline-block;">
+                                Browse all properties
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Display only first 4 properties
+                const displayProperties = properties.slice(0, 4);
+                
+                propertiesGrid.innerHTML = displayProperties.map(property => {
+                    const bhkType = property.bhkType || property.bhk;
+                    const seater = property.pgSeater || property.seater;
+                    const title = property.name || 
+                                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
+                    const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
+                    
+                    return `
+                        <div class="property-card" onclick="window.location.href='property-details.html?id=${property.id}'" style="cursor: pointer;">
+                            <div class="property-image">
+                                <img src="${imageUrl}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60'">
+                            </div>
+                            <div class="property-details">
+                                <h3>${title}</h3>
+                                <p><i class="fas fa-tag"></i> ${property.type}</p>
+                                <p><i class="fas fa-map-marker-alt"></i> ${property.location}, ${property.city}</p>
+                                <p style="color: #007bff; font-weight: 600; margin-top: 10px;">
+                                    <i class="fas fa-rupee-sign"></i> ${formatNumber(property.expectedRent)}/month
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading properties:', error);
+                propertiesGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                        <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                        <p style="color: #666;">Failed to load properties. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
 </head>
 
 <body>
@@ -20,13 +116,14 @@
 
 
 
-    <!--===== Owner Dashboard Section Start =====-->
+    <!--===== Tenant Dashboard Header Start =====-->
     <section class="owner-dashboard">
         <div class="dashboard-container">
             <h2 class="dashboard-title">Tenant Dashboard</h2>
-            <p class="dashboard-subtitle">Welcome Back, XYZ</p>
+            <p class="dashboard-subtitle">Welcome Back, <span id="tenantName">...</span></p>
         </div>
     </section>
+    <!--===== Tenant Dashboard Header End =====-->
 
         <!--===== Service Requests Section Start =====-->
         <section class="tenant-service-requests-section">
@@ -82,47 +179,17 @@
 
     <section class="properties-dashboard">
         <div class="properties-container">
-            <h2 class="">Properties</h2>
-            <div class="properties-row">
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60" alt="Cozy Apartment in Downtown">
-                    </div>
-                    <div class="property-details">
-                        <h3>Cozy Apartment in Downtown</h3>
-                        <p>Apartment</p>
-                        <p>123 Oak Street, Anytown</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=60" alt="Spacious House with Garden">
-                    </div>
-                    <div class="property-details">
-                        <h3>Spacious House with Garden</h3>
-                        <p>House</p>
-                        <p>456 Maple Avenue, Anytown</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=60" alt="Studio Flat near University">
-                    </div>
-                    <div class="property-details">
-                        <h3>Studio Flat near University</h3>
-                        <p>Studio</p>
-                        <p>789 Pine Lane, Anytown</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=1200&q=60" alt="Luxury Penthouse with City View">
-                    </div>
-                    <div class="property-details">
-                        <h3>Luxury Penthouse with City View</h3>
-                        <p>Penthouse</p>
-                        <p>101 Elm Road, Anytown</p>
-                    </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Available Properties</h2>
+                <a href="properties.html" class="view-all-link" style="color: #007bff; text-decoration: none; font-weight: 600;">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="properties-row" id="tenantPropertiesGrid">
+                <!-- Loading state -->
+                <div class="loading-properties" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #007bff;"></i>
+                    <p style="margin-top: 15px; color: #666;">Loading properties...</p>
                 </div>
             </div>
         </div>

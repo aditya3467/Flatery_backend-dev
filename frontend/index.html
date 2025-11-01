@@ -87,41 +87,82 @@
                     <h2>Recommended Properties</h2>
                 </div>
             </div>
-            <div class="row">
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="./img/properties/1.jpeg" alt="Property Image">
-                    </div>
-                    <div class="property-details">
-                        <h3>Modern Apartment</h3>
-                        <p>2 Beds • 2 Baths • 1200 sqft</p>
-                        <p>$1500/month</p>
-                    </div>
+            <div class="row" id="recommendedPropertiesGrid">
+                <!-- Loading state -->
+                <div class="loading-properties" style="width: 100%; text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #007bff;"></i>
+                    <p style="margin-top: 15px; color: #666;">Loading properties...</p>
                 </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="./img/properties/1.jpeg" alt="Property Image">
-                    </div>
-                    <div class="property-details">
-                        <h3>Cozy Cottage</h3>
-                        <p>3 Beds • 2 Baths • 1500 sqft</p>
-                        <p>$2000/month</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="./img/properties/1.jpeg" alt="Property Image">
-                    </div>
-                    <div class="property-details">
-                        <h3>Luxury Villa</h3>
-                        <p>4 Beds • 3 Baths • 3000 sqft</p>
-                        <p>$5000/month</p>
-                    </div>
-                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="properties.html" class="btn-1">View All Properties</a>
             </div>
         </div>
     </section>
     <!-- Recommended Property Section ends -->
+    <script>
+        // Load recommended properties on home page
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadRecommendedProperties();
+        });
+
+        async function loadRecommendedProperties() {
+            const propertiesGrid = document.getElementById('recommendedPropertiesGrid');
+            
+            try {
+                // Fetch properties from API (limit to 3 for home page)
+                const response = await apiService.getProperties();
+                const properties = response.content || [];
+                
+                if (properties.length === 0) {
+                    propertiesGrid.innerHTML = `
+                        <div style="width: 100%; text-align: center; padding: 40px;">
+                            <i class="fas fa-home fa-3x" style="color: #ccc; margin-bottom: 15px;"></i>
+                            <p style="color: #666;">No properties available at the moment.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Display only first 3 properties
+                const displayProperties = properties.slice(0, 3);
+                
+                propertiesGrid.innerHTML = displayProperties.map(property => {
+                    const bhkType = property.bhkType || property.bhk;
+                    const seater = property.pgSeater || property.seater;
+                    const title = property.name || 
+                                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
+                    const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
+                    
+                    return `
+                        <div class="property-card" onclick="window.location.href='property-details.html?id=${property.id}'" style="cursor: pointer;">
+                            <div class="property-image">
+                                <img src="${imageUrl}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60'">
+                            </div>
+                            <div class="property-details">
+                                <h3>${title}</h3>
+                                <p>${bhkType ? bhkType + ' BHK' : seater + ' Seater'} • ${property.bathrooms} Bath${property.bathrooms > 1 ? 's' : ''} • ${property.builtUpAreaSqft} sqft</p>
+                                <p style="color: #007bff; font-weight: 600;">₹${formatNumberHome(property.expectedRent)}/month</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading properties:', error);
+                propertiesGrid.innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px;">
+                        <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                        <p style="color: #666;">Failed to load properties. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function formatNumberHome(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
     <!-- Owner section starts -->
     <section class="owner">
         <div class="container">
