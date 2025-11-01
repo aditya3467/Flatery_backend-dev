@@ -356,8 +356,12 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     document.getElementById('signupModal')?.classList.remove('active');
 
     const roles = authResponse.roles || [];
-    if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
-        window.location.href = 'Owner.html';
+    console.log('User roles:', roles); // Debug log
+    if (roles.includes('SUPERADMIN')) {
+        console.log('Redirecting to superadmin dashboard...'); // Debug log
+        window.location.href = '/frontend/superadmin-dashboard.html';
+    } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
+        window.location.href = '/frontend/Owner.html';
     }
   } catch (error) {
     showError(error.message || 'Login failed. Please try again.');
@@ -471,7 +475,10 @@ function updateUIForLoggedInUser() {
   const roles = JSON.parse(localStorage.getItem('roles') || '[]');
   const dashboardLink = document.querySelector('.nav-menu ul li a[href="#Dashboard"]'); // Assuming this is the dashboard link
   if (dashboardLink) {
-      if (roles.includes('ADMIN')) {
+      if (roles.includes('SUPERADMIN')) {
+          dashboardLink.href = 'superadmin-dashboard.html';
+          dashboardLink.textContent = 'Admin Dashboard';
+      } else if (roles.includes('ADMIN')) {
           dashboardLink.href = 'Owner.html';
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) {
@@ -481,6 +488,12 @@ function updateUIForLoggedInUser() {
           dashboardLink.href = 'index.html'; // Default or hide
           dashboardLink.textContent = 'Dashboard';
       }
+
+      // Show/hide superadmin menu items
+      const superadminItems = document.querySelectorAll('.superadmin-only');
+      superadminItems.forEach(item => {
+          item.style.display = roles.includes('SUPERADMIN') ? 'block' : 'none';
+      });
   }
 }
 
