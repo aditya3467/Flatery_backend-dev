@@ -13,6 +13,7 @@
     <script src="Javascript/api.js" defer></script>
     <script src="Javascript/main.js" defer></script>
     <script src="Javascript/home.js" defer></script>
+    <script src="Javascript/role-checker.js" defer></script>
 </head>
 
 <body>
@@ -38,20 +39,27 @@
                 </div>
                 <div class="hero-bar row">
                     <div class="location">
-
-
-                        <select name="cars" id="cars">
-                            <option value="volvo">Noida</option>
-                            <option value="saab">Delhi</option>
-                            <option value="mercedes">Mohali</option>
-                            <option value="audi">Chandigarh</option>
+                        <select name="citySelect" id="citySelect">
+                            <option value="">Select City</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Kolkata">Kolkata</option>
+                            <option value="Ahmedabad">Ahmedabad</option>
+                            <option value="Noida">Noida</option>
+                            <option value="Gurgaon">Gurgaon</option>
+                            <option value="Chandigarh">Chandigarh</option>
+                            <option value="Mohali">Mohali</option>
                         </select>
                     </div>
                     <div class="search-bar">
                         <div class="wrap">
                             <div class="search">
-                                <input type="text" class="searchTerm" placeholder="What are you looking for?">
-                                <button type="submit" class="searchButton">
+                                <input type="text" id="searchTerm" class="searchTerm" placeholder="Search by location, property type...">
+                                <button type="button" id="searchButton" class="searchButton">
                                     <i class="fa fa-search"></i>
                                 </button>
                             </div>
