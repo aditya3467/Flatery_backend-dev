@@ -11,6 +11,7 @@ const itemsPerPage = 9;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadProperties();
+    applyUrlFilters();
 });
 
 /**
@@ -27,6 +28,9 @@ async function loadProperties() {
         allProperties = response.content || [];
         filteredProperties = [...allProperties];
         
+        // Apply URL filters after loading
+        applyUrlFilters();
+        
         displayProperties();
         setupPagination();
         
@@ -39,6 +43,48 @@ async function loadProperties() {
                 <p>Please try again later.</p>
             </div>
         `;
+    }
+}
+
+/**
+ * Apply filters from URL parameters
+ */
+function applyUrlFilters() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cityParam = urlParams.get('city');
+    const keywordParam = urlParams.get('keyword');
+    
+    // Set filter dropdowns if they exist
+    if (cityParam) {
+        const cityFilter = document.getElementById('filterCity');
+        if (cityFilter) {
+            cityFilter.value = cityParam;
+        }
+        
+        // Apply city filter to properties
+        filteredProperties = allProperties.filter(property => 
+            property.city && property.city.toLowerCase() === cityParam.toLowerCase()
+        );
+    }
+    
+    // Apply keyword filter if provided
+    if (keywordParam) {
+        const keyword = keywordParam.toLowerCase();
+        filteredProperties = filteredProperties.filter(property => 
+            (property.city && property.city.toLowerCase().includes(keyword)) ||
+            (property.location && property.location.toLowerCase().includes(keyword)) ||
+            (property.type && property.type.toLowerCase().includes(keyword)) ||
+            (property.name && property.name.toLowerCase().includes(keyword))
+        );
+    }
+    
+    // Reset to first page
+    currentPage = 1;
+    
+    // Update display
+    if (allProperties.length > 0) {
+        displayProperties();
+        setupPagination();
     }
 }
 
