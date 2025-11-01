@@ -158,6 +158,9 @@ function displayProperties() {
     
     propertiesGrid.innerHTML = currentProperties.map(property => createPropertyCard(property)).join('');
     
+    // Update favorite icons based on localStorage
+    updateFavoriteIcons();
+    
     // Add click listeners to property cards
     document.querySelectorAll('.property-card').forEach(card => {
         card.addEventListener('click', function() {
@@ -174,17 +177,51 @@ function createPropertyCard(property) {
     // Handle API response format (PropertySummary)
     const bhkType = property.bhkType || property.bhk;
     const seater = property.pgSeater || property.seater;
-    const title = property.name || 
-                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
+    
+    // Compute property name:
+    // For PG: use name field if present
+    // For others: use first word of location + BHK type
+    let title;
+    if (property.type === 'PG' && property.name) {
+        title = property.name;
+    } else {
+        // Get first word of location
+        const firstWord = property.location ? property.location.trim().split(/\s+/)[0] : (property.city || 'Property');
+        
+        // Add BHK type if available
+        if (bhkType) {
+            const bhkNumber = bhkType.replace('BHK_', '');
+            title = `${firstWord} ${bhkNumber} BHK`;
+        } else {
+            title = firstWord;
+        }
+    }
     
     // Use primaryImageUrl from API, fallback to placeholder
-    const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
+    const imageUrl = property.primaryImageUrl || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60';
+    
+    // Format available from date
+    const availableDate = property.availableFrom ? new Date(property.availableFrom).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Available Now';
+    
+    // Format furnishing display
+    const furnishingDisplay = property.furnishing ? property.furnishing.replace('_', ' ') : 'Not Specified';
+    
+    // Format apartment type display  
+    const apartmentType = bhkType ? bhkType.replace('BHK_', '') + ' BHK' : (property.type || 'Property');
+    
+    // Get preferred tenants (assuming it comes as array or string)
+    const preferredTenants = Array.isArray(property.preferredTenants) && property.preferredTenants.length > 0 
+        ? property.preferredTenants[0].replace('_', ' ') 
+        : 'Any';
     
     return `
         <div class="property-card" data-property-id="${property.id}">
             <div class="property-image">
-                <img src="${imageUrl}" alt="${title}" onerror="this.src='img/properties/default.jpg'">
+                <img src="${imageUrl}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'">
                 <span class="property-badge">${property.type}</span>
+                <button class="favorite-btn" onclick="toggleFavorite(event, ${property.id})">
+                    <i class="far fa-heart"></i>
+                </button>
             </div>
             <div class="property-content">
                 <h3 class="property-title">${title}</h3>
@@ -192,18 +229,43 @@ function createPropertyCard(property) {
                     <i class="fas fa-map-marker-alt"></i>
                     <span>${property.location}, ${property.city}</span>
                 </div>
-                <div class="property-details">
-                    ${bhkType ? `<div class="detail-item"><i class="fas fa-bed"></i> ${bhkType} BHK</div>` : ''}
-                    ${seater ? `<div class="detail-item"><i class="fas fa-users"></i> ${seater} Seater</div>` : ''}
-                    <div class="detail-item"><i class="fas fa-ruler-combined"></i> ${property.builtUpAreaSqft} sq.ft</div>
-                    <div class="detail-item"><i class="fas fa-bath"></i> ${property.bathrooms} Bath</div>
-                    <div class="detail-item"><i class="fas fa-couch"></i> ${property.furnishing}</div>
-                </div>
-                <div class="property-amenities">
-                    ${property.amenities && property.amenities.length > 0 ? property.amenities.slice(0, 3).map(amenity => 
-                        `<span class="amenity-badge">${amenity.replace('_', ' ')}</span>`
-                    ).join('') : ''}
-                    ${property.amenities && property.amenities.length > 3 ? `<span class="amenity-badge">+${property.amenities.length - 3} more</span>` : ''}
+                <div class="property-info-grid">
+                    <div class="property-info-item">
+                        <div class="property-info-icon">
+                            <i class="fas fa-couch"></i>
+                        </div>
+                        <div class="property-info-content">
+                            <span class="property-info-label">Furnishing</span>
+                            <span class="property-info-value">${furnishingDisplay}</span>
+                        </div>
+                    </div>
+                    <div class="property-info-item">
+                        <div class="property-info-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="property-info-content">
+                            <span class="property-info-label">Apartment Type</span>
+                            <span class="property-info-value">${apartmentType}</span>
+                        </div>
+                    </div>
+                    <div class="property-info-item">
+                        <div class="property-info-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="property-info-content">
+                            <span class="property-info-label">Preferred Tenants</span>
+                            <span class="property-info-value">${preferredTenants}</span>
+                        </div>
+                    </div>
+                    <div class="property-info-item">
+                        <div class="property-info-icon">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="property-info-content">
+                            <span class="property-info-label">Available From</span>
+                            <span class="property-info-value">${availableDate}</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="property-footer">
                     <div class="property-price">
@@ -218,21 +280,87 @@ function createPropertyCard(property) {
 }
 
 /**
+ * Toggle BHK/Seater filter based on property type
+ */
+function toggleBhkSeaterFilter() {
+    const propertyType = document.getElementById('filterPropertyType').value;
+    const bhkGroup = document.getElementById('bhkFilterGroup');
+    const seaterGroup = document.getElementById('seaterFilterGroup');
+    
+    if (propertyType === 'PG') {
+        bhkGroup.style.display = 'none';
+        seaterGroup.style.display = 'flex';
+    } else {
+        bhkGroup.style.display = 'flex';
+        seaterGroup.style.display = 'none';
+    }
+}
+
+/**
  * Apply filters
  */
 function applyFilters() {
     const propertyType = document.getElementById('filterPropertyType').value;
     const bhk = document.getElementById('filterBHK').value;
+    const seater = document.getElementById('filterSeater').value;
     const city = document.getElementById('filterCity').value.toLowerCase();
     const maxRent = parseInt(document.getElementById('filterMaxRent').value) || Infinity;
+    const availability = document.getElementById('filterAvailability').value;
+    const preferredTenant = document.getElementById('filterPreferredTenant').value;
+    const furnishing = document.getElementById('filterFurnishing').value;
+    
+    const today = new Date();
     
     filteredProperties = allProperties.filter(property => {
+        // Property Type
         const matchType = !propertyType || property.type === propertyType;
-        const matchBHK = !bhk || property.bhkType === bhk || property.bhk === bhk;
+        
+        // BHK or Seater (depending on property type)
+        let matchBhkSeater = true;
+        if (propertyType === 'PG' && seater) {
+            matchBhkSeater = property.pgSeater && property.pgSeater >= parseInt(seater);
+        } else if (bhk) {
+            matchBhkSeater = property.bhkType === bhk;
+        }
+        
+        // City
         const matchCity = !city || property.city.toLowerCase().includes(city);
+        
+        // Max Rent
         const matchRent = property.expectedRent <= maxRent;
         
-        return matchType && matchBHK && matchCity && matchRent;
+        // Availability
+        let matchAvailability = true;
+        if (availability && property.availableFrom) {
+            const availableDate = new Date(property.availableFrom);
+            const diffTime = availableDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            switch(availability) {
+                case 'immediate':
+                    matchAvailability = diffDays <= 0;
+                    break;
+                case '15days':
+                    matchAvailability = diffDays > 0 && diffDays <= 15;
+                    break;
+                case '30days':
+                    matchAvailability = diffDays > 0 && diffDays <= 30;
+                    break;
+                case 'after30days':
+                    matchAvailability = diffDays > 30;
+                    break;
+            }
+        }
+        
+        // Preferred Tenant
+        const matchTenant = !preferredTenant || 
+                           (Array.isArray(property.preferredTenants) && property.preferredTenants.includes(preferredTenant)) ||
+                           property.preferredTenants === preferredTenant;
+        
+        // Furnishing
+        const matchFurnishing = !furnishing || property.furnishing === furnishing;
+        
+        return matchType && matchBhkSeater && matchCity && matchRent && matchAvailability && matchTenant && matchFurnishing;
     });
     
     currentPage = 1;
@@ -251,8 +379,16 @@ function applyFilters() {
 function clearFilters() {
     document.getElementById('filterPropertyType').value = '';
     document.getElementById('filterBHK').value = '';
+    document.getElementById('filterSeater').value = '';
     document.getElementById('filterCity').value = '';
     document.getElementById('filterMaxRent').value = '';
+    document.getElementById('filterAvailability').value = '';
+    document.getElementById('filterPreferredTenant').value = '';
+    document.getElementById('filterFurnishing').value = '';
+    
+    // Reset BHK/Seater visibility
+    document.getElementById('bhkFilterGroup').style.display = 'flex';
+    document.getElementById('seaterFilterGroup').style.display = 'none';
     
     filteredProperties = [...allProperties];
     currentPage = 1;
@@ -343,10 +479,69 @@ function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+/**
+ * Toggle favorite property
+ */
+function toggleFavorite(event, propertyId) {
+    event.stopPropagation(); // Prevent card click
+    
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    
+    // Get favorites from localStorage
+    let favorites = JSON.parse(localStorage.getItem('favoriteProperties') || '[]');
+    
+    if (favorites.includes(propertyId)) {
+        // Remove from favorites
+        favorites = favorites.filter(id => id !== propertyId);
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        btn.classList.remove('active');
+        
+        if (typeof showNotification === 'function') {
+            showNotification('Removed from favorites', 'info');
+        }
+    } else {
+        // Add to favorites
+        favorites.push(propertyId);
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        btn.classList.add('active');
+        
+        if (typeof showNotification === 'function') {
+            showNotification('Added to favorites', 'success');
+        }
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('favoriteProperties', JSON.stringify(favorites));
+}
+
+/**
+ * Check if property is favorited and update icon
+ */
+function updateFavoriteIcons() {
+    const favorites = JSON.parse(localStorage.getItem('favoriteProperties') || '[]');
+    
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        const card = btn.closest('.property-card');
+        const propertyId = parseInt(card.getAttribute('data-property-id'));
+        const icon = btn.querySelector('i');
+        
+        if (favorites.includes(propertyId)) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            btn.classList.add('active');
+        }
+    });
+}
+
 // Make functions globally available
 window.applyFilters = applyFilters;
 window.clearFilters = clearFilters;
 window.nextPage = nextPage;
 window.previousPage = previousPage;
+window.toggleFavorite = toggleFavorite;
+window.toggleBhkSeaterFilter = toggleBhkSeaterFilter;
 
 console.log('Properties page initialized');

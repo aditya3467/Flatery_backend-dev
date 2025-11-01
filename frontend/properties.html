@@ -25,7 +25,7 @@
             <div class="filters-container">
                 <div class="filter-group">
                     <label for="filterPropertyType">Property Type</label>
-                    <select id="filterPropertyType">
+                    <select id="filterPropertyType" onchange="toggleBhkSeaterFilter()">
                         <option value="">All Types</option>
                         <option value="PG">PG</option>
                         <option value="FLAT">Flat</option>
@@ -33,15 +33,26 @@
                     </select>
                 </div>
 
-                <div class="filter-group">
-                    <label for="filterBHK">BHK</label>
+                <div class="filter-group" id="bhkFilterGroup">
+                    <label for="filterBHK" id="bhkLabel">BHK</label>
                     <select id="filterBHK">
                         <option value="">All</option>
-                        <option value="1">1 BHK</option>
-                        <option value="2">2 BHK</option>
-                        <option value="3">3 BHK</option>
-                        <option value="4">4 BHK</option>
-                        <option value="4+">4+ BHK</option>
+                        <option value="BHK_1">1 BHK</option>
+                        <option value="BHK_2">2 BHK</option>
+                        <option value="BHK_3">3 BHK</option>
+                        <option value="BHK_4">4 BHK</option>
+                        <option value="BHK_4_PLUS">4+ BHK</option>
+                    </select>
+                </div>
+
+                <div class="filter-group" id="seaterFilterGroup" style="display: none;">
+                    <label for="filterSeater">Seater</label>
+                    <select id="filterSeater">
+                        <option value="">All</option>
+                        <option value="1">Single</option>
+                        <option value="2">Double</option>
+                        <option value="3">Triple</option>
+                        <option value="4">4+ Seater</option>
                     </select>
                 </div>
 
@@ -53,6 +64,38 @@
                 <div class="filter-group">
                     <label for="filterMaxRent">Max Rent</label>
                     <input type="number" id="filterMaxRent" placeholder="e.g., 20000">
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterAvailability">Availability</label>
+                    <select id="filterAvailability">
+                        <option value="">All</option>
+                        <option value="immediate">Immediate</option>
+                        <option value="15days">Within 15 Days</option>
+                        <option value="30days">Within 30 Days</option>
+                        <option value="after30days">After 30 Days</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterPreferredTenant">Preferred Tenant</label>
+                    <select id="filterPreferredTenant">
+                        <option value="">All</option>
+                        <option value="FAMILY">Family</option>
+                        <option value="BACHELOR">Bachelor</option>
+                        <option value="COMPANY">Company</option>
+                        <option value="ANY">Any</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filterFurnishing">Furnishing</label>
+                    <select id="filterFurnishing">
+                        <option value="">All</option>
+                        <option value="FURNISHED">Furnished</option>
+                        <option value="SEMI_FURNISHED">Semi Furnished</option>
+                        <option value="UNFURNISHED">Unfurnished</option>
+                    </select>
                 </div>
 
                 <button class="btn-filter" onclick="applyFilters()">
