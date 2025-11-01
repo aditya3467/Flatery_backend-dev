@@ -301,10 +301,121 @@
     <!-- Navbar Component -->
     <div id="navbar-container" data-component="components/navbar.html"></div>
 
-    <!-- Property Details Container -->
+    <!-- Property Details Container (static HTML, JS only hydrates data) -->
     <div class="property-details-container" id="propertyDetails">
-        <div class="loading-container">
-            <i class="fas fa-spinner fa-spin fa-3x" style="color: #007bff;"></i>
+        <a href="properties.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Back to Properties
+        </a>
+
+        <!-- Header -->
+        <div class="property-header">
+            <h1 class="property-title" id="propTitle">Loading…</h1>
+            <div class="property-location-header">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="propLocation">—</span>
+                <span id="propLandmark" style="color:#999; display:none;"></span>
+            </div>
+            <div class="property-meta">
+                <div class="meta-item"><i class="fas fa-tag"></i><span><strong id="propType">—</strong></span></div>
+                <div class="meta-item" id="metaBhk" style="display:none;"><i class="fas fa-bed"></i><span id="propBhk">—</span></div>
+                <div class="meta-item" id="metaSeater" style="display:none;"><i class="fas fa-users"></i><span id="propSeater">—</span></div>
+                <div class="meta-item"><i class="fas fa-ruler-combined"></i><span id="propArea">—</span></div>
+                <div class="meta-item"><i class="fas fa-calendar-alt"></i><span id="propPostedOn">—</span></div>
+            </div>
+        </div>
+
+        <div class="property-content">
+            <div class="main-content">
+                <!-- Images Section -->
+                <div class="section-card">
+                    <h2 class="section-title"><i class="fas fa-images"></i> Property Images</h2>
+                    <div id="imageGallery">
+                        <div class="image-gallery" id="imageGrid"></div>
+                        <div class="no-images" id="noImages" style="display:none;">
+                            <i class="fas fa-image fa-3x"></i>
+                            <p>No images available for this property</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="section-card" id="descriptionSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-align-left"></i> Description</h2>
+                    <p class="description-text" id="propDescription"></p>
+                </div>
+
+                <!-- Property Details -->
+                <div class="section-card">
+                    <h2 class="section-title"><i class="fas fa-info-circle"></i> Property Details</h2>
+                    <div class="details-grid">
+                        <div class="detail-row"><span class="detail-label">Property Type</span><span class="detail-value" id="detType">—</span></div>
+                        <div class="detail-row" id="detBhkRow" style="display:none;"><span class="detail-label">BHK Type</span><span class="detail-value" id="detBhk">—</span></div>
+                        <div class="detail-row" id="detSeaterRow" style="display:none;"><span class="detail-label">Seater</span><span class="detail-value" id="detSeater">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Built-up Area</span><span class="detail-value" id="detArea">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Floor</span><span class="detail-value" id="detFloor">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Property Age</span><span class="detail-value" id="detAge">—</span></div>
+                        <div class="detail-row" id="detFacingRow" style="display:none;"><span class="detail-label">Facing</span><span class="detail-value" id="detFacing">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Furnishing</span><span class="detail-value" id="detFurnishing">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Bathrooms</span><span class="detail-value" id="detBathrooms">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Parking</span><span class="detail-value" id="detParking">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Balcony</span><span class="detail-value" id="detBalcony">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Monthly Maintenance</span><span class="detail-value" id="detMaintenance">—</span></div>
+                        <div class="detail-row" id="detConditionRow" style="display:none;"><span class="detail-label">Current Condition</span><span class="detail-value" id="detCondition">—</span></div>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <div class="section-card" id="amenitiesSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-check-circle"></i> Amenities</h2>
+                    <div class="amenities-list" id="amenitiesList"></div>
+                </div>
+
+                <!-- Preferred Tenants -->
+                <div class="section-card" id="tenantsSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-user-friends"></i> Preferred Tenants</h2>
+                    <div class="amenities-list" id="tenantsList"></div>
+                </div>
+
+                <!-- Viewing Schedule -->
+                <div class="section-card" id="scheduleSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-clock"></i> Viewing Schedule</h2>
+                    <div class="details-grid">
+                        <div class="detail-row"><span class="detail-label">Availability</span><span class="detail-value" id="detAvailability">—</span></div>
+                        <div class="detail-row" id="detTimingsRow" style="display:none;"><span class="detail-label">Timings</span><span class="detail-value" id="detTimings">—</span></div>
+                        <div class="detail-row" id="detWhoShowsRow" style="display:none;"><span class="detail-label">Who Shows</span><span class="detail-value" id="detWhoShows">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="price-card">
+                    <div class="price-label">Monthly Rent</div>
+                    <div class="price-amount" id="priceAmount">—</div>
+                    <div>
+                        <span class="badge" id="negotiableBadge">—</span>
+                    </div>
+                    <div class="deposit-info">
+                        <div class="price-label">Security Deposit</div>
+                        <div class="deposit-amount" id="depositAmount">—</div>
+                    </div>
+                </div>
+
+                <div class="contact-card">
+                    <div class="availability-info" id="availabilityInfo" style="display:flex;">
+                        <i class="fas fa-calendar-check"></i>
+                        <div>
+                            <strong>Available from</strong><br>
+                            <span id="availableDate">—</span>
+                        </div>
+                    </div>
+                    <button class="contact-btn" onclick="contactOwner()">
+                        <i class="fas fa-phone"></i>
+                        Contact Owner
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

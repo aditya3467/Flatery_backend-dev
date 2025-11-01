@@ -24,15 +24,9 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function loadPropertyDetails() {
     try {
-        // Fetch property details from API
-        const response = await fetch(`http://localhost:8081/api/properties/${propertyId}`);
-        
-        if (!response.ok) {
-            throw new Error('Property not found');
-        }
-        
-        propertyData = await response.json();
-        displayPropertyDetails(propertyData);
+        // Fetch property details from API (use shared apiService)
+        propertyData = await apiService.makeRequest(`/properties/${propertyId}`, { includeAuth: false });
+        hydratePropertyDetails(propertyData);
         
     } catch (error) {
         console.error('Error loading property:', error);
@@ -43,245 +37,116 @@ async function loadPropertyDetails() {
 /**
  * Display property details
  */
-function displayPropertyDetails(property) {
-    const container = document.getElementById('propertyDetails');
-    
-    // Determine title
+function hydratePropertyDetails(property) {
+    // Compute title
     const bhkType = property.bhkType || property.bhk;
     const seater = property.pgSeater || property.seater;
-    const title = property.name || 
-                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
-    
-    // Format availability date
-    const availableDate = new Date(property.availableFrom).toLocaleDateString('en-IN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    
-    container.innerHTML = `
-        <a href="properties.html" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-            Back to Properties
-        </a>
-        
-        <div class="property-header">
-            <h1 class="property-title">${title}</h1>
-            <div class="property-location-header">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>${property.location}, ${property.city}</span>
-                ${property.landmark ? `<span style="color: #999;">• ${property.landmark}</span>` : ''}
-            </div>
-            <div class="property-meta">
-                <div class="meta-item">
-                    <i class="fas fa-tag"></i>
-                    <span><strong>${property.type}</strong></span>
-                </div>
-                ${bhkType ? `
-                <div class="meta-item">
-                    <i class="fas fa-bed"></i>
-                    <span>${bhkType} BHK</span>
-                </div>` : ''}
-                ${seater ? `
-                <div class="meta-item">
-                    <i class="fas fa-users"></i>
-                    <span>${seater} Seater</span>
-                </div>` : ''}
-                <div class="meta-item">
-                    <i class="fas fa-ruler-combined"></i>
-                    <span>${property.builtUpAreaSqft} sq.ft</span>
-                </div>
-                <div class="meta-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Posted on ${new Date(property.postedOn).toLocaleDateString('en-IN')}</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-content">
-            <div class="main-content">
-                <!-- Images Section -->
-                <div class="section-card">
-                    <h2 class="section-title">
-                        <i class="fas fa-images"></i> Property Images
-                    </h2>
-                    <div id="imageGallery">
-                        <div class="loading-container">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Description -->
-                ${property.description ? `
-                <div class="section-card">
-                    <h2 class="section-title">
-                        <i class="fas fa-align-left"></i> Description
-                    </h2>
-                    <p class="description-text">${property.description}</p>
-                </div>` : ''}
-                
-                <!-- Property Details -->
-                <div class="section-card">
-                    <h2 class="section-title">
-                        <i class="fas fa-info-circle"></i> Property Details
-                    </h2>
-                    <div class="details-grid">
-                        <div class="detail-row">
-                            <span class="detail-label">Property Type</span>
-                            <span class="detail-value">${property.type}</span>
-                        </div>
-                        ${bhkType ? `
-                        <div class="detail-row">
-                            <span class="detail-label">BHK Type</span>
-                            <span class="detail-value">${bhkType} BHK</span>
-                        </div>` : ''}
-                        ${seater ? `
-                        <div class="detail-row">
-                            <span class="detail-label">Seater</span>
-                            <span class="detail-value">${seater} Seater</span>
-                        </div>` : ''}
-                        <div class="detail-row">
-                            <span class="detail-label">Built-up Area</span>
-                            <span class="detail-value">${property.builtUpAreaSqft} sq.ft</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Floor</span>
-                            <span class="detail-value">${property.currentFloor} of ${property.totalFloor}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Property Age</span>
-                            <span class="detail-value">${formatPropertyAge(property.age)}</span>
-                        </div>
-                        ${property.facing ? `
-                        <div class="detail-row">
-                            <span class="detail-label">Facing</span>
-                            <span class="detail-value">${property.facing}</span>
-                        </div>` : ''}
-                        <div class="detail-row">
-                            <span class="detail-label">Furnishing</span>
-                            <span class="detail-value">${property.furnishing}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Bathrooms</span>
-                            <span class="detail-value">${property.bathrooms}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Parking</span>
-                            <span class="detail-value">${property.parking}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Balcony</span>
-                            <span class="detail-value">${property.balcony ? 'Yes' : 'No'}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Monthly Maintenance</span>
-                            <span class="detail-value">₹${formatNumber(property.monthlyMaintenance)}</span>
-                        </div>
-                        ${property.currentCondition ? `
-                        <div class="detail-row">
-                            <span class="detail-label">Current Condition</span>
-                            <span class="detail-value">${formatEnumValue(property.currentCondition)}</span>
-                        </div>` : ''}
-                    </div>
-                </div>
-                
-                <!-- Amenities -->
-                ${property.amenities && property.amenities.length > 0 ? `
-                <div class="section-card">
-                    <h2 class="section-title">
-                        <i class="fas fa-check-circle"></i> Amenities
-                    </h2>
-                    <div class="amenities-list">
-                        ${property.amenities.map(amenity => `
-                            <div class="amenity-badge">
-                                <i class="fas fa-check"></i>
-                                ${formatEnumValue(amenity)}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>` : ''}
-                
-                <!-- Preferred Tenants -->
-                ${property.preferredTenants && property.preferredTenants.length > 0 ? `
-                <div class="section-card">
-                    <h2 class="section-title">
-                        <i class="fas fa-user-friends"></i> Preferred Tenants
-                    </h2>
-                    <div class="amenities-list">
-                        ${property.preferredTenants.map(tenant => `
-                            <div class="amenity-badge">
-                                <i class="fas fa-user"></i>
-                                ${formatEnumValue(tenant)}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>` : ''}
-                
-                <!-- Schedule Information -->
-                ${property.scheduleAvailability ? `
-                <div class="section-card">
-                    <h2 class="section-title">
-                        <i class="fas fa-clock"></i> Viewing Schedule
-                    </h2>
-                    <div class="details-grid">
-                        <div class="detail-row">
-                            <span class="detail-label">Availability</span>
-                            <span class="detail-value">${formatEnumValue(property.scheduleAvailability)}</span>
-                        </div>
-                        ${property.allDay ? `
-                        <div class="detail-row">
-                            <span class="detail-label">Timings</span>
-                            <span class="detail-value">All Day</span>
-                        </div>` : property.scheduleStart && property.scheduleEnd ? `
-                        <div class="detail-row">
-                            <span class="detail-label">Timings</span>
-                            <span class="detail-value">${formatTime(property.scheduleStart)} - ${formatTime(property.scheduleEnd)}</span>
-                        </div>` : ''}
-                        ${property.whoShows ? `
-                        <div class="detail-row">
-                            <span class="detail-label">Who Shows</span>
-                            <span class="detail-value">${formatEnumValue(property.whoShows)}</span>
-                        </div>` : ''}
-                    </div>
-                </div>` : ''}
-            </div>
-            
-            <div class="sidebar">
-                <!-- Price Card -->
-                <div class="price-card">
-                    <div class="price-label">Monthly Rent</div>
-                    <div class="price-amount">₹${formatNumber(property.expectedRent)}</div>
-                    <div>
-                        <span class="badge ${property.negotiable ? 'badge-negotiable' : 'badge-non-negotiable'}">
-                            ${property.negotiable ? 'Negotiable' : 'Non-Negotiable'}
-                        </span>
-                    </div>
-                    <div class="deposit-info">
-                        <div class="price-label">Security Deposit</div>
-                        <div class="deposit-amount">₹${formatNumber(property.expectedDeposit)}</div>
-                    </div>
-                </div>
-                
-                <!-- Contact Card -->
-                <div class="contact-card">
-                    <div class="availability-info">
-                        <i class="fas fa-calendar-check"></i>
-                        <div>
-                            <strong>Available from</strong><br>
-                            ${availableDate}
-                        </div>
-                    </div>
-                    <button class="contact-btn" onclick="contactOwner()">
-                        <i class="fas fa-phone"></i>
-                        Contact Owner
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Load images
+    let title;
+    if (property.type === 'PG' && property.name) {
+        title = property.name;
+    } else {
+        const firstWord = property.location ? property.location.trim().split(/\s+/)[0] : (property.city || 'Property');
+        title = bhkType ? `${firstWord} ${String(bhkType).replace('BHK_', '')} BHK` : firstWord;
+    }
+
+    // Header
+    document.getElementById('propTitle').textContent = title;
+    document.getElementById('propLocation').textContent = `${property.location}, ${property.city}`;
+    if (property.landmark) {
+        const lm = document.getElementById('propLandmark');
+        lm.textContent = `• ${property.landmark}`;
+        lm.style.display = '';
+    }
+    document.getElementById('propType').textContent = property.type;
+    document.getElementById('propArea').textContent = `${property.builtUpAreaSqft} sq.ft`;
+    if (property.postedOn) {
+        document.getElementById('propPostedOn').textContent = `Posted on ${new Date(property.postedOn).toLocaleDateString('en-IN')}`;
+    }
+    if (bhkType) {
+        document.getElementById('metaBhk').style.display = '';
+        document.getElementById('propBhk').textContent = `${String(bhkType).replace('BHK_', '')} BHK`;
+    }
+    if (seater) {
+        document.getElementById('metaSeater').style.display = '';
+        document.getElementById('propSeater').textContent = `${seater} Seater`;
+    }
+
+    // Description
+    if (property.description) {
+        document.getElementById('descriptionSection').style.display = '';
+        document.getElementById('propDescription').textContent = property.description;
+    }
+
+    // Details grid
+    document.getElementById('detType').textContent = property.type;
+    if (bhkType) { document.getElementById('detBhkRow').style.display = ''; document.getElementById('detBhk').textContent = `${String(bhkType).replace('BHK_', '')} BHK`; }
+    if (seater) { document.getElementById('detSeaterRow').style.display = ''; document.getElementById('detSeater').textContent = `${seater} Seater`; }
+    document.getElementById('detArea').textContent = `${property.builtUpAreaSqft} sq.ft`;
+    document.getElementById('detFloor').textContent = `${property.currentFloor} of ${property.totalFloor}`;
+    document.getElementById('detAge').textContent = formatPropertyAge(property.age);
+    if (property.facing) { document.getElementById('detFacingRow').style.display = ''; document.getElementById('detFacing').textContent = property.facing; }
+    document.getElementById('detFurnishing').textContent = property.furnishing;
+    document.getElementById('detBathrooms').textContent = property.bathrooms;
+    document.getElementById('detParking').textContent = property.parking;
+    document.getElementById('detBalcony').textContent = property.balcony ? 'Yes' : 'No';
+    document.getElementById('detMaintenance').textContent = `₹${formatNumber(property.monthlyMaintenance)}`;
+    if (property.currentCondition) { document.getElementById('detConditionRow').style.display = ''; document.getElementById('detCondition').textContent = formatEnumValue(property.currentCondition); }
+
+    // Amenities
+    if (Array.isArray(property.amenities) && property.amenities.length > 0) {
+        document.getElementById('amenitiesSection').style.display = '';
+        const list = document.getElementById('amenitiesList');
+        list.innerHTML = '';
+        property.amenities.forEach(a => {
+            const chip = document.createElement('div');
+            chip.className = 'amenity-badge';
+            chip.innerHTML = `<i class="fas fa-check"></i> ${formatEnumValue(a)}`;
+            list.appendChild(chip);
+        });
+    }
+
+    // Preferred tenants
+    if (Array.isArray(property.preferredTenants) && property.preferredTenants.length > 0) {
+        document.getElementById('tenantsSection').style.display = '';
+        const tlist = document.getElementById('tenantsList');
+        tlist.innerHTML = '';
+        property.preferredTenants.forEach(t => {
+            const chip = document.createElement('div');
+            chip.className = 'amenity-badge';
+            chip.innerHTML = `<i class="fas fa-user"></i> ${formatEnumValue(t)}`;
+            tlist.appendChild(chip);
+        });
+    }
+
+    // Schedule
+    if (property.scheduleAvailability) {
+        document.getElementById('scheduleSection').style.display = '';
+        document.getElementById('detAvailability').textContent = formatEnumValue(property.scheduleAvailability);
+        const timingsRow = document.getElementById('detTimingsRow');
+        if (property.allDay) {
+            timingsRow.style.display = '';
+            document.getElementById('detTimings').textContent = 'All Day';
+        } else if (property.scheduleStart && property.scheduleEnd) {
+            timingsRow.style.display = '';
+            document.getElementById('detTimings').textContent = `${formatTime(property.scheduleStart)} - ${formatTime(property.scheduleEnd)}`;
+        }
+        if (property.whoShows) {
+            document.getElementById('detWhoShowsRow').style.display = '';
+            document.getElementById('detWhoShows').textContent = formatEnumValue(property.whoShows);
+        }
+    }
+
+    // Sidebar pricing
+    document.getElementById('priceAmount').textContent = `₹${formatNumber(property.expectedRent)}`;
+    const badge = document.getElementById('negotiableBadge');
+    if (property.negotiable) { badge.classList.add('badge-negotiable'); badge.textContent = 'Negotiable'; }
+    else { badge.classList.add('badge-non-negotiable'); badge.textContent = 'Non-Negotiable'; }
+    document.getElementById('depositAmount').textContent = `₹${formatNumber(property.expectedDeposit)}`;
+    if (property.availableFrom) {
+        document.getElementById('availableDate').textContent = new Date(property.availableFrom).toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+    }
+
+    // Images
     loadPropertyImages(property.id);
 }
 
@@ -290,50 +155,39 @@ function displayPropertyDetails(property) {
  */
 async function loadPropertyImages(propertyId) {
     const imageGallery = document.getElementById('imageGallery');
+    const baseOrigin = (window.apiService && apiService.baseURL)
+        ? apiService.baseURL.replace(/\/?api\/?$/, '')
+        : 'http://localhost:8081';
+    const toAbsolute = (u) => {
+        if (!u) return null;
+        return u.startsWith('http') ? u : `${baseOrigin}${u.startsWith('/') ? '' : '/'}${u}`;
+    };
     
-    try {
-        const response = await fetch(`http://localhost:8081/api/properties/${propertyId}/images`);
-        
-        if (!response.ok) {
-            throw new Error('Failed to load images');
-        }
-        
-        const images = await response.json();
-        
-        if (images.length === 0) {
-            imageGallery.innerHTML = `
-                <div class="no-images">
-                    <i class="fas fa-image fa-3x"></i>
-                    <p>No images available for this property</p>
-                </div>
-            `;
-            return;
-        }
-        
+    // WORKAROUND: Skip gallery endpoint (403 issue) and use primary image directly from details
+    // The /api/properties/{id}/images endpoint is returning 403 even though it's public
+    // Until backend permissions are fixed, just show the primary image
+    if (propertyData && propertyData.primaryImageUrl) {
+        const primaryAbs = toAbsolute(propertyData.primaryImageUrl);
         imageGallery.innerHTML = `
             <div class="image-gallery">
-                ${images.map((image, index) => `
-                    <img src="${image.imageUrl}" 
-                         alt="Property Image ${index + 1}" 
-                         class="gallery-image"
-                         onclick="openImageModal('${image.imageUrl}')"
-                         onerror="this.src='img/properties/default.jpg'">
-                `).join('')}
+                <img src="${primaryAbs}" 
+                     alt="Property Image" 
+                     class="gallery-image"
+                     onclick="openImageModal('${primaryAbs}')"
+                     onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'">
             </div>
         `;
-        
-    } catch (error) {
-        console.error('Error loading images:', error);
-        imageGallery.innerHTML = `
-            <div class="no-images">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Could not load images</p>
-            </div>
-        `;
+        return;
     }
-}
-
-/**
+    
+    // No primary image available
+    imageGallery.innerHTML = `
+        <div class="no-images">
+            <i class="fas fa-image fa-3x"></i>
+            <p>No images available for this property</p>
+        </div>
+    `;
+}/**
  * Show error message
  */
 function showError(message) {
