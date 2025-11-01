@@ -61,27 +61,49 @@
     </style>
     <script src="Javascript/component-loader.js" defer></script>
     <script src="Javascript/api.js" defer></script>
-    <script src="Javascript/role-checker.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Superadmin dashboard loading...');
+            
             try {
                 // Check if user is authenticated and is superadmin
                 if (!apiService.isAuthenticated()) {
-                    window.location.href = '/frontend/';
+                    console.log('Not authenticated, redirecting to home');
+                    window.location.href = '/frontend/index.html';
                     return;
                 }
 
+                // Check if user has SUPERADMIN role
+                const storedRoles = JSON.parse(localStorage.getItem('roles') || '[]');
+                console.log('User roles:', storedRoles);
+                
+                if (!storedRoles.includes('SUPERADMIN')) {
+                    console.log('Not a superadmin, redirecting to home');
+                    window.location.href = '/frontend/index.html';
+                    return;
+                }
+
+                console.log('Fetching user counts...');
                 // Fetch user counts
                 const response = await apiService.makeRequest('/stats/users/counts');
+                console.log('User counts response:', response);
                 
                 // Update the UI with the counts
-                document.getElementById('ownerCount').textContent = response.ownerCount;
-                document.getElementById('tenantCount').textContent = response.tenantCount;
+                document.getElementById('ownerCount').textContent = response.ownerCount || 0;
+                document.getElementById('tenantCount').textContent = response.tenantCount || 0;
+                
+                console.log('Dashboard loaded successfully!');
             } catch (error) {
                 console.error('Failed to fetch stats:', error);
-                if (error.status === 403) {
-                    // Unauthorized - redirect to home
-                    window.location.href = '/frontend/';
+                // Show error message on the dashboard
+                document.getElementById('ownerCount').textContent = 'Error';
+                document.getElementById('tenantCount').textContent = 'Error';
+                
+                if (error.status === 403 || error.status === 401) {
+                    // Unauthorized - redirect to home after showing error
+                    setTimeout(() => {
+                        window.location.href = '/frontend/index.html';
+                    }, 2000);
                 }
             }
         });

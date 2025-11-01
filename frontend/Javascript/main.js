@@ -357,11 +357,25 @@ async function handleLogin(e) { // e can be a form event or an object with crede
 
     const roles = authResponse.roles || [];
     console.log('User roles:', roles); // Debug log
+    console.log('Full auth response:', authResponse); // Debug log
+    
+    // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {
         console.log('Redirecting to superadmin dashboard...'); // Debug log
-        window.location.href = '/frontend/superadmin-dashboard.html';
+        setTimeout(() => {
+            window.location.href = '/frontend/superadmin-dashboard.html';
+        }, 100);
+        return; // Stop further execution
     } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
-        window.location.href = '/frontend/Owner.html';
+        setTimeout(() => {
+            window.location.href = '/frontend/Owner.html';
+        }, 100);
+        return;
+    } else if (roles.includes('USER')) {
+        setTimeout(() => {
+            window.location.href = '/frontend/tenant.html';
+        }, 100);
+        return;
     }
   } catch (error) {
     showError(error.message || 'Login failed. Please try again.');

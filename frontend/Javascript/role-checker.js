@@ -14,45 +14,43 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-    try {
-        // Get stored roles first
-        const storedRoles = JSON.parse(localStorage.getItem('roles') || '[]');
-        console.log('Stored roles:', storedRoles); // Debug log
+        try {
+            // Get stored roles from localStorage
+            const storedRoles = JSON.parse(localStorage.getItem('roles') || '[]');
+            console.log('Stored roles:', storedRoles); // Debug log
 
-        // Get current roles from backend
-        const response = await apiService.makeRequest('/auth/me');
-        const roles = response.roles || [];
-        console.log('Current roles from backend:', roles); // Debug log
+            const currentPath = window.location.pathname;
+            console.log('Current path:', currentPath); // Debug log
 
-        const currentPath = window.location.pathname;
-        console.log('Current path:', currentPath); // Debug log
-
-        // Protect superadmin dashboard
-        if (currentPath.includes('superadmin-dashboard.html')) {
-            if (!roles.includes('SUPERADMIN')) {
-                console.log('Non-superadmin trying to access dashboard, redirecting...'); // Debug log
-                window.location.href = '/frontend/index.html';
-                return;
+            // Protect superadmin dashboard
+            if (currentPath.includes('superadmin-dashboard.html')) {
+                if (!storedRoles.includes('SUPERADMIN')) {
+                    console.log('Non-superadmin trying to access dashboard, redirecting...'); // Debug log
+                    window.location.href = '/frontend/index.html';
+                    return;
+                }
             }
-        }
 
-        // Auto-redirect to appropriate dashboard
-        if (!currentPath.includes('superadmin-dashboard.html') && 
-            !currentPath.includes('Owner.html') && 
-            !currentPath.includes('tenant.html')) {
-            if (roles.includes('SUPERADMIN')) {
-                console.log('Redirecting to superadmin dashboard...'); // Debug log
-                window.location.href = '/frontend/superadmin-dashboard.html';
-            } else if (roles.includes('ADMIN')) {
-                window.location.href = '/frontend/Owner.html';
-            } else if (roles.includes('USER')) {
-                window.location.href = '/frontend/tenant.html';
+            // Auto-redirect to appropriate dashboard on index page ONLY
+            const isIndexPage = currentPath.includes('index.html') || currentPath.endsWith('/frontend/') || currentPath.endsWith('/frontend');
+            const isOnCorrectPage = (storedRoles.includes('SUPERADMIN') && currentPath.includes('superadmin-dashboard.html')) ||
+                                   (storedRoles.includes('ADMIN') && currentPath.includes('Owner.html')) ||
+                                   (storedRoles.includes('USER') && currentPath.includes('tenant.html'));
+            
+            if (isIndexPage && !isOnCorrectPage) {
+                if (storedRoles.includes('SUPERADMIN')) {
+                    console.log('Redirecting to superadmin dashboard...'); // Debug log
+                    window.location.href = '/frontend/superadmin-dashboard.html';
+                } else if (storedRoles.includes('ADMIN')) {
+                    console.log('Redirecting to owner dashboard...'); // Debug log
+                    window.location.href = '/frontend/Owner.html';
+                } else if (storedRoles.includes('USER')) {
+                    console.log('Redirecting to tenant dashboard...'); // Debug log
+                    window.location.href = '/frontend/tenant.html';
+                }
             }
+        } catch (error) {
+            console.error('Error checking user role:', error);
         }
-    } catch (error) {
-        console.error('Error checking user role:', error);
-        // On error, clear auth and redirect to home
-        apiService.clearToken();
-        window.location.href = '/frontend/index.html';
-    }
+    }, 500); // Wait 500ms for components to load
 });

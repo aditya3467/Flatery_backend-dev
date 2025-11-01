@@ -19,12 +19,12 @@ public class StatsService {
 
     /**
      * Returns counts for owners and tenants.
-     * - Owners: number of distinct ownerId values stored in properties table.
-     * - Tenants: users with RoleName.USER who are not owners.
+     * - Owners: users with RoleName.ADMIN (property owners)
+     * - Tenants: users with RoleName.USER (tenants)
      */
     public UserCountsDto getUserCounts() {
-        long ownerCount = propertyRepository.countDistinctOwnerIds();
-        long tenantCount = userRepository.countByRoleExcludingOwners(RoleName.USER);
+        long ownerCount = userRepository.countByRole(RoleName.ADMIN);
+        long tenantCount = userRepository.countByRole(RoleName.USER);
         return new UserCountsDto(ownerCount, tenantCount);
     }
 }
