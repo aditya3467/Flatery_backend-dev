@@ -295,6 +295,90 @@
                 font-size: 32px;
             }
         }
+
+        /* Lightbox styles */
+        .lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .lightbox-overlay.active { display: flex; }
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .lightbox-image-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-height: 85vh;
+        }
+        #lightboxImage {
+            max-width: 100%;
+            max-height: 85vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            object-fit: contain;
+            background: #111;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 10000;
+            opacity: 0.9;
+        }
+        .lightbox-prev, .lightbox-next {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .lightbox-prev:hover, .lightbox-next:hover { background: rgba(255,255,255,0.3); }
+        .lightbox-controls {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+        .lightbox-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        .lightbox-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .lightbox-dot.active { background: #fff; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -327,14 +411,14 @@
 
         <div class="property-content">
             <div class="main-content">
-                <!-- Images Section -->
+                <!-- Images Carousel Section -->
                 <div class="section-card">
                     <h2 class="section-title"><i class="fas fa-images"></i> Property Images</h2>
-                    <div id="imageGallery">
-                        <div class="image-gallery" id="imageGrid"></div>
-                        <div class="no-images" id="noImages" style="display:none;">
-                            <i class="fas fa-image fa-3x"></i>
-                            <p>No images available for this property</p>
+                    <div id="imageCarouselContainer">
+                        <!-- Carousel will be injected here -->
+                        <div class="carousel-loading" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color: #007bff;"></i>
+                            <p style="margin-top: 10px;">Loading images...</p>
                         </div>
                     </div>
                 </div>
@@ -421,6 +505,23 @@
 
     <!-- Modals Component -->
     <div id="modals-container" data-component="components/modals.html"></div>
+
+    <!-- Lightbox Overlay -->
+    <div id="lightboxOverlay" class="lightbox-overlay" aria-hidden="true">
+        <span class="lightbox-close" onclick="closeLightbox()" aria-label="Close">&times;</span>
+        <div class="lightbox-content">
+            <div class="lightbox-controls">
+                <button class="lightbox-prev" onclick="lightboxPrev()" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+                <button class="lightbox-next" onclick="lightboxNext()" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="lightbox-image-wrapper">
+                <img id="lightboxImage" src="" alt="Property image" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'" />
+            </div>
+            <div class="lightbox-dots" id="lightboxDots"></div>
+        </div>
+    </div>
+
+    
 
     <!-- Scripts -->
     <script src="Javascript/api.js"></script>

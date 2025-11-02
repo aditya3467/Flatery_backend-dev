@@ -1,197 +1,297 @@
 /**
- * Property Details Page JavaScript
- * Handles fetching and displaying detailed property information
+ * Property Details Page — Simple, robust details + images grid (no carousel/lightbox)
  */
 
+// Global state
 let propertyId = null;
 let propertyData = null;
+let propertyImages = [];
+let lightboxIndex = 0;
+let lightboxKeyHandler = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Get property ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    propertyId = urlParams.get('id');
-    
-    if (!propertyId) {
-        showError('Property ID not found');
-        return;
+// Utils
+const el = (id) => document.getElementById(id);
+const safeText = (v, fallback = '—') => (v === null || v === undefined || v === '' ? fallback : v);
+const formatNumber = (num) => {
+    if (num === null || num === undefined || isNaN(num)) return '—';
+    return Number(num).toLocaleString('en-IN');
+};
+const formatEnumValue = (value) => {
+    if (!value || typeof value !== 'string') return '—';
+    return value.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+};
+const formatPropertyAge = (age) => {
+    const ageMap = {
+        // Older naming
+        UNDER_1_YEAR: 'Under 1 Year',
+        ONE_TO_THREE: '1-3 Years',
+        THREE_TO_FIVE: '3-5 Years',
+        FIVE_TO_TEN: '5-10 Years',
+        OVER_TEN: 'Over 10 Years',
+        // Backend enum in this repo
+        Y1_3: '1-3 Years',
+        Y3_5: '3-5 Years',
+        Y5_10: '5-10 Years',
+        Y10_PLUS: '10+ Years',
+    };
+    return ageMap[age] || formatEnumValue(age);
+};
+const formatDate = (iso) => {
+    if (!iso) return '—';
+    try {
+        return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch { return '—'; }
+};
+const formatTime = (time) => {
+    if (!time) return '';
+    const [h, m] = String(time).split(':');
+    const hour = parseInt(h, 10);
+    if (isNaN(hour)) return String(time);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const display = (hour % 12) || 12;
+    return `${display}:${m ?? '00'} ${ampm}`;
+};
+const toAbsolute = (u) => {
+    if (!u) return null;
+    const baseOrigin = (window.apiService && apiService.baseURL)
+        ? apiService.baseURL.replace(/\/?api\/?$/, '')
+        : window.location.origin;
+    return u.startsWith('http') ? u : `${baseOrigin}${u.startsWith('/') ? '' : '/'}${u}`;
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        propertyId = params.get('id');
+        if (!propertyId) {
+            showError('Missing property id');
+            return;
+        }
+        loadPropertyDetails();
+    } catch (e) {
+        showError('Failed to initialize page');
+        console.error(e);
     }
-    
-    loadPropertyDetails();
 });
 
-/**
- * Load property details from API
- */
 async function loadPropertyDetails() {
+    const container = el('propertyDetails');
+    if (!container) return;
     try {
-        // Fetch property details from API (use shared apiService)
-        propertyData = await apiService.makeRequest(`/properties/${propertyId}`, { includeAuth: false });
+        // Fetch details (public endpoint)
+        const details = await apiService.makeRequest(`/properties/${propertyId}`, { includeAuth: false });
+        propertyData = details || {};
         hydratePropertyDetails(propertyData);
-        
-    } catch (error) {
-        console.error('Error loading property:', error);
-        showError('Failed to load property details');
+        // Images after details to allow fallback
+        await loadPropertyImages(propertyId, propertyData);
+    } catch (err) {
+        console.error('Failed to load property details:', err);
+        showError(err.message || 'Could not load property');
     }
 }
 
-/**
- * Display property details
- */
-function hydratePropertyDetails(property) {
-    // Compute title
-    const bhkType = property.bhkType || property.bhk;
-    const seater = property.pgSeater || property.seater;
-    let title;
-    if (property.type === 'PG' && property.name) {
-        title = property.name;
-    } else {
-        const firstWord = property.location ? property.location.trim().split(/\s+/)[0] : (property.city || 'Property');
-        title = bhkType ? `${firstWord} ${String(bhkType).replace('BHK_', '')} BHK` : firstWord;
+function hydratePropertyDetails(d) {
+    // Title
+    const type = d.type || d.propertyType;
+    const bhk = d.bhkType || d.bhk;
+    const seater = d.pgSeater || d.seater;
+    const location = [d.location, d.city].filter(Boolean).join(', ');
+    let title = d.name || d.propertyName;
+    if (!title) {
+        if (type === 'FLAT' && bhk) {
+            title = `${String(bhk).replace('BHK_', '')} BHK in ${d.location || d.city || 'Property'}`;
+        } else {
+            title = d.location || d.city || 'Property';
+        }
     }
 
-    // Header
-    document.getElementById('propTitle').textContent = title;
-    document.getElementById('propLocation').textContent = `${property.location}, ${property.city}`;
-    if (property.landmark) {
-        const lm = document.getElementById('propLandmark');
-        lm.textContent = `• ${property.landmark}`;
-        lm.style.display = '';
+    el('propTitle') && (el('propTitle').textContent = safeText(title));
+    el('propLocation') && (el('propLocation').textContent = safeText(location));
+    if (d.landmark && el('propLandmark')) {
+        el('propLandmark').style.display = 'inline';
+        el('propLandmark').textContent = `• Near ${d.landmark}`;
     }
-    document.getElementById('propType').textContent = property.type;
-    document.getElementById('propArea').textContent = `${property.builtUpAreaSqft} sq.ft`;
-    if (property.postedOn) {
-        document.getElementById('propPostedOn').textContent = `Posted on ${new Date(property.postedOn).toLocaleDateString('en-IN')}`;
+
+    // Meta header
+    el('propType') && (el('propType').textContent = formatEnumValue(type));
+    if (bhk && type !== 'PG') {
+        const val = `${String(bhk).replace('BHK_', '')} BHK`;
+        const node = el('propBhk');
+        const row = document.getElementById('metaBhk');
+        if (row) row.style.display = 'flex';
+        if (node) node.textContent = val;
     }
-    if (bhkType) {
-        document.getElementById('metaBhk').style.display = '';
-        document.getElementById('propBhk').textContent = `${String(bhkType).replace('BHK_', '')} BHK`;
+    if ((type === 'PG' && (seater || seater === 0)) || (seater && !bhk)) {
+        const node = el('propSeater');
+        const row = el('metaSeater');
+        if (row) row.style.display = 'flex';
+        if (node) node.textContent = `${seater}-Seater`;
     }
-    if (seater) {
-        document.getElementById('metaSeater').style.display = '';
-        document.getElementById('propSeater').textContent = `${seater} Seater`;
+    const area = d.builtUpAreaSqft ?? d.builtUpArea;
+    if (area || area === 0) el('propArea') && (el('propArea').textContent = `${area} sq ft`);
+    if (d.postedOn || d.createdAt) {
+        el('propPostedOn') && (el('propPostedOn').textContent = formatDate(d.postedOn || d.createdAt));
     }
 
     // Description
-    if (property.description) {
-        document.getElementById('descriptionSection').style.display = '';
-        document.getElementById('propDescription').textContent = property.description;
+    if (d.propertyDescription) {
+        const sec = el('descriptionSection');
+        if (sec) sec.style.display = 'block';
+        el('propDescription') && (el('propDescription').textContent = d.propertyDescription);
     }
 
     // Details grid
-    document.getElementById('detType').textContent = property.type;
-    if (bhkType) { document.getElementById('detBhkRow').style.display = ''; document.getElementById('detBhk').textContent = `${String(bhkType).replace('BHK_', '')} BHK`; }
-    if (seater) { document.getElementById('detSeaterRow').style.display = ''; document.getElementById('detSeater').textContent = `${seater} Seater`; }
-    document.getElementById('detArea').textContent = `${property.builtUpAreaSqft} sq.ft`;
-    document.getElementById('detFloor').textContent = `${property.currentFloor} of ${property.totalFloor}`;
-    document.getElementById('detAge').textContent = formatPropertyAge(property.age);
-    if (property.facing) { document.getElementById('detFacingRow').style.display = ''; document.getElementById('detFacing').textContent = property.facing; }
-    document.getElementById('detFurnishing').textContent = property.furnishing;
-    document.getElementById('detBathrooms').textContent = property.bathrooms;
-    document.getElementById('detParking').textContent = property.parking;
-    document.getElementById('detBalcony').textContent = property.balcony ? 'Yes' : 'No';
-    document.getElementById('detMaintenance').textContent = `₹${formatNumber(property.monthlyMaintenance)}`;
-    if (property.currentCondition) { document.getElementById('detConditionRow').style.display = ''; document.getElementById('detCondition').textContent = formatEnumValue(property.currentCondition); }
+    el('detType') && (el('detType').textContent = formatEnumValue(type));
+    if (bhk && type !== 'PG') {
+        const row = el('detBhkRow');
+        if (row) row.style.display = 'flex';
+        el('detBhk') && (el('detBhk').textContent = `${String(bhk).replace('BHK_', '')} BHK`);
+    }
+    if (type === 'PG' && seater) {
+        const row = el('detSeaterRow');
+        if (row) row.style.display = 'flex';
+        el('detSeater') && (el('detSeater').textContent = `${seater}-Seater`);
+    }
+    const detAreaVal = d.builtUpAreaSqft ?? d.builtUpArea;
+    if (detAreaVal || detAreaVal === 0) el('detArea') && (el('detArea').textContent = `${detAreaVal} sq ft`);
+    if (d.currentFloor || d.totalFloor) {
+        el('detFloor') && (el('detFloor').textContent = [d.currentFloor, d.totalFloor].filter(Boolean).join(' of '));
+    }
+    const ageVal = d.age ?? d.propertyAge;
+    if (ageVal) {
+        el('detAge') && (el('detAge').textContent = formatPropertyAge(ageVal));
+    }
+    if (d.facing) {
+        const row = el('detFacingRow');
+        if (row) row.style.display = 'flex';
+        el('detFacing') && (el('detFacing').textContent = formatEnumValue(d.facing));
+    }
+    if (d.furnishing) el('detFurnishing') && (el('detFurnishing').textContent = formatEnumValue(d.furnishing));
+    if (d.bathrooms || d.bathrooms === 0) el('detBathrooms') && (el('detBathrooms').textContent = String(d.bathrooms));
+    if (d.parking) el('detParking') && (el('detParking').textContent = formatEnumValue(d.parking));
+    if (d.balcony !== undefined) el('detBalcony') && (el('detBalcony').textContent = d.balcony ? 'Yes' : 'No');
+    if (d.monthlyMaintenance || d.monthlyMaintenance === 0) el('detMaintenance') && (el('detMaintenance').textContent = `₹${formatNumber(d.monthlyMaintenance)}`);
+    if (d.currentCondition) {
+        const row = el('detConditionRow');
+        if (row) row.style.display = 'flex';
+        el('detCondition') && (el('detCondition').textContent = formatEnumValue(d.currentCondition));
+    }
 
     // Amenities
-    if (Array.isArray(property.amenities) && property.amenities.length > 0) {
-        document.getElementById('amenitiesSection').style.display = '';
-        const list = document.getElementById('amenitiesList');
-        list.innerHTML = '';
-        property.amenities.forEach(a => {
-            const chip = document.createElement('div');
-            chip.className = 'amenity-badge';
-            chip.innerHTML = `<i class="fas fa-check"></i> ${formatEnumValue(a)}`;
-            list.appendChild(chip);
-        });
+    if (Array.isArray(d.amenities) && d.amenities.length) {
+        const sec = el('amenitiesSection');
+        if (sec) sec.style.display = 'block';
+        const list = el('amenitiesList');
+        if (list) {
+            list.innerHTML = d.amenities.map(a => `<span class="amenity-badge"><i class="fas fa-check"></i> ${formatEnumValue(a)}</span>`).join('');
+        }
     }
 
-    // Preferred tenants
-    if (Array.isArray(property.preferredTenants) && property.preferredTenants.length > 0) {
-        document.getElementById('tenantsSection').style.display = '';
-        const tlist = document.getElementById('tenantsList');
-        tlist.innerHTML = '';
-        property.preferredTenants.forEach(t => {
-            const chip = document.createElement('div');
-            chip.className = 'amenity-badge';
-            chip.innerHTML = `<i class="fas fa-user"></i> ${formatEnumValue(t)}`;
-            tlist.appendChild(chip);
-        });
+    // Preferred Tenants
+    if (Array.isArray(d.preferredTenants) && d.preferredTenants.length) {
+        const sec = el('tenantsSection');
+        if (sec) sec.style.display = 'block';
+        const list = el('tenantsList');
+        if (list) {
+            list.innerHTML = d.preferredTenants.map(t => `<span class="amenity-badge"><i class="fas fa-user"></i> ${formatEnumValue(t)}</span>`).join('');
+        }
     }
 
-    // Schedule
-    if (property.scheduleAvailability) {
-        document.getElementById('scheduleSection').style.display = '';
-        document.getElementById('detAvailability').textContent = formatEnumValue(property.scheduleAvailability);
-        const timingsRow = document.getElementById('detTimingsRow');
-        if (property.allDay) {
-            timingsRow.style.display = '';
-            document.getElementById('detTimings').textContent = 'All Day';
-        } else if (property.scheduleStart && property.scheduleEnd) {
-            timingsRow.style.display = '';
-            document.getElementById('detTimings').textContent = `${formatTime(property.scheduleStart)} - ${formatTime(property.scheduleEnd)}`;
-        }
-        if (property.whoShows) {
-            document.getElementById('detWhoShowsRow').style.display = '';
-            document.getElementById('detWhoShows').textContent = formatEnumValue(property.whoShows);
-        }
+    // Viewing Schedule / Availability
+    const availabilityText = d.availableFrom ? `From ${formatDate(d.availableFrom)}` : 'Available Now';
+    el('detAvailability') && (el('detAvailability').textContent = availabilityText);
+    el('availableDate') && (el('availableDate').textContent = availabilityText);
+
+    if ((d.viewingFrom && d.viewingTo) || (d.availableTimeFrom && d.availableTimeTo)) {
+        const from = d.viewingFrom || d.availableTimeFrom;
+        const to = d.viewingTo || d.availableTimeTo;
+        const row = el('detTimingsRow');
+        if (row) row.style.display = 'flex';
+        el('detTimings') && (el('detTimings').textContent = `${formatTime(from)} - ${formatTime(to)}`);
+    }
+    if (d.whoShows) {
+        const row = el('detWhoShowsRow');
+        if (row) row.style.display = 'flex';
+        el('detWhoShows') && (el('detWhoShows').textContent = formatEnumValue(d.whoShows));
     }
 
     // Sidebar pricing
-    document.getElementById('priceAmount').textContent = `₹${formatNumber(property.expectedRent)}`;
-    const badge = document.getElementById('negotiableBadge');
-    if (property.negotiable) { badge.classList.add('badge-negotiable'); badge.textContent = 'Negotiable'; }
-    else { badge.classList.add('badge-non-negotiable'); badge.textContent = 'Non-Negotiable'; }
-    document.getElementById('depositAmount').textContent = `₹${formatNumber(property.expectedDeposit)}`;
-    if (property.availableFrom) {
-        document.getElementById('availableDate').textContent = new Date(property.availableFrom).toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+    el('priceAmount') && (el('priceAmount').textContent = `₹${formatNumber(d.expectedRent)}`);
+    const badge = el('negotiableBadge');
+    if (badge) {
+        const isNegotiable = !!d.rentNegotiable || d.negotiable === true || d.isNegotiable === true;
+        badge.textContent = isNegotiable ? 'Negotiable' : 'Fixed Price';
+        badge.className = `badge ${isNegotiable ? 'badge-negotiable' : 'badge-non-negotiable'}`;
     }
-
-    // Images
-    loadPropertyImages(property.id);
+    el('depositAmount') && (el('depositAmount').textContent = `₹${formatNumber(d.expectedDeposit)}`);
 }
 
-/**
- * Load property images
- */
-async function loadPropertyImages(propertyId) {
-    const imageGallery = document.getElementById('imageGallery');
-    const baseOrigin = (window.apiService && apiService.baseURL)
-        ? apiService.baseURL.replace(/\/?api\/?$/, '')
-        : 'http://localhost:8081';
-    const toAbsolute = (u) => {
-        if (!u) return null;
-        return u.startsWith('http') ? u : `${baseOrigin}${u.startsWith('/') ? '' : '/'}${u}`;
-    };
-    
-    // WORKAROUND: Skip gallery endpoint (403 issue) and use primary image directly from details
-    // The /api/properties/{id}/images endpoint is returning 403 even though it's public
-    // Until backend permissions are fixed, just show the primary image
-    if (propertyData && propertyData.primaryImageUrl) {
-        const primaryAbs = toAbsolute(propertyData.primaryImageUrl);
-        imageGallery.innerHTML = `
-            <div class="image-gallery">
-                <img src="${primaryAbs}" 
-                     alt="Property Image" 
-                     class="gallery-image"
-                     onclick="openImageModal('${primaryAbs}')"
-                     onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'">
-            </div>
-        `;
+async function loadPropertyImages(id, details) {
+    const container = el('imageCarouselContainer');
+    if (!container) return;
+    try {
+        const images = await apiService.makeRequest(`/properties/${id}/images`, { includeAuth: false });
+        let imgs = Array.isArray(images) ? images : [];
+        if (imgs.length > 0) {
+            // Normalize and sort: primary first then by position
+            const normalized = imgs.map(img => ({
+                id: img.id,
+                url: toAbsolute(img.url || img.imageUrl || img.path),
+                primary: !!(img.primaryImage || img.primary),
+                position: (img.position !== undefined && img.position !== null) ? img.position : 9999,
+            })).filter(x => !!x.url);
+
+            normalized.sort((a, b) => (b.primary - a.primary) || (a.position - b.position));
+
+            propertyImages = normalized;
+            renderImageGrid(propertyImages);
+            return;
+        }
+    } catch (e) {
+        console.warn('Failed to fetch images, falling back to primary image', e);
+    }
+
+    // Fallback to primary image from property details
+    if (details && details.primaryImageUrl) {
+        propertyImages = [{ id: 'primary', url: toAbsolute(details.primaryImageUrl), primary: true, position: 0 }];
+        renderImageGrid(propertyImages);
+    } else {
+        showNoImages();
+    }
+}
+
+function renderImageGrid(images) {
+    const container = el('imageCarouselContainer');
+    if (!container) return;
+    if (!images || images.length === 0) {
+        showNoImages();
         return;
     }
-    
-    // No primary image available
-    imageGallery.innerHTML = `
+    container.innerHTML = `
+        <div class="image-gallery">
+            ${images.map((img, idx) => `
+                <img class="gallery-image" src="${img.url}" alt="Property Image ${idx+1}"
+                     onclick="openLightbox(${idx})"
+                     onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'" />
+            `).join('')}
+        </div>
+    `;
+}
+
+function showNoImages() {
+    const container = el('imageCarouselContainer');
+    if (!container) return;
+    container.innerHTML = `
         <div class="no-images">
             <i class="fas fa-image fa-3x"></i>
             <p>No images available for this property</p>
         </div>
     `;
-}/**
- * Show error message
- */
+}
+
 function showError(message) {
-    const container = document.getElementById('propertyDetails');
+    const container = el('propertyDetails');
+    if (!container) return;
     container.innerHTML = `
         <div class="error-container">
             <i class="fas fa-exclamation-circle"></i>
@@ -202,81 +302,6 @@ function showError(message) {
     `;
 }
 
-/**
- * Format number with commas
- */
-function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-/**
- * Format enum values (replace underscores with spaces and capitalize)
- */
-function formatEnumValue(value) {
-    return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
-
-/**
- * Format property age
- */
-function formatPropertyAge(age) {
-    const ageMap = {
-        'UNDER_1_YEAR': 'Under 1 Year',
-        'ONE_TO_THREE': '1-3 Years',
-        'THREE_TO_FIVE': '3-5 Years',
-        'FIVE_TO_TEN': '5-10 Years',
-        'OVER_TEN': 'Over 10 Years'
-    };
-    return ageMap[age] || age;
-}
-
-/**
- * Format time
- */
-function formatTime(time) {
-    if (!time) return '';
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-}
-
-/**
- * Open image in modal (can be enhanced with a proper lightbox)
- */
-function openImageModal(imageUrl) {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.9);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        cursor: pointer;
-    `;
-    
-    modal.innerHTML = `
-        <img src="${imageUrl}" 
-             style="max-width: 90%; max-height: 90%; object-fit: contain;">
-        <button style="position: absolute; top: 20px; right: 20px; background: white; border: none; 
-                       width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px;">
-            ×
-        </button>
-    `;
-    
-    modal.onclick = () => modal.remove();
-    document.body.appendChild(modal);
-}
-
-/**
- * Contact owner
- */
 function contactOwner() {
     if (typeof showNotification === 'function') {
         showNotification('Contact feature coming soon!', 'info');
@@ -285,4 +310,73 @@ function contactOwner() {
     }
 }
 
-console.log('Property details page initialized');
+// ==========================
+// Lightbox logic
+// ==========================
+function openLightbox(index = 0) {
+    if (!propertyImages || propertyImages.length === 0) return;
+    lightboxIndex = Math.max(0, Math.min(index, propertyImages.length - 1));
+    const overlay = el('lightboxOverlay');
+    if (!overlay) return;
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    updateLightboxUI();
+    // Keyboard controls
+    lightboxKeyHandler = (e) => {
+        if (e.key === 'Escape') closeLightbox();
+        else if (e.key === 'ArrowRight') lightboxNext();
+        else if (e.key === 'ArrowLeft') lightboxPrev();
+    };
+    document.addEventListener('keydown', lightboxKeyHandler);
+}
+
+function closeLightbox() {
+    const overlay = el('lightboxOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+    if (lightboxKeyHandler) {
+        document.removeEventListener('keydown', lightboxKeyHandler);
+        lightboxKeyHandler = null;
+    }
+}
+
+function lightboxNext() {
+    if (!propertyImages || propertyImages.length === 0) return;
+    lightboxIndex = (lightboxIndex + 1) % propertyImages.length;
+    updateLightboxUI();
+}
+
+function lightboxPrev() {
+    if (!propertyImages || propertyImages.length === 0) return;
+    lightboxIndex = (lightboxIndex - 1 + propertyImages.length) % propertyImages.length;
+    updateLightboxUI();
+}
+
+function goToLightbox(i) {
+    if (!propertyImages || propertyImages.length === 0) return;
+    lightboxIndex = Math.max(0, Math.min(i, propertyImages.length - 1));
+    updateLightboxUI();
+}
+
+function updateLightboxUI() {
+    const imgEl = el('lightboxImage');
+    const dotsEl = el('lightboxDots');
+    if (!imgEl || !dotsEl) return;
+    const current = propertyImages[lightboxIndex];
+    imgEl.src = current.url;
+    imgEl.onerror = function(){ this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'; };
+    // dots
+    dotsEl.innerHTML = propertyImages.map((_, idx) =>
+        `<span class="lightbox-dot ${idx === lightboxIndex ? 'active' : ''}" onclick="goToLightbox(${idx})"></span>`
+    ).join('');
+}
+
+// Expose globals used by HTML
+window.contactOwner = contactOwner;
+window.openLightbox = openLightbox;
+window.closeLightbox = closeLightbox;
+window.lightboxNext = lightboxNext;
+window.lightboxPrev = lightboxPrev;
+window.goToLightbox = goToLightbox;
+console.log('Property details script loaded');

@@ -344,9 +344,18 @@ async function handleLogin(e) { // e can be a form event or an object with crede
 
   try {
     const authResponse = await apiService.login({ username, password });
+    
+    // Fetch user details to get firstName
+    const userDetails = await apiService.getCurrentUser();
+    console.log('User details fetched:', userDetails);
+    
+    // Extract first name from fullName
+    const firstName = userDetails.fullName ? userDetails.fullName.split(' ')[0] : username;
+    console.log('First name extracted:', firstName);
+    
     // Store user data in localStorage
     localStorage.setItem('username', username);
-    localStorage.setItem('firstName', authResponse.firstName || username); // Store first name
+    localStorage.setItem('firstName', firstName);
     localStorage.setItem('roles', JSON.stringify(authResponse.roles)); // Store roles for redirection
     showSuccess('Login successful!');
     updateUIForLoggedInUser();
@@ -450,6 +459,7 @@ async function handleLogout() {
 function updateUIForLoggedInUser() {
   const username = localStorage.getItem('username') || 'User';
   const firstName = localStorage.getItem('firstName') || username;
+  console.log('Updating UI with firstName:', firstName);
   const loginNavItem = document.getElementById('loginNavItem');
   const profileSection = document.getElementById('profileSection');
   const burgerLoginBtn = document.getElementById('burgerLoginBtn');
@@ -464,6 +474,9 @@ function updateUIForLoggedInUser() {
     const dropdownUsername = document.getElementById('dropdownUsername');
     if (dropdownUsername) {
       dropdownUsername.textContent = `${firstName}`;
+      console.log('Dropdown username set to:', firstName);
+    } else {
+      console.error('dropdownUsername element not found');
     }
     // Setup profile dropdown handlers after showing the profile section
     setTimeout(() => {

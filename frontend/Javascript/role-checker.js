@@ -4,6 +4,18 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(async function() {
         console.log('Role checker running...'); // Debug log
         
+        // Explicitly allow homepage without any redirects (defensive guard)
+        try {
+            const path = window.location.pathname || '';
+            const isHome = path === '/' || path.endsWith('/index.html') || path.endsWith('/frontend') || path.endsWith('/frontend/');
+            if (isHome) {
+                console.log('On homepage, skip any role-based redirects');
+                return;
+            }
+        } catch (e) {
+            console.warn('Path check failed:', e);
+        }
+
         // Check authentication token
         if (!apiService.isAuthenticated()) {
             console.log('User not authenticated'); // Debug log
@@ -31,24 +43,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Auto-redirect to appropriate dashboard on index page ONLY
-            const isIndexPage = currentPath.includes('index.html') || currentPath.endsWith('/frontend/') || currentPath.endsWith('/frontend');
-            const isOnCorrectPage = (storedRoles.includes('SUPERADMIN') && currentPath.includes('superadmin-dashboard.html')) ||
-                                   (storedRoles.includes('ADMIN') && currentPath.includes('Owner.html')) ||
-                                   (storedRoles.includes('USER') && currentPath.includes('tenant.html'));
-            
-            if (isIndexPage && !isOnCorrectPage) {
-                if (storedRoles.includes('SUPERADMIN')) {
-                    console.log('Redirecting to superadmin dashboard...'); // Debug log
-                    window.location.href = '/frontend/superadmin-dashboard.html';
-                } else if (storedRoles.includes('ADMIN')) {
-                    console.log('Redirecting to owner dashboard...'); // Debug log
-                    window.location.href = '/frontend/Owner.html';
-                } else if (storedRoles.includes('USER')) {
-                    console.log('Redirecting to tenant dashboard...'); // Debug log
-                    window.location.href = '/frontend/tenant.html';
-                }
-            }
+            // No auto-redirect from index.html - allow logged-in users to browse
+            // Only dashboard pages are protected above
         } catch (error) {
             console.error('Error checking user role:', error);
         }
