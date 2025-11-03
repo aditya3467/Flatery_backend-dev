@@ -249,6 +249,26 @@ class ApiService {
         }
     }
 
+    // Tenant Management API methods
+    async addTenant(tenantData) {
+        try {
+            return await this.makeRequest('/tenants', {
+                method: 'POST',
+                body: JSON.stringify(tenantData)
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getTenants() {
+        try {
+            return await this.makeRequest('/tenants');
+        } catch (error) {
+            throw new Error('Failed to fetch tenants: ' + error.message);
+        }
+    }
+
     // Check if user is authenticated
     isAuthenticated() {
         return !!this.token;

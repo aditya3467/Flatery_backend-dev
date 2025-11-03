@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Tenant</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/add-tenant.css" />
+  <script src="Javascript/component-loader.js" defer></script>
+  <script src="Javascript/api.js" defer></script>
+  <script src="Javascript/add-tenant.js" defer></script>
+  <script src="Javascript/main.js" defer></script>
+</head>
+<body>
+  <div id="navbar-container" data-component="components/navbar.html"></div>
+
+  <section class="form-section" style="max-width: 720px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.06);">
+    <h2 style="margin-bottom: 8px;">Add Tenant</h2>
+    <p style="color:#666; margin-bottom: 20px;">Create a tenant account linked to one of your properties.</p>
+
+    <div id="alertMessage" class="alert" style="display:none;"></div>
+
+    <form id="addTenantForm" onsubmit="handleSubmit(event)">
+      <div class="form-group">
+        <label>Tenant Name</label>
+        <input type="text" name="tenantName" required placeholder="Full name" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Phone Number</label>
+          <input type="text" name="phoneNumber" required placeholder="10-digit phone" maxlength="10" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Email Address (optional)</label>
+          <input type="email" name="emailAddress" placeholder="name@example.com" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Property</label>
+          <select id="propertyId" name="propertyId" required>
+            <option value="">Loading your properties...</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Flat / Room Number</label>
+          <input type="text" name="flatRoomNumber" required placeholder="e.g., A-302" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Rent Amount</label>
+          <input type="number" name="rentAmount" min="0" required placeholder="e.g., 12000" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Security Deposit</label>
+          <input type="number" name="securityDeposit" min="0" required placeholder="e.g., 30000" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Rent Due Date (pick any date, we’ll use the day)</label>
+          <input type="date" name="rentDueDateDate" required />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Tenant Status</label>
+          <select name="status">
+            <option value="ACTIVE" selected>Active</option>
+            <option value="PENDING_INFO">Pending Info</option>
+            <option value="VACATED">Vacated</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Lease Start Date</label>
+          <input type="date" name="leaseStartDate" required />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Lease End Date (optional)</label>
+          <input type="date" name="leaseEndDate" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Temporary Password (optional)</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" name="temporaryPassword" placeholder="Leave empty to auto-generate" style="flex:1;" />
+            <button type="button" class="btn" onclick="generateTempPassword()">Generate</button>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn primary">Create Tenant</button>
+    </form>
+
+    <div id="loadingIndicator" style="display:none; padding: 20px;">Creating tenant...</div>
+
+    <div id="successMessage" style="display:none; padding: 16px; border: 1px solid #e1f3e8; background:#f6fffa; border-radius: 8px; margin-top: 16px;">
+      <h3>Tenant Created</h3>
+      <p><strong>Tenant ID:</strong> <span id="displayTenantId"></span></p>
+      <p><strong>Username:</strong> <span id="displayUsername"></span></p>
+      <p><strong>Temporary Password:</strong> <span id="displayPassword"></span></p>
+      <p style="color:#666; font-size: 14px;">Share these credentials with the tenant. The password will only be shown once.</p>
+    </div>
+  </section>
+
+  <div id="modals-container" data-component="components/modals.html"></div>
+</body>
+</html>
