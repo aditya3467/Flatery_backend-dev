@@ -86,6 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
   function toggleModals(hideId, showId) {
     document.getElementById(hideId)?.classList.remove('active');
     document.getElementById(showId)?.classList.add('active');
+    // Keep body overflow hidden when switching between modals
+    document.body.style.overflow = 'hidden';
   }
 
   // Switch from login → signup
@@ -241,15 +243,18 @@ function openLoginModal(e) {
     // Only open login modal if user is NOT logged in
     if (!apiService.isAuthenticated()) {
         document.getElementById('loginModal').classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
     }
 }
 
 function closeLoginModal() {
     document.getElementById('loginModal').classList.remove('active');
+    document.body.style.overflow = ''; // Restore scrolling
 }
 
 function closeSignupModal() {
     document.getElementById('signupModal').classList.remove('active');
+    document.body.style.overflow = ''; // Restore scrolling
 }
 
 // 🔸 AUTH HANDLERS
