@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Details - Flatery</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/property-details.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .property-details-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            gap: 12px;
+        }
+
+        .property-header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .property-title {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .property-location-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .property-meta {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #555;
+        }
+
+        .meta-item i {
+            color: #007bff;
+        }
+
+        .property-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .section-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.05);
+        }
+
+        .no-images {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .amenities-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .amenity-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .description-text {
+            line-height: 1.8;
+            color: #555;
+            font-size: 16px;
+        }
+
+        .price-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .price-amount {
+            font-size: 42px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .price-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .deposit-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .deposit-amount {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .contact-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .contact-btn {
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .contact-btn:hover {
+            background: #218838;
+        }
+
+        .availability-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        .error-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .error-container i {
+            font-size: 64px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .badge-negotiable {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-non-negotiable {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .property-content {
+                grid-template-columns: 1fr;
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .property-title {
+                font-size: 24px;
+            }
+
+            .price-amount {
+                font-size: 32px;
+            }
+        }
+
+        /* Lightbox styles */
+        .lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .lightbox-overlay.active { display: flex; }
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .lightbox-image-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-height: 85vh;
+        }
+        #lightboxImage {
+            max-width: 100%;
+            max-height: 85vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            object-fit: contain;
+            background: #111;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 10000;
+            opacity: 0.9;
+        }
+        .lightbox-prev, .lightbox-next {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .lightbox-prev:hover, .lightbox-next:hover { background: rgba(255,255,255,0.3); }
+        .lightbox-controls {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+        .lightbox-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        .lightbox-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .lightbox-dot.active { background: #fff; transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <!-- Navbar Component -->
+    <div id="navbar-container" data-component="components/navbar.html"></div>
+
+    <!-- Property Details Container (static HTML, JS only hydrates data) -->
+    <div class="property-details-container" id="propertyDetails">
+        <a href="properties.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Back to Properties
+        </a>
+
+        <!-- Header -->
+        <div class="property-header">
+            <h1 class="property-title" id="propTitle">Loading…</h1>
+            <div class="property-location-header">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="propLocation">—</span>
+                <span id="propLandmark" style="color:#999; display:none;"></span>
+            </div>
+            <div class="property-meta">
+                <div class="meta-item"><i class="fas fa-tag"></i><span><strong id="propType">—</strong></span></div>
+                <div class="meta-item" id="metaBhk" style="display:none;"><i class="fas fa-bed"></i><span id="propBhk">—</span></div>
+                <div class="meta-item" id="metaSeater" style="display:none;"><i class="fas fa-users"></i><span id="propSeater">—</span></div>
+                <div class="meta-item"><i class="fas fa-ruler-combined"></i><span id="propArea">—</span></div>
+                <div class="meta-item"><i class="fas fa-calendar-alt"></i><span id="propPostedOn">—</span></div>
+            </div>
+        </div>
+
+        <div class="property-content">
+            <div class="main-content">
+                <!-- Images Carousel Section -->
+                <div class="section-card">
+                    <h2 class="section-title"><i class="fas fa-images"></i> Property Images</h2>
+                    <div id="imageCarouselContainer">
+                        <!-- Carousel will be injected here -->
+                        <div class="carousel-loading" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color: #007bff;"></i>
+                            <p style="margin-top: 10px;">Loading images...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="section-card" id="descriptionSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-align-left"></i> Description</h2>
+                    <p class="description-text" id="propDescription"></p>
+                </div>
+
+                <!-- Property Details -->
+                <div class="section-card">
+                    <h2 class="section-title"><i class="fas fa-info-circle"></i> Property Details</h2>
+                    <div class="details-grid">
+                        <div class="detail-row"><span class="detail-label">Property Type</span><span class="detail-value" id="detType">—</span></div>
+                        <div class="detail-row" id="detBhkRow" style="display:none;"><span class="detail-label">BHK Type</span><span class="detail-value" id="detBhk">—</span></div>
+                        <div class="detail-row" id="detSeaterRow" style="display:none;"><span class="detail-label">Seater</span><span class="detail-value" id="detSeater">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Built-up Area</span><span class="detail-value" id="detArea">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Floor</span><span class="detail-value" id="detFloor">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Property Age</span><span class="detail-value" id="detAge">—</span></div>
+                        <div class="detail-row" id="detFacingRow" style="display:none;"><span class="detail-label">Facing</span><span class="detail-value" id="detFacing">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Furnishing</span><span class="detail-value" id="detFurnishing">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Bathrooms</span><span class="detail-value" id="detBathrooms">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Parking</span><span class="detail-value" id="detParking">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Balcony</span><span class="detail-value" id="detBalcony">—</span></div>
+                        <div class="detail-row"><span class="detail-label">Monthly Maintenance</span><span class="detail-value" id="detMaintenance">—</span></div>
+                        <div class="detail-row" id="detConditionRow" style="display:none;"><span class="detail-label">Current Condition</span><span class="detail-value" id="detCondition">—</span></div>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <div class="section-card" id="amenitiesSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-check-circle"></i> Amenities</h2>
+                    <div class="amenities-list" id="amenitiesList"></div>
+                </div>
+
+                <!-- Preferred Tenants -->
+                <div class="section-card" id="tenantsSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-user-friends"></i> Preferred Tenants</h2>
+                    <div class="amenities-list" id="tenantsList"></div>
+                </div>
+
+                <!-- Viewing Schedule -->
+                <div class="section-card" id="scheduleSection" style="display:none;">
+                    <h2 class="section-title"><i class="fas fa-clock"></i> Viewing Schedule</h2>
+                    <div class="details-grid">
+                        <div class="detail-row"><span class="detail-label">Availability</span><span class="detail-value" id="detAvailability">—</span></div>
+                        <div class="detail-row" id="detTimingsRow" style="display:none;"><span class="detail-label">Timings</span><span class="detail-value" id="detTimings">—</span></div>
+                        <div class="detail-row" id="detWhoShowsRow" style="display:none;"><span class="detail-label">Who Shows</span><span class="detail-value" id="detWhoShows">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="price-card">
+                    <div class="price-label">Monthly Rent</div>
+                    <div class="price-amount" id="priceAmount">—</div>
+                    <div>
+                        <span class="badge" id="negotiableBadge">—</span>
+                    </div>
+                    <div class="deposit-info">
+                        <div class="price-label">Security Deposit</div>
+                        <div class="deposit-amount" id="depositAmount">—</div>
+                    </div>
+                </div>
+
+                <div class="contact-card">
+                    <div class="availability-info" id="availabilityInfo" style="display:flex;">
+                        <i class="fas fa-calendar-check"></i>
+                        <div>
+                            <strong>Available from</strong><br>
+                            <span id="availableDate">—</span>
+                        </div>
+                    </div>
+                    <button class="contact-btn" onclick="contactOwner()">
+                        <i class="fas fa-phone"></i>
+                        Contact Owner
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals Component -->
+    <div id="modals-container" data-component="components/modals.html"></div>
+
+    <!-- Lightbox Overlay -->
+    <div id="lightboxOverlay" class="lightbox-overlay" aria-hidden="true">
+        <span class="lightbox-close" onclick="closeLightbox()" aria-label="Close">&times;</span>
+        <div class="lightbox-content">
+            <div class="lightbox-controls">
+                <button class="lightbox-prev" onclick="lightboxPrev()" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+                <button class="lightbox-next" onclick="lightboxNext()" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="lightbox-image-wrapper">
+                <img id="lightboxImage" src="" alt="Property image" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'" />
+            </div>
+            <div class="lightbox-dots" id="lightboxDots"></div>
+        </div>
+    </div>
+
+    
+
+    <!-- Scripts -->
+    <script src="Javascript/api.js"></script>
+    <script src="Javascript/component-loader.js"></script>
+    <script src="Javascript/main.js"></script>
+    <script src="Javascript/property-details.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+/* Property Details Page Styles */
+.property-details-page {
+    background: #f5f7fa;
+    min-height: 100vh;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .property-content {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .sidebar {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .property-header {
+        padding: 20px !important;
+    }
+    
+    .property-title {
+        font-size: 24px !important;
+    }
+    
+    .property-meta {
+        flex-direction: column;
+        gap: 15px !important;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .price-amount {
+        font-size: 32px !important;
+    }
+    
+    .section-card {
+        padding: 20px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .property-details-container {
+        padding: 10px !important;
+    }
+    
+    .property-title {
+        font-size: 20px !important;
+    }
+    
+    .price-amount {
+        font-size: 28px !important;
+    }
+    
+    .section-title {
+        font-size: 18px !important;
+    }
+}

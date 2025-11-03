@@ -26,6 +26,10 @@ async function loadProperties() {
         
         // Response is a Page object with content array
         allProperties = response.content || [];
+        
+        // Fetch full details for PG and APARTMENT to get names
+        await enrichPropertiesWithNames();
+        
         filteredProperties = [...allProperties];
         
         // Apply URL filters after loading
@@ -44,6 +48,25 @@ async function loadProperties() {
             </div>
         `;
     }
+}
+
+/**
+ * Fetch full details for PG and APARTMENT properties to get their names
+ */
+async function enrichPropertiesWithNames() {
+    const pgAndApartments = allProperties.filter(p => p.type === 'PG' || p.type === 'APARTMENT');
+    
+    // Fetch details in parallel for all PG/APARTMENT properties
+    const detailsPromises = pgAndApartments.map(async (property) => {
+        try {
+            const details = await apiService.makeRequest(`/properties/${property.id}`, { includeAuth: false });
+            property.name = details.name; // Add name to the summary object
+        } catch (error) {
+            console.warn(`Failed to fetch name for property ${property.id}:`, error);
+        }
+    });
+    
+    await Promise.all(detailsPromises);
 }
 
 /**
@@ -179,22 +202,18 @@ function createPropertyCard(property) {
     const seater = property.pgSeater || property.seater;
     
     // Compute property name:
-    // For PG: use name field if present
-    // For others: use first word of location + BHK type
+    // For PG and APARTMENT: use name field (enriched from details API)
+    // For FLAT: use "BHK in Location"
     let title;
-    if (property.type === 'PG' && property.name) {
+    if ((property.type === 'PG' || property.type === 'APARTMENT') && property.name) {
         title = property.name;
+    } else if (property.type === 'FLAT' && bhkType) {
+        const bhkNumber = bhkType.replace('BHK_', '');
+        const locationName = property.location || property.city || 'Property';
+        title = `${bhkNumber} BHK in ${locationName}`;
     } else {
-        // Get first word of location
-        const firstWord = property.location ? property.location.trim().split(/\s+/)[0] : (property.city || 'Property');
-        
-        // Add BHK type if available
-        if (bhkType) {
-            const bhkNumber = bhkType.replace('BHK_', '');
-            title = `${firstWord} ${bhkNumber} BHK`;
-        } else {
-            title = firstWord;
-        }
+        // Fallback
+        title = property.location || property.city || 'Property';
     }
     
     // Use primaryImageUrl from API, fallback to placeholder
@@ -463,13 +482,8 @@ function previousPage() {
  * View property details
  */
 function viewPropertyDetails(propertyId) {
-    // TODO: Navigate to property details page
     console.log('Viewing property:', propertyId);
-    // window.location.href = `property-details.html?id=${propertyId}`;
-    
-    if (typeof showNotification === 'function') {
-        showNotification('Property details page coming soon!', 'info');
-    }
+    window.location.href = `property-details.html?id=${propertyId}`;
 }
 
 /**

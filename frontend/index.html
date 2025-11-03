@@ -11,9 +11,9 @@
     <link rel="stylesheet" href="css/style.css">
     <script src="Javascript/component-loader.js" defer></script>
     <script src="Javascript/api.js" defer></script>
-    <script src="Javascript/main.js" defer></script>
+    <script src="Javascript/main.js?v=20251101-1" defer></script>
     <script src="Javascript/home.js" defer></script>
-    <script src="Javascript/role-checker.js" defer></script>
+    <script src="Javascript/role-checker.js?v=20251101-1" defer></script>
 </head>
 
 <body>
@@ -33,9 +33,16 @@
         <div class="container">
 
             <div class="hero">
+                <!-- Decorative corner elements -->
+                <div class="hero-decorations">
+                    <div class="corner-dot corner-top-left"></div>
+                    <div class="corner-dot corner-top-right"></div>
+                </div>
+                
                 <div class="hero-text align-items-center">
-                    <h2>A complete housing solution</h2>
-                    <span>Discover</span>
+                    <h2>Find your perfect home</h2>
+                    <span>in the digital age</span>
+                    <p class="hero-subtitle">Discover thousands of properties tailored to your lifestyle. Your dream space is just a click away.</p>
                 </div>
                 <div class="hero-bar row">
                     <div class="location">
@@ -68,11 +75,17 @@
                     <div class="search-btn"></div>
                 </div>
             </div>
-            <div class="hero-image">
-                <img loading="lazy"
-                    src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60"
-                    alt="Modern living room interior">
-
+            
+            <!-- Character illustration at bottom -->
+            <div class="hero-characters">
+                <div class="property-icons">
+                    <div class="floating-icon" style="left: 10%; animation-delay: 0s;">🏠</div>
+                    <div class="floating-icon" style="left: 25%; animation-delay: 0.5s;">🏢</div>
+                    <div class="floating-icon" style="left: 40%; animation-delay: 1s;">🏡</div>
+                    <div class="floating-icon" style="left: 60%; animation-delay: 1.5s;">🏘️</div>
+                    <div class="floating-icon" style="left: 75%; animation-delay: 2s;">🏗️</div>
+                    <div class="floating-icon" style="left: 90%; animation-delay: 2.5s;">🏛️</div>
+                </div>
             </div>
 
         </div>
@@ -87,41 +100,82 @@
                     <h2>Recommended Properties</h2>
                 </div>
             </div>
-            <div class="row">
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="./img/properties/1.jpeg" alt="Property Image">
-                    </div>
-                    <div class="property-details">
-                        <h3>Modern Apartment</h3>
-                        <p>2 Beds • 2 Baths • 1200 sqft</p>
-                        <p>$1500/month</p>
-                    </div>
+            <div class="row" id="recommendedPropertiesGrid">
+                <!-- Loading state -->
+                <div class="loading-properties" style="width: 100%; text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #007bff;"></i>
+                    <p style="margin-top: 15px; color: #666;">Loading properties...</p>
                 </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="./img/properties/1.jpeg" alt="Property Image">
-                    </div>
-                    <div class="property-details">
-                        <h3>Cozy Cottage</h3>
-                        <p>3 Beds • 2 Baths • 1500 sqft</p>
-                        <p>$2000/month</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="./img/properties/1.jpeg" alt="Property Image">
-                    </div>
-                    <div class="property-details">
-                        <h3>Luxury Villa</h3>
-                        <p>4 Beds • 3 Baths • 3000 sqft</p>
-                        <p>$5000/month</p>
-                    </div>
-                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="properties.html" class="btn-1">View All Properties</a>
             </div>
         </div>
     </section>
     <!-- Recommended Property Section ends -->
+    <script>
+        // Load recommended properties on home page
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadRecommendedProperties();
+        });
+
+        async function loadRecommendedProperties() {
+            const propertiesGrid = document.getElementById('recommendedPropertiesGrid');
+            
+            try {
+                // Fetch properties from API (limit to 3 for home page)
+                const response = await apiService.getProperties();
+                const properties = response.content || [];
+                
+                if (properties.length === 0) {
+                    propertiesGrid.innerHTML = `
+                        <div style="width: 100%; text-align: center; padding: 40px;">
+                            <i class="fas fa-home fa-3x" style="color: #ccc; margin-bottom: 15px;"></i>
+                            <p style="color: #666;">No properties available at the moment.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Display only first 3 properties
+                const displayProperties = properties.slice(0, 3);
+                
+                propertiesGrid.innerHTML = displayProperties.map(property => {
+                    const bhkType = property.bhkType || property.bhk;
+                    const seater = property.pgSeater || property.seater;
+                    const title = property.name || 
+                                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
+                    const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
+                    
+                    return `
+                        <div class="property-card" onclick="window.location.href='property-details.html?id=${property.id}'" style="cursor: pointer;">
+                            <div class="property-image">
+                                <img src="${imageUrl}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60'">
+                            </div>
+                            <div class="property-details">
+                                <h3>${title}</h3>
+                                <p>${bhkType ? bhkType + ' BHK' : seater + ' Seater'} • ${property.bathrooms} Bath${property.bathrooms > 1 ? 's' : ''} • ${property.builtUpAreaSqft} sqft</p>
+                                <p style="color: #007bff; font-weight: 600;">₹${formatNumberHome(property.expectedRent)}/month</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading properties:', error);
+                propertiesGrid.innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px;">
+                        <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                        <p style="color: #666;">Failed to load properties. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function formatNumberHome(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
     <!-- Owner section starts -->
     <section class="owner">
         <div class="container">
@@ -170,6 +224,54 @@
         </div>
 
     </section>
+
+    <!-- Lifestyle Section Starts -->
+    <section class="lifestyle-section section-padding">
+        <div class="container">
+            <div class="lifestyle-content">
+                <div class="lifestyle-text">
+                    <h2 class="lifestyle-title">A lifestyle Tailor-made<br><span class="highlight-text">for you</span></h2>
+                    
+                    <div class="lifestyle-features">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h3>Verified Properties</h3>
+                                <p>Every listing is meticulously verified to ensure its authenticity and accuracy.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-gavel"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h3>Legal Assistance</h3>
+                                <p>We offer professional legal guidance to empower you in making well-informed decisions.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h3>Extensive User Base</h3>
+                                <p>Become part of our thriving community of over one million satisfied clients.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="lifestyle-image">
+                    <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80" alt="Modern Living Room">
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Lifestyle Section Ends -->
 
     <!-- How it works starts -->
 

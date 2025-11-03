@@ -39,6 +39,19 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
+        try {
+            // Extract token from "Bearer <token>"
+            String jwtToken = token.substring(7);
+            var userDetails = authService.getUserFromToken(jwtToken);
+            return ResponseEntity.ok(userDetails);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Invalid or expired token"));
+        }
+    }
+
     record ErrorResponse(String error) {}
     record MessageResponse(String message) {}
 }

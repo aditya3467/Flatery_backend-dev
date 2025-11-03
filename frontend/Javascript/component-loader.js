@@ -186,6 +186,8 @@ class ComponentLoader {
     toggleModals(hideId, showId) {
         document.getElementById(hideId)?.classList.remove('active');
         document.getElementById(showId)?.classList.add('active');
+        // Keep body overflow hidden when switching between modals
+        document.body.style.overflow = 'hidden';
     }
 
     /**

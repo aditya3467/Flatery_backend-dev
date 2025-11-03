@@ -228,6 +228,27 @@ class ApiService {
         }
     }
 
+    // Set primary image for a property
+    async setPrimaryPropertyImage(propertyId, imageId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/images/${imageId}/primary`, {
+                method: 'PUT',
+                body: JSON.stringify({}) // Some servers require a body for PUT requests
+            });
+        } catch (error) {
+            throw new Error('Failed to set primary image: ' + error.message);
+        }
+    }
+
+    // Get one of my properties (admin)
+    async getMyProperty(id) {
+        try {
+            return await this.makeRequest(`/admin/properties/${id}`);
+        } catch (error) {
+            throw new Error('Failed to fetch property: ' + error.message);
+        }
+    }
+
     // Check if user is authenticated
     isAuthenticated() {
         return !!this.token;

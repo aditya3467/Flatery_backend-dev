@@ -49,4 +49,34 @@ public class AuthService {
     public void signup(RegisterRequest registerRequest) {
         userService.register(registerRequest);
     }
+
+    public UserDetailsResponse getUserFromToken(String token) {
+        String username = jwtService.extractUsername(token);
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Set<String> roles = user.getRoles().stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+        
+        String fullName = user.getFirstName() + " " + user.getLastName();
+        
+        return new UserDetailsResponse(
+                user.getId(),
+                user.getUsername(),
+                fullName,
+                user.getEmail(),
+                user.getPhoneNumber(),
+                roles
+        );
+    }
+
+    public record UserDetailsResponse(
+            Long id,
+            String username,
+            String fullName,
+            String email,
+            String phoneNumber,
+            Set<String> roles
+    ) {}
 }
