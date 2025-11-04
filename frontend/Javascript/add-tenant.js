@@ -116,6 +116,30 @@ async function handleSubmit(e) {
     return showAlert('error', 'Lease end date cannot be before lease start date');
   }
 
+  // Final check: verify no duplicate tenancy for this property + phone combination
+  try {
+    const tenants = await apiService.getTenants();
+    const normalizePhone = (phone) => {
+      if (!phone) return '';
+      return phone.replace(/^\+91/, '').replace(/\D/g, '');
+    };
+    
+    const inputPhone = normalizePhone(data.phoneNumber);
+    
+    // Check if tenant with same phone already exists for this property
+    const duplicate = tenants.find(t => {
+      const tenantPhone = normalizePhone(t.phoneNumber);
+      return t.propertyId === data.propertyId && tenantPhone === inputPhone;
+    });
+    
+    if (duplicate) {
+      return showAlert('error', 'This tenant is already assigned to this property. You can edit the tenancy details instead.');
+    }
+  } catch (err) {
+    console.warn('Could not verify duplicate tenant', err);
+    // Continue with submission
+  }
+
   document.getElementById('loadingIndicator').style.display = 'block';
   form.style.display = 'none';
   hideAlert();
@@ -204,7 +228,11 @@ async function lookupExistingUser() {
     // Autofill
     const name = [user.firstName || '', user.lastName || ''].filter(Boolean).join(' ').trim();
     if (name) document.querySelector('input[name="tenantName"]').value = name;
-    if (user.phoneNumber) document.querySelector('input[name="phoneNumber"]').value = user.phoneNumber;
+    if (user.phoneNumber) {
+      // Strip country code if present (e.g., +91 for India)
+      let phone = user.phoneNumber.replace(/^\+91/, '').replace(/\D/g, '');
+      document.querySelector('input[name="phoneNumber"]').value = phone;
+    }
     if (user.email) document.querySelector('input[name="emailAddress"]').value = user.email;
     // Lock fields to avoid accidental changes
     setFormFieldsDisabled(true, ['propertyId','flatRoomNumber','rentAmount','securityDeposit','rentDueDateDate','leaseStartDate','leaseEndDate','status']);
@@ -212,6 +240,9 @@ async function lookupExistingUser() {
     const resEl = document.getElementById('lookupResult');
     resEl.style.display = 'block';
     resEl.textContent = `Found user: ${user.username} (${user.email || 'no email'})`;
+    
+    // Check if this user already has a tenancy - wait for property selection
+    checkDuplicateTenancy(user);
   } catch (err) {
     console.warn('Lookup failed', err);
     existingUser = null;
@@ -234,8 +265,73 @@ function setFormFieldsDisabled(disabled, exceptions = []) {
     if (el.name && except.has(el.name)) return;
     // keep buttons active
     if (el.tagName === 'BUTTON') return;
-    el.disabled = disabled;
+    // Use readonly instead of disabled so fields are still submitted
+    if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.tagName === 'TEXTAREA') {
+      el.readOnly = disabled;
+      if (disabled) {
+        el.style.backgroundColor = '#f3f4f6';
+        el.style.cursor = 'not-allowed';
+      } else {
+        el.style.backgroundColor = '';
+        el.style.cursor = '';
+      }
+    } else {
+      el.disabled = disabled;
+    }
   });
+}
+
+// Check if user already has tenancy for selected property
+async function checkDuplicateTenancy(user) {
+  const propertySelect = document.getElementById('propertyId');
+  
+  // Add listener for property selection changes
+  const checkHandler = async () => {
+    const selectedPropertyId = parseInt(propertySelect.value);
+    if (!selectedPropertyId || !user) return;
+    
+    try {
+      // Fetch all tenants for this owner
+      const tenants = await apiService.getTenants();
+      
+      // Normalize phone for comparison
+      const normalizePhone = (phone) => {
+        if (!phone) return '';
+        return phone.replace(/^\+91/, '').replace(/\D/g, '');
+      };
+      
+      const userPhone = normalizePhone(user.phoneNumber);
+      
+      // Check if this user already has a tenancy for the selected property
+      const existingTenancy = tenants.find(t => {
+        const tenantPhone = normalizePhone(t.phoneNumber);
+        return tenantPhone === userPhone && t.propertyId === selectedPropertyId;
+      });
+      
+      if (existingTenancy) {
+        showAlert('error', `⚠️ Tenant already assigned to this property! You can edit the tenancy details instead.`);
+        // Disable submit button
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+      } else {
+        hideAlert();
+        // Re-enable submit button
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } catch (err) {
+      console.warn('Failed to check for duplicate tenancy', err);
+    }
+  };
+  
+  // Check immediately if property is already selected
+  if (propertySelect.value) {
+    checkHandler();
+  }
+  
+  // Add listener for future changes
+  propertySelect.removeEventListener('change', checkHandler); // Remove any previous listener
+  propertySelect.addEventListener('change', checkHandler);
 }
 
 window.onExistingToggleChange = onExistingToggleChange;

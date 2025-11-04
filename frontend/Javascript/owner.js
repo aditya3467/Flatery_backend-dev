@@ -177,11 +177,14 @@
     // Get rent value
     const rent = property.expectedRent || property.rent || 0;
 
+    const isPG = (property.type || '').toString().toUpperCase() === 'PG';
+    const overlayLabel = isPG ? 'Manage PG' : 'Open Dashboard';
+
     card.innerHTML = `
       <div class="property-image" style="position:relative;">
         <img src="${imageUrl}" alt="${propertyTitle}" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'">
         <div class="manage-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease; pointer-events:none;">
-          <span style="color:#fff; font-size:24px; font-weight:700; text-transform:uppercase; letter-spacing:2px;">Manage</span>
+          <span style="color:#fff; font-size:24px; font-weight:700; text-transform:uppercase; letter-spacing:2px;">${overlayLabel}</span>
         </div>
       </div>
       <div class="property-details">
@@ -209,10 +212,15 @@
       });
     }
 
-    // Add click handler to view property details (card-level)
+      // Add click handler: PG -> property-config, others -> property-details (placeholder for future dashboards)
     card.style.cursor = 'pointer';
     card.addEventListener('click', () => {
-      window.location.href = `property-details.html?id=${property.id}`;
+        const type = (property.type || '').toString().toUpperCase();
+        if (type === 'PG') {
+          window.location.href = `property-config.html?id=${property.id}`;
+        } else {
+          window.location.href = `property-details.html?id=${property.id}`;
+        }
     });
 
     // Wire action buttons

@@ -14,4 +14,6 @@ public class TenantSummary {
     private String status;
     private Integer rentAmount;
     private Integer securityDeposit;
+    private Long propertyId;
+    private String phoneNumber;
 }

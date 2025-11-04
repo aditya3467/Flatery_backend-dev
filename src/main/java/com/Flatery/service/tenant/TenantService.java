@@ -119,7 +119,8 @@ public class TenantService {
     public List<TenantSummary> getOwnerTenants(Long ownerId) {
         return tenantRepository.findByOwnerId(ownerId).stream()
                 .map(t -> new TenantSummary(
-                        t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), t.getRentAmount(), t.getSecurityDeposit()
+                        t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
+                        t.getRentAmount(), t.getSecurityDeposit(), t.getPropertyId(), t.getPhoneNumber()
                 ))
                 .collect(Collectors.toList());
     }
