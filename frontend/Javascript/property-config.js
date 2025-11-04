@@ -3,6 +3,8 @@ let currentPropertyId = null;
 let propertyData = null;
 let floors = [];
 let units = [];
+let tenants = [];
+let currentView = 'floors'; // 'floors' or 'tenants'
 
 document.addEventListener('DOMContentLoaded', async function() {
   // Get property ID from URL
@@ -19,8 +21,58 @@ document.addEventListener('DOMContentLoaded', async function() {
   const ok = await ensureOwnerSession();
   if (ok) {
     await loadPropertyConfig();
+    setupNavigationHandlers();
   }
 });
+
+function setupNavigationHandlers() {
+  // Handle navigation between sections (sidebar only)
+  document.querySelectorAll('.config-sidebar .nav-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      const href = this.getAttribute('href') || '';
+      if (!href.startsWith('#')) return; // allow normal links
+      e.preventDefault();
+
+      // Remove active class from sidebar nav items
+      document.querySelectorAll('.config-sidebar .nav-item').forEach(nav => nav.classList.remove('active'));
+      this.classList.add('active');
+
+      // Show appropriate section
+      if (href === '#floors') {
+        showFloorsSection();
+      } else if (href === '#tenants') {
+        showTenantsSection();
+      }
+    });
+  });
+}
+
+function toggleTopMeta(show) {
+  const pageTitle = document.querySelector('.page-title-section');
+  const filters = document.querySelector('.filters-section');
+  const stats = document.querySelector('.stats-overview');
+  if (pageTitle) pageTitle.style.display = show ? 'block' : 'none';
+  if (filters) filters.style.display = show ? 'flex' : 'none';
+  // Restore the original layout for stats (flex), not grid
+  if (stats) stats.style.display = show ? 'flex' : 'none';
+}
+
+function showFloorsSection() {
+  currentView = 'floors';
+  document.querySelector('.floors-section').style.display = 'block';
+  document.querySelector('.tenants-section').style.display = 'none';
+  // Show top meta (title/filters/stats) in floors view
+  toggleTopMeta(true);
+}
+
+function showTenantsSection() {
+  currentView = 'tenants';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'block';
+  // Hide top meta (title/filters/stats) in tenants view
+  toggleTopMeta(false);
+  loadTenants();
+}
 
 async function ensureOwnerSession() {
   try {
@@ -78,13 +130,13 @@ async function loadPropertyConfig() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     document.getElementById('userName').textContent = user.firstName || 'Owner';
     
-    // Initialize floors and units data
-    initializeFloorsAndUnits();
+  // Load floors and units from backend
+  await loadFloorsAndUnitsFromApi();
     
-    // Render the configuration
-    renderFloorsAndUnits();
-    updateStats();
-    populateFloorFilters();
+  // Render the configuration
+  renderFloorsAndUnits();
+  updateStats();
+  populateFloorFilters();
     
   } catch (error) {
     console.error('Failed to load property configuration:', error);
@@ -92,22 +144,51 @@ async function loadPropertyConfig() {
   }
 }
 
-function initializeFloorsAndUnits() {
-  // For now, create a sample structure
-  // In production, this would come from your backend
-  floors = [
-    { id: 0, name: 'Ground Floor', number: 0 },
-    { id: 1, name: 'First Floor', number: 1 },
-    { id: 2, name: 'Second Floor', number: 2 }
-  ];
+async function loadFloorsAndUnitsFromApi() {
+  // Fetch floors
+  const floorList = await apiService.getFloors(currentPropertyId);
+  floors = Array.isArray(floorList) ? floorList : [];
   
-  // Sample units - replace with actual data from backend
-  units = [
-    { id: 1, floor: 0, number: 'B-1', type: '2BHK', beds: 2, rent: 12000, status: 'available' },
-    { id: 2, floor: 0, number: 'B-2', type: '2BHK', beds: 2, rent: 12000, status: 'occupied' },
-    { id: 3, floor: 0, number: 'B-3', type: '1BHK', beds: 1, rent: 10000, status: 'available' },
-    { id: 4, floor: 0, number: 'B-4', type: '1BHK', beds: 1, rent: 10000, status: 'reserved' },
-  ];
+  // Fetch units
+  const unitList = await apiService.getUnits(currentPropertyId);
+  const floorById = new Map(floors.map(f => [f.id, f]));
+  units = (Array.isArray(unitList) ? unitList : []).map(u => {
+    const capacity = u.capacity || 1;
+    const occupied = u.occupiedBeds || 0;
+    let status = (u.status || 'AVAILABLE').toString();
+    // Derive status from occupancy cache to avoid stale values
+    if (occupied === 0) status = 'AVAILABLE';
+    else if (occupied < capacity) status = 'PARTIAL';
+    else status = 'OCCUPIED';
+    return {
+      id: u.id,
+      floor: floorById.get(u.floorId)?.number ?? 0,
+      number: u.code,
+      type: u.type || 'ROOM',
+      beds: capacity,
+      occupied: occupied,
+      free: Math.max(0, capacity - occupied),
+      rent: u.rentAmount || 0,
+      status: status.toLowerCase()
+    };
+  });
+
+  // Console logs for debugging occupancy per unit and per floor
+  units.forEach(u => {
+    console.log(`[PG] Unit ${u.number}: active tenants=${u.occupied}, capacity=${u.beds}, freeBeds=${u.free}`);
+  });
+  const byFloor = new Map();
+  units.forEach(u => {
+    const key = u.floor;
+    const prev = byFloor.get(key) || { tenants: 0, beds: 0, free: 0 };
+    prev.tenants += u.occupied;
+    prev.beds += u.beds;
+    prev.free += u.free;
+    byFloor.set(key, prev);
+  });
+  byFloor.forEach((agg, floorNum) => {
+    console.log(`[PG] Floor ${floorNum}: tenants=${agg.tenants}, beds=${agg.beds}, freeBeds=${agg.free}`);
+  });
 }
 
 function renderFloorsAndUnits() {
@@ -126,23 +207,25 @@ function createFloorCard(floor, floorUnits) {
   card.className = 'floor-card';
   
   const available = floorUnits.filter(u => u.status === 'available').length;
+  const partial = floorUnits.filter(u => u.status === 'partial').length;
   const occupied = floorUnits.filter(u => u.status === 'occupied').length;
-  const reserved = floorUnits.filter(u => u.status === 'reserved').length;
   const totalBeds = floorUnits.reduce((sum, u) => sum + (u.beds || 0), 0);
+  const freeBeds = floorUnits.reduce((sum, u) => sum + (u.free || 0), 0);
   
   card.innerHTML = `
     <div class="floor-header">
       <h3>${floor.name}</h3>
-      <button class="btn-icon" onclick="deleteFloor(${floor.number})">
+      <button class="btn-icon" onclick="deleteFloorById(${floor.id})">
         <i class="fas fa-trash"></i> Delete Floor
       </button>
     </div>
     <div class="floor-stats">
       <span>Total Units: <strong>${floorUnits.length}</strong></span>
       <span>Total Beds: <strong>${totalBeds}</strong></span>
+      <span>Free Beds: <strong class="text-success">${freeBeds}</strong></span>
       <span>Available: <strong class="text-success">${available}</strong></span>
+      <span>Partially Filled: <strong class="text-warning">${partial}</strong></span>
       <span>Occupied: <strong class="text-danger">${occupied}</strong></span>
-      <span>Reserved: <strong class="text-warning">${reserved}</strong></span>
     </div>
     <div class="units-grid" id="floor${floor.number}Units"></div>
     <button class="btn-add-unit" onclick="openAddUnitModal(${floor.number})">
@@ -166,12 +249,13 @@ function createUnitBox(unit) {
   box.onclick = () => openUnitDetails(unit);
   
   const icon = unit.status === 'available' ? 'fa-check-circle' :
-               unit.status === 'occupied' ? 'fa-user' :
+                 (unit.status === 'occupied' || unit.status === 'partial') ? 'fa-user' :
                unit.status === 'reserved' ? 'fa-bookmark' : 'fa-wrench';
   
   box.innerHTML = `
     <i class="fas ${icon}"></i>
     <span>${unit.number}</span>
+    <small style="display:block;opacity:.8;margin-top:4px;">${unit.free}/${unit.beds} beds free</small>
   `;
   
   return box;
@@ -181,17 +265,20 @@ function updateStats() {
   const totalUnits = units.length;
   const totalBeds = units.reduce((sum, u) => sum + (u.beds || 0), 0);
   const available = units.filter(u => u.status === 'available').length;
+  const partial = units.filter(u => u.status === 'partial').length;
   const occupied = units.filter(u => u.status === 'occupied').length;
-  const reserved = units.filter(u => u.status === 'reserved').length;
   const maintenance = units.filter(u => u.status === 'maintenance').length;
+  const availableBeds = units.reduce((sum, u) => sum + (u.free || 0), 0);
   
   document.getElementById('totalUnits').textContent = totalUnits;
   document.getElementById('totalBeds').textContent = totalBeds;
+  const ab = document.getElementById('availableBeds');
+  if (ab) ab.textContent = availableBeds;
   document.getElementById('availableUnits').textContent = available;
   document.getElementById('occupiedUnits').textContent = occupied;
-  document.getElementById('reservedUnits').textContent = reserved;
+  const pu = document.getElementById('partiallyUnits');
+  if (pu) pu.textContent = partial;
   document.getElementById('maintenanceUnits').textContent = maintenance;
-  document.getElementById('intimatedUnits').textContent = 0; // Update when you have this data
 }
 
 function populateFloorFilters() {
@@ -205,7 +292,7 @@ function populateFloorFilters() {
     floorFilter.appendChild(option1);
     
     const option2 = document.createElement('option');
-    option2.value = floor.number;
+    option2.value = floor.id;
     option2.textContent = floor.name;
     unitFloorSelect.appendChild(option2);
   });
@@ -224,7 +311,10 @@ function closeCreateFloorModal() {
 function openAddUnitModal(floorNumber = null) {
   document.getElementById('addUnitModal').classList.add('active');
   if (floorNumber !== null) {
-    document.getElementById('unitFloorSelect').value = floorNumber;
+    const floor = floors.find(f => f.number === floorNumber);
+    if (floor) {
+      document.getElementById('unitFloorSelect').value = floor.id;
+    }
   }
 }
 
@@ -244,66 +334,92 @@ async function handleCreateFloor(e) {
   e.preventDefault();
   const formData = new FormData(e.target);
   
-  const newFloor = {
-    id: floors.length,
-    name: formData.get('floorName'),
-    number: parseInt(formData.get('floorNumber'))
-  };
+  const number = parseInt(formData.get('floorNumber'));
+  const name = formData.get('floorName');
   
-  // Check if floor number already exists
-  if (floors.some(f => f.number === newFloor.number)) {
-    showAlert('error', 'Floor number already exists');
-    return;
+  try {
+    await apiService.createFloor(currentPropertyId, { number, name });
+    closeCreateFloorModal();
+    showAlert('success', 'Floor created successfully');
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+    populateFloorFilters();
+  } catch (err) {
+    showAlert('error', err.message || 'Failed to create floor');
   }
-  
-  floors.push(newFloor);
-  renderFloorsAndUnits();
-  updateStats();
-  populateFloorFilters();
-  closeCreateFloorModal();
-  showAlert('success', 'Floor created successfully');
 }
 
 async function handleAddUnit(e) {
   e.preventDefault();
   const formData = new FormData(e.target);
   
-  const newUnit = {
-    id: units.length + 1,
-    floor: parseInt(formData.get('floor')),
-    number: formData.get('unitNumber'),
-    type: formData.get('unitType'),
-    beds: parseInt(formData.get('beds')),
-    rent: parseInt(formData.get('rent')),
-    status: 'available'
-  };
-  
-  // Check if unit number already exists on this floor
-  if (units.some(u => u.floor === newUnit.floor && u.number === newUnit.number)) {
-    showAlert('error', 'Unit number already exists on this floor');
-    return;
+  const floorId = parseInt(formData.get('floor'));
+  const code = formData.get('unitNumber');
+  const uiType = formData.get('unitType');
+  const beds = parseInt(formData.get('beds')) || 1;
+  const rent = parseInt(formData.get('rent')) || 0;
+
+  // Map UI to backend model (PG focus)
+  let type = 'ROOM';
+  let sharingType = 'PRIVATE';
+  let capacity = beds;
+  if (uiType === 'Shared') {
+    if (beds === 2) sharingType = 'DOUBLE';
+    else if (beds === 3) sharingType = 'TRIPLE';
+    else if (beds === 4) sharingType = 'QUAD';
+    else sharingType = 'CUSTOM';
+  } else {
+    sharingType = beds > 1 ? 'CUSTOM' : 'PRIVATE';
   }
-  
-  units.push(newUnit);
-  renderFloorsAndUnits();
-  updateStats();
-  closeAddUnitModal();
-  showAlert('success', 'Unit added successfully');
+
+  try {
+    await apiService.createUnit(currentPropertyId, {
+      floorId,
+      code,
+      type,
+      sharingType,
+      capacity,
+      genderPolicy: 'ANY',
+      rentAmount: rent,
+      depositAmount: null,
+      furnishedLevel: 'UNFURNISHED',
+      attributes: null
+    });
+    closeAddUnitModal();
+    showAlert('success', 'Unit added successfully');
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+  } catch (err) {
+    showAlert('error', err.message || 'Failed to add unit');
+  }
 }
 
-function deleteFloor(floorNumber) {
+async function deleteFloorById(floorId) {
   if (!confirm('Are you sure you want to delete this floor? All units on this floor will be deleted.')) {
     return;
   }
-  
-  // Remove floor and its units
-  floors = floors.filter(f => f.number !== floorNumber);
-  units = units.filter(u => u.floor !== floorNumber);
-  
-  renderFloorsAndUnits();
-  updateStats();
-  populateFloorFilters();
-  showAlert('success', 'Floor deleted successfully');
+  try {
+    await apiService.deleteFloor(floorId);
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+    populateFloorFilters();
+    showAlert('success', 'Floor deleted successfully');
+  } catch (err) {
+    showAlert('error', err.message || 'Failed to delete floor');
+  }
+}
+
+// Backward-compat: delete by floor number if called from static markup
+function deleteFloor(floorNumber) {
+  const f = floors.find(fl => fl.number === floorNumber);
+  if (!f) {
+    showAlert('error', 'Floor not found');
+    return;
+  }
+  deleteFloorById(f.id);
 }
 
 // Utility Functions
@@ -325,6 +441,161 @@ window.onclick = function(event) {
   }
 };
 
+// Tenants Section Functions
+async function loadTenants() {
+  try {
+    const tenantsData = await apiService.getTenants();
+    // Filter tenants for current property
+    tenants = tenantsData.filter(t => t.propertyId === parseInt(currentPropertyId));
+    renderTenants();
+  } catch (error) {
+    console.error('Failed to load tenants:', error);
+    showAlert('error', 'Failed to load tenants');
+  }
+}
+
+function renderTenants() {
+  const container = document.getElementById('tenantsListContainer');
+  
+  if (!tenants || tenants.length === 0) {
+    container.innerHTML = `
+      <div class="tenants-empty">
+        <i class="fas fa-users"></i>
+        <h3>No Tenants Yet</h3>
+        <p>Start by adding tenants to your property</p>
+        <button class="btn-primary" onclick="window.location.href='add-tenant.html?propertyId=${currentPropertyId}'">
+          <i class="fas fa-plus"></i> Add Tenant
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  tenants.forEach(tenant => {
+    const initials = getInitials(tenant.tenantName);
+    const floorName = getFloorName(tenant.floorId);
+    const unitName = getUnitName(tenant.unitId);
+    const bedInfo = tenant.bedIndex !== null && tenant.bedIndex !== undefined ? ` (Bed ${tenant.bedIndex})` : '';
+    const location = unitName ? `${unitName}${bedInfo}` : 'Not Assigned';
+    
+    html += `
+      <div class="tenant-item" data-tenant-id="${tenant.id}">
+        <div class="tenant-avatar">${initials}</div>
+        <div class="tenant-info">
+          <div class="tenant-detail">
+            <span class="tenant-label">Name</span>
+            <span class="tenant-value name">${tenant.tenantName || 'N/A'}</span>
+          </div>
+          <div class="tenant-detail">
+            <span class="tenant-label">Mobile Number</span>
+            <span class="tenant-value phone">${tenant.phoneNumber || 'N/A'}</span>
+          </div>
+          <div class="tenant-detail">
+            <span class="tenant-label">Floor</span>
+            <span class="tenant-value">${floorName}</span>
+          </div>
+          <div class="tenant-detail">
+            <span class="tenant-label">Unit / Room</span>
+            <span class="tenant-value">${location}</span>
+          </div>
+        </div>
+        <div class="tenant-actions">
+          <button class="btn-menu" onclick="toggleTenantMenu(${tenant.id})">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <div class="tenant-dropdown" id="tenantMenu-${tenant.id}">
+            <button onclick="editTenant(${tenant.id})">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="delete" onclick="removeTenant(${tenant.id})">
+              <i class="fas fa-trash"></i> Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+  
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.tenant-actions')) {
+      document.querySelectorAll('.tenant-dropdown').forEach(dropdown => {
+        dropdown.classList.remove('active');
+      });
+    }
+  });
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+function getFloorName(floorId) {
+  if (!floorId) return 'N/A';
+  const floor = floors.find(f => f.id === floorId);
+  return floor ? floor.name : 'N/A';
+}
+
+function getUnitName(unitId) {
+  if (!unitId) return null;
+  const unit = units.find(u => u.id === unitId);
+  return unit ? unit.roomNumber : null;
+}
+
+function toggleTenantMenu(tenantId) {
+  event.stopPropagation();
+  const menu = document.getElementById(`tenantMenu-${tenantId}`);
+  
+  // Close all other menus
+  document.querySelectorAll('.tenant-dropdown').forEach(dropdown => {
+    if (dropdown.id !== `tenantMenu-${tenantId}`) {
+      dropdown.classList.remove('active');
+    }
+  });
+  
+  menu.classList.toggle('active');
+}
+
+function editTenant(tenantId) {
+  // Will implement API later
+  console.log('Edit tenant:', tenantId);
+  showAlert('info', 'Edit functionality will be implemented soon');
+}
+
+function removeTenant(tenantId) {
+  // Will implement API later
+  console.log('Remove tenant:', tenantId);
+  if (confirm('Are you sure you want to remove this tenant?')) {
+    showAlert('info', 'Remove functionality will be implemented soon');
+  }
+}
+
+// Search functionality for tenants
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('searchTenant');
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const tenantItems = document.querySelectorAll('.tenant-item');
+      
+      tenantItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+  }
+});
+
 // Expose functions to window
 window.openCreateFloorModal = openCreateFloorModal;
 window.closeCreateFloorModal = closeCreateFloorModal;
@@ -333,5 +604,9 @@ window.closeAddUnitModal = closeAddUnitModal;
 window.handleCreateFloor = handleCreateFloor;
 window.handleAddUnit = handleAddUnit;
 window.deleteFloor = deleteFloor;
+window.deleteFloorById = deleteFloorById;
 window.loadPropertyConfig = loadPropertyConfig;
 window.openUnitDetails = openUnitDetails;
+window.toggleTenantMenu = toggleTenantMenu;
+window.editTenant = editTenant;
+window.removeTenant = removeTenant;

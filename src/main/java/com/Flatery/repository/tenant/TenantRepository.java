@@ -13,4 +13,9 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     boolean existsByTenantId(String tenantId);
     Optional<Tenant> findByPhoneNumber(String phoneNumber);
     Optional<Tenant> findByEmailAddress(String email);
+    
+    // Unit-based queries
+    long countByUnitIdAndLeaseEndDateIsNull(Long unitId);
+    List<Tenant> findByUnitId(Long unitId);
 }
+

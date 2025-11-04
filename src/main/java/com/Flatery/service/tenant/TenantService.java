@@ -8,6 +8,9 @@ import com.Flatery.model.User;
 import com.Flatery.model.property.Property;
 import com.Flatery.model.tenant.Tenant;
 import com.Flatery.repository.UserRepository;
+import com.Flatery.model.property.Unit;
+import com.Flatery.repository.property.UnitRepository;
+import com.Flatery.service.property.UnitService;
 import com.Flatery.repository.property.PropertyRepository;
 import com.Flatery.repository.tenant.TenantRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,8 @@ public class TenantService {
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UnitRepository unitRepository;
+    private final UnitService unitService;
 
     private static final String TENANT_PREFIX = "TEN";
     private final Random random = new SecureRandom();
@@ -62,6 +67,55 @@ public class TenantService {
     Tenant.TenantStatus status = parseStatusOrDefault(req.getStatus());
     tenant.setStatus(status);
 
+    // Optional: Assign to PG unit
+    if (req.getUnitId() != null) {
+        Unit unit = unitRepository.findById(req.getUnitId())
+                .orElseThrow(() -> new IllegalArgumentException("Unit not found"));
+
+        // Validate unit belongs to the same property
+        if (!unit.getPropertyId().equals(property.getId())) {
+            throw new IllegalArgumentException("Unit does not belong to the selected property");
+        }
+
+        // Validate owner owns the property of the unit (already verified via property above)
+
+        // Determine currently occupied beds (active tenancies with bed index)
+        var activeTenants = tenantRepository.findByUnitId(unit.getId()).stream()
+                .filter(t -> t.getLeaseEndDate() == null)
+                .toList();
+
+        // Compute bed assignment
+        Integer requestedBed = req.getBedIndex();
+        int capacity = unit.getCapacity() != null ? unit.getCapacity() : 1;
+        if (requestedBed != null) {
+            if (requestedBed < 1 || requestedBed > capacity) {
+                throw new IllegalArgumentException("Bed index must be between 1 and " + capacity);
+            }
+            boolean taken = activeTenants.stream()
+                    .anyMatch(t -> t.getBedIndex() != null && t.getBedIndex().equals(requestedBed));
+            if (taken) {
+                throw new IllegalArgumentException("Selected bed is already occupied");
+            }
+            tenant.setBedIndex(requestedBed);
+        } else {
+            // Auto-assign the first free bed
+            java.util.Set<Integer> occupied = activeTenants.stream()
+                    .map(Tenant::getBedIndex)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(java.util.stream.Collectors.toSet());
+            Integer free = null;
+            for (int i = 1; i <= capacity; i++) {
+                if (!occupied.contains(i)) { free = i; break; }
+            }
+            if (free == null) {
+                throw new IllegalArgumentException("No free beds available in this unit");
+            }
+            tenant.setBedIndex(free);
+        }
+        tenant.setUnitId(unit.getId());
+        tenant.setFloorId(unit.getFloorId());
+    }
+
     // Check if user already exists by phone or email
     User existing = null;
     if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
@@ -92,6 +146,11 @@ public class TenantService {
 
     tenant = tenantRepository.save(tenant);
 
+    // If assigned to a unit, recompute its occupancy status
+    if (tenant.getUnitId() != null) {
+        unitService.recomputeUnitStatus(tenant.getUnitId());
+    }
+
     if (existing == null) {
         User user = new User();
         user.setFirstName(req.getTenantName());
@@ -119,10 +178,22 @@ public class TenantService {
     public List<TenantSummary> getOwnerTenants(Long ownerId) {
         return tenantRepository.findByOwnerId(ownerId).stream()
                 .map(t -> new TenantSummary(
-                        t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
-                        t.getRentAmount(), t.getSecurityDeposit(), t.getPropertyId(), t.getPhoneNumber()
+            t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
+            t.getRentAmount(), t.getSecurityDeposit(), t.getPropertyId(), t.getPhoneNumber(),
+            t.getFloorId(), t.getUnitId(), t.getBedIndex()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TenantSummary> getTenantsByUnit(Long unitId) {
+    return tenantRepository.findByUnitId(unitId).stream()
+        .map(t -> new TenantSummary(
+            t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(),
+            t.getRentAmount(), t.getSecurityDeposit(), t.getPropertyId(), t.getPhoneNumber(),
+            t.getFloorId(), t.getUnitId(), t.getBedIndex()
+        ))
+        .collect(Collectors.toList());
     }
 
     private Tenant.TenantStatus parseStatusOrDefault(String status) {

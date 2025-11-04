@@ -163,18 +163,18 @@
             <span class="stat-value" id="totalBeds">0</span>
           </div>
         </div>
-        <div class="stat-card reserved">
-          <i class="fas fa-bookmark"></i>
+        <div class="stat-card available">
+          <i class="fas fa-bed"></i>
           <div class="stat-info">
-            <span class="stat-label">Reserved</span>
-            <span class="stat-value" id="reservedUnits">0</span>
+            <span class="stat-label">Available Beds</span>
+            <span class="stat-value" id="availableBeds">0</span>
           </div>
         </div>
-        <div class="stat-card intimated">
-          <i class="fas fa-bell"></i>
+        <div class="stat-card partial">
+          <i class="fas fa-user-friends"></i>
           <div class="stat-info">
-            <span class="stat-label">Reserved & Intimated</span>
-            <span class="stat-value" id="intimatedUnits">0</span>
+            <span class="stat-label">Partially Filled</span>
+            <span class="stat-value" id="partiallyUnits">0</span>
           </div>
         </div>
         <div class="stat-card available">
@@ -239,6 +239,24 @@
               <i class="fas fa-plus-circle"></i> Add Unit
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Tenants Section -->
+      <div class="tenants-section" style="display: none;">
+        <div class="section-header">
+          <h2>Tenants</h2>
+          <div class="section-actions">
+            <input type="text" id="searchTenant" placeholder="Search tenants..." class="search-input">
+            <button class="btn-search"><i class="fas fa-search"></i> Search</button>
+            <button class="btn-primary" onclick="window.location.href='add-tenant.html'">
+              <i class="fas fa-plus"></i> Add Tenant
+            </button>
+          </div>
+        </div>
+
+        <div class="tenants-list" id="tenantsListContainer">
+          <!-- Tenants will be dynamically loaded here -->
         </div>
       </div>
 

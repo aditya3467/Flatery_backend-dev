@@ -249,6 +249,77 @@ class ApiService {
         }
     }
 
+    // Floors API
+    async getFloors(propertyId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/floors`);
+        } catch (error) {
+            throw new Error('Failed to fetch floors: ' + error.message);
+        }
+    }
+
+    async createFloor(propertyId, { number, name }) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/floors`, {
+                method: 'POST',
+                body: JSON.stringify({ number, name })
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteFloor(floorId) {
+        try {
+            return await this.makeRequest(`/admin/properties/floors/${floorId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    // Units API
+    async getUnits(propertyId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/units`);
+        } catch (error) {
+            throw new Error('Failed to fetch units: ' + error.message);
+        }
+    }
+
+    async createUnit(propertyId, payload) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/units`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateUnitStatus(unitId, status) {
+        try {
+            return await this.makeRequest(`/admin/properties/units/${unitId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status })
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteUnit(unitId) {
+        try {
+            return await this.makeRequest(`/admin/properties/units/${unitId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     // Tenant Management API methods
     async addTenant(tenantData) {
         try {

@@ -75,17 +75,47 @@
         </div>
       </div>
 
-      <div class="form-row">
+        <div class="form-row">
         <div class="form-group" style="flex:1;">
           <label>Property</label>
-          <select id="propertyId" name="propertyId" required>
-            <option value="">Loading your properties...</option>
+          <select id="propertyId" name="propertyId" required onchange="loadPropertyUnits(this.value)">
+            <option value="">Select property</option>
           </select>
         </div>
-        <div class="form-group" style="flex:1;">
+        <div class="form-group" id="flatRoomGroup" style="flex:1;">
           <label>Flat / Room Number</label>
-          <input type="text" name="flatRoomNumber" required placeholder="e.g., A-302" />
+          <input type="text" name="flatRoomNumber" placeholder="e.g., A-302" />
         </div>
+      </div>
+
+      <!-- PG Unit assignment section (visible only for PG properties) -->
+      <div id="pgUnitSection" style="display:none; margin-top:12px; border:1px dashed #e5e7eb; padding:12px; border-radius:8px;">
+        <div style="font-weight:600; margin-bottom:8px;">Assign to a Unit (PG only)</div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Floor</label>
+            <select id="floorSelect">
+              <option value="">Select Floor</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Unit</label>
+            <select id="unitSelect" name="unitId">
+              <option value="">Select Unit</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Bed (optional)</label>
+            <input type="number" id="bedIndex" name="bedIndex" min="1" placeholder="Leave blank to auto-assign" />
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Unit Info</label>
+            <div id="unitStatusInfo" style="padding:8px; background:#fbfbfb; border-radius:6px;">Select a unit to see availability</div>
+          </div>
+        </div>
+        <div style="font-size:12px; color:#6b7280; margin-top:8px;">If you assign a unit above, the <strong>Flat / Room Number</strong> becomes optional.</div>
       </div>
 
       <div class="form-row">
@@ -154,3 +184,4 @@
   <div id="modals-container" data-component="components/modals.html"></div>
 </body>
 </html>
+
