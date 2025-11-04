@@ -4,7 +4,9 @@ import com.Flatery.dto.RegisterRequest;
 import com.Flatery.dto.AuthResponse;
 import com.Flatery.dto.LoginRequest;
 import com.Flatery.model.User;
+import com.Flatery.model.tenant.Tenant;
 import com.Flatery.repository.UserRepository;
+import com.Flatery.repository.tenant.TenantRepository;
 import com.Flatery.security.JwtService;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,6 +24,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserRepository userRepo;
     private final UserService userService;
+    private final TenantRepository tenantRepository;
 
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -43,6 +46,22 @@ public class AuthService {
         resp.setTokenType("Bearer");
         resp.setExpiresIn(expiresIn);
         resp.setRoles(roles);
+        
+        // Check if user is a tenant with temporary password
+        boolean requiresPasswordChange = false;
+        Tenant tenant = tenantRepository.findByPhoneNumber(user.getPhoneNumber())
+                .or(() -> tenantRepository.findByEmailAddress(user.getEmail()))
+                .orElse(null);
+        
+        if (tenant != null && tenant.getTemporaryPassword() != null && !tenant.getTemporaryPassword().isEmpty()) {
+            requiresPasswordChange = true;
+            // Clear the temporary password from database
+            tenant.setTemporaryPassword(null);
+            tenant.setPasswordChanged(true);
+            tenantRepository.save(tenant);
+        }
+        
+        resp.setRequiresPasswordChange(requiresPasswordChange);
         return resp;
     }
 
@@ -69,6 +88,22 @@ public class AuthService {
                 user.getPhoneNumber(),
                 roles
         );
+    }
+
+    public void changePassword(String token, String currentPassword, String newPassword) {
+        String username = jwtService.extractUsername(token);
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Verify current password
+        if (!org.springframework.security.crypto.bcrypt.BCrypt.checkpw(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+        
+        // Update password
+        user.setPassword(org.springframework.security.crypto.bcrypt.BCrypt.hashpw(newPassword, 
+                org.springframework.security.crypto.bcrypt.BCrypt.gensalt()));
+        userRepo.save(user);
     }
 
     public record UserDetailsResponse(
