@@ -72,6 +72,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  /**
+   * Attach Change Password form submit listener
+   */
+  const changePasswordForm = document.getElementById('changePasswordForm');
+  if (changePasswordForm) {
+    changePasswordForm.addEventListener('submit', handleChangePassword);
+  }
+
   // =========================
   // 🔹 MODAL TOGGLE HELPERS
   // =========================
@@ -257,6 +265,22 @@ function closeSignupModal() {
     document.body.style.overflow = ''; // Restore scrolling
 }
 
+function openChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.remove('active');
+    document.body.style.overflow = ''; // Restore scrolling
+    document.getElementById('changePasswordForm').reset();
+    const errorDiv = document.getElementById('changePasswordError');
+    if (errorDiv) errorDiv.style.display = 'none';
+}
+
+window.openChangePasswordModal = openChangePasswordModal;
+window.closeChangePasswordModal = closeChangePasswordModal;
+
 // 🔸 AUTH HANDLERS
 // ========================================================
 
@@ -362,6 +386,22 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     localStorage.setItem('username', username);
     localStorage.setItem('firstName', firstName);
     localStorage.setItem('roles', JSON.stringify(authResponse.roles)); // Store roles for redirection
+    
+    // Check if password change is required
+    if (authResponse.requiresPasswordChange) {
+        console.log('Password change required');
+        document.getElementById('loginModal')?.classList.remove('active');
+        document.getElementById('signupModal')?.classList.remove('active');
+        updateUIForLoggedInUser();
+        
+        // Show notification and open change password modal
+        showSuccess('Login successful! Please change your temporary password.');
+        setTimeout(() => {
+            openChangePasswordModal();
+        }, 500);
+        return;
+    }
+    
     showSuccess('Login successful!');
     updateUIForLoggedInUser();
     document.getElementById('loginModal')?.classList.remove('active');
@@ -578,4 +618,75 @@ function showSuccess(msg) {
 /** Shortcut for error message */
 function showError(msg) {
   showNotification(msg, 'error');
+}
+
+// Change Password Handler
+async function handleChangePassword(e) {
+  e.preventDefault();
+  const form = e.target;
+  const currentPassword = form.querySelector('[name="currentPassword"]').value;
+  const newPassword = form.querySelector('[name="newPassword"]').value;
+  const confirmPassword = form.querySelector('[name="confirmPassword"]').value;
+  const errorDiv = document.getElementById('changePasswordError');
+  const submitBtn = form.querySelector('button[type="submit"]');
+
+  // Clear previous error
+  if (errorDiv) errorDiv.style.display = 'none';
+
+  // Validate new password
+  if (newPassword.length < 6) {
+    if (errorDiv) {
+      errorDiv.textContent = 'New password must be at least 6 characters';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    if (errorDiv) {
+      errorDiv.textContent = 'New passwords do not match';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+
+  if (currentPassword === newPassword) {
+    if (errorDiv) {
+      errorDiv.textContent = 'New password must be different from current password';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+
+  showLoading(submitBtn);
+
+  try {
+    await apiService.changePassword(currentPassword, newPassword);
+    showSuccess('Password changed successfully! Redirecting...');
+    closeChangePasswordModal();
+    form.reset();
+    
+    // Redirect to appropriate dashboard after password change
+    const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+    setTimeout(() => {
+      if (roles.includes('USER')) {
+        window.location.href = '/frontend/tenant.html';
+      } else if (roles.includes('ADMIN')) {
+        window.location.href = '/frontend/Owner.html';
+      } else if (roles.includes('SUPERADMIN')) {
+        window.location.href = '/frontend/superadmin-dashboard.html';
+      } else {
+        window.location.href = '/frontend/index.html';
+      }
+    }, 1500);
+  } catch (error) {
+    const msg = error.message || 'Failed to change password';
+    if (errorDiv) {
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+    }
+    showError(msg);
+  } finally {
+    hideLoading(submitBtn);
+  }
 }

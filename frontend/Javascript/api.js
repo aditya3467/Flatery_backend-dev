@@ -249,6 +249,52 @@ class ApiService {
         }
     }
 
+    // Tenant Management API methods
+    async addTenant(tenantData) {
+        try {
+            return await this.makeRequest('/tenants', {
+                method: 'POST',
+                body: JSON.stringify(tenantData)
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getTenants() {
+        try {
+            return await this.makeRequest('/tenants');
+        } catch (error) {
+            throw new Error('Failed to fetch tenants: ' + error.message);
+        }
+    }
+
+    // User lookup for owners adding tenants
+    async findUser({ username, email, phone }) {
+        try {
+            const params = new URLSearchParams();
+            if (username) params.append('username', username);
+            if (email) params.append('email', email);
+            if (phone) params.append('phone', phone);
+            return await this.makeRequest(`/users/search?${params.toString()}`);
+        } catch (error) {
+            // surface 404 as an error for the caller to handle
+            throw error;
+        }
+    }
+
+    // Change password
+    async changePassword(currentPassword, newPassword) {
+        try {
+            return await this.makeRequest('/auth/change-password', {
+                method: 'POST',
+                body: JSON.stringify({ currentPassword, newPassword })
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     // Check if user is authenticated
     isAuthenticated() {
         return !!this.token;

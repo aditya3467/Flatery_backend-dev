@@ -42,13 +42,27 @@
     }
   });
 
+  // Listen for tenant added event and reload metrics
+  window.addEventListener('tenantAdded', async () => {
+    console.log('Tenant added event received, reloading metrics...');
+    await loadDashboardMetrics();
+  });
+
+  // Also reload when page becomes visible (user returns from another tab/page)
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden && apiService.isAuthenticated()) {
+      console.log('Page became visible, reloading metrics...');
+      await loadDashboardMetrics();
+    }
+  });
+
   async function loadDashboardMetrics() {
     try {
       const totalEl = document.getElementById('totalPropertiesCount');
-      if (!totalEl) return;
-
-      // Show a loading state briefly
-      totalEl.textContent = '…';
+      const tenantsEl = document.getElementById('activeTenantsCount');
+      
+      if (totalEl) totalEl.textContent = '…';
+      if (tenantsEl) tenantsEl.textContent = '…';
 
       // Fetch a minimal page to read totalElements
       // all=false -> only my properties; page=0; size=1 to reduce payload
@@ -56,11 +70,34 @@
 
       // Spring Data Page typically has totalElements; fallback to other shapes if customized
       const total = (page && (page.totalElements ?? page.total ?? page.total_items)) || 0;
-      totalEl.textContent = Number.isFinite(total) ? String(total) : '0';
+      if (totalEl) totalEl.textContent = Number.isFinite(total) ? String(total) : '0';
+
+      // Fetch active tenants count
+      try {
+        console.log('Fetching tenants from backend...');
+        const tenants = await apiService.getTenants();
+        console.log('Tenants response:', tenants);
+        console.log('Is array?', Array.isArray(tenants));
+        
+        const activeTenants = Array.isArray(tenants) 
+          ? tenants.filter(t => {
+              console.log('Tenant:', t.tenantName, 'Status:', t.status);
+              return t.status === 'ACTIVE';
+            }).length 
+          : 0;
+        
+        console.log('Active tenants count:', activeTenants);
+        if (tenantsEl) tenantsEl.textContent = String(activeTenants);
+      } catch (tenantErr) {
+        console.error('Failed to load tenants count:', tenantErr);
+        if (tenantsEl) tenantsEl.textContent = '0';
+      }
     } catch (err) {
       console.error('Failed to load dashboard metrics:', err);
       const totalEl = document.getElementById('totalPropertiesCount');
+      const tenantsEl = document.getElementById('activeTenantsCount');
       if (totalEl) totalEl.textContent = '0';
+      if (tenantsEl) tenantsEl.textContent = '0';
       throw err;
     }
   }
@@ -140,11 +177,14 @@
     // Get rent value
     const rent = property.expectedRent || property.rent || 0;
 
+    const isPG = (property.type || '').toString().toUpperCase() === 'PG';
+    const overlayLabel = isPG ? 'Manage PG' : 'Open Dashboard';
+
     card.innerHTML = `
       <div class="property-image" style="position:relative;">
         <img src="${imageUrl}" alt="${propertyTitle}" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'">
         <div class="manage-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease; pointer-events:none;">
-          <span style="color:#fff; font-size:24px; font-weight:700; text-transform:uppercase; letter-spacing:2px;">Manage</span>
+          <span style="color:#fff; font-size:24px; font-weight:700; text-transform:uppercase; letter-spacing:2px;">${overlayLabel}</span>
         </div>
       </div>
       <div class="property-details">
@@ -172,10 +212,15 @@
       });
     }
 
-    // Add click handler to view property details (card-level)
+      // Add click handler: PG -> property-config, others -> property-details (placeholder for future dashboards)
     card.style.cursor = 'pointer';
     card.addEventListener('click', () => {
-      window.location.href = `property-details.html?id=${property.id}`;
+        const type = (property.type || '').toString().toUpperCase();
+        if (type === 'PG') {
+          window.location.href = `property-config.html?id=${property.id}`;
+        } else {
+          window.location.href = `property-details.html?id=${property.id}`;
+        }
     });
 
     // Wire action buttons

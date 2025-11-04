@@ -171,4 +171,47 @@
         </p>
     </div>
 </div>
+
+<!--===== Change Password Modal =====-->
+<div class="login-modal" id="changePasswordModal">
+    <div class="modal-floating-shapes">
+        <div class="float-shape shape-1"></div>
+        <div class="float-shape shape-2"></div>
+        <div class="float-shape shape-3"></div>
+    </div>
+    
+    <div class="login-box">
+        <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
+        
+        <div class="modal-header">
+            <h2>Change Your Password</h2>
+            <p class="modal-subtitle">Update your password to keep your account secure.</p>
+        </div>
+        
+        <form class="modal-form" id="changePasswordForm">
+            <div class="form-group">
+                <label for="current-password">Current Password</label>
+                <input type="password" id="current-password" name="currentPassword" placeholder="••••••••" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="new-password">New Password</label>
+                <input type="password" id="new-password" name="newPassword" placeholder="••••••••" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm-password">Confirm New Password</label>
+                <input type="password" id="confirm-password" name="confirmPassword" placeholder="••••••••" required minlength="6">
+            </div>
+            
+            <div id="changePasswordError" class="error-message" style="display:none; color:#f44336; font-size:14px; margin-bottom:12px;"></div>
+            
+            <button type="submit" class="login-btn">Change Password</button>
+        </form>
+        
+        <p class="signup-link">
+            <a href="#" onclick="closeChangePasswordModal()">Cancel</a>
+        </p>
+    </div>
+</div>
 <!--===== Modals End =====-->

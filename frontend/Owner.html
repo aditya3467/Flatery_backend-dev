@@ -26,6 +26,16 @@
         <div class="dashboard-container">
             <h2 class="dashboard-title">Owner Dashboard</h2>
             <p class="dashboard-subtitle">Manage your properties and tenant requests efficiently.</p>
+            <div class="quick-actions" style="margin: 16px 0 8px; display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="add-property.html" class="btn primary" style="padding: 10px 14px; background:#007bff; color:#fff; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                    <i class="fas fa-plus-circle"></i>
+                    Add Property
+                </a>
+                <a href="add-tenant.html" class="btn success" style="padding: 10px 14px; background:#28a745; color:#fff; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                    <i class="fas fa-user-plus"></i>
+                    Add Tenant
+                </a>
+            </div>
             <div class="dashboard-cards">
                 <div class="dashboard-card">
                     <span class="card-label">Total Properties</span>
@@ -33,7 +43,7 @@
                 </div>
                 <div class="dashboard-card">
                     <span class="card-label">Active Tenants</span>
-                    <span class="card-value">22</span>
+                    <span class="card-value" id="activeTenantsCount">0</span>
                 </div>
                 <div class="dashboard-card">
                     <span class="card-label">Pending Requests</span>
