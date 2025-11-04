@@ -126,7 +126,13 @@ async function handleSubmit(e) {
     document.getElementById('successMessage').style.display = 'block';
     document.getElementById('displayTenantId').textContent = res.tenantId;
     document.getElementById('displayUsername').textContent = res.username || res.tenantId;
-    document.getElementById('displayPassword').textContent = res.temporaryPassword || '(generated)';
+    const passwordRow = document.getElementById('passwordRow');
+    if (res.temporaryPassword) {
+      document.getElementById('displayPassword').textContent = res.temporaryPassword;
+      passwordRow.style.display = 'block';
+    } else {
+      passwordRow.style.display = 'none';
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     // Optionally trigger a custom event to notify other components
@@ -162,3 +168,75 @@ function generateTempPassword() {
   if (input) input.value = s;
 }
 window.generateTempPassword = generateTempPassword;
+
+// Existing user toggle & lookup
+let existingUser = null;
+
+function onExistingToggleChange(checked) {
+  const lookup = document.getElementById('existingLookup');
+  const tempRow = document.getElementById('tempPasswordRow');
+  const tempInput = document.querySelector('input[name="temporaryPassword"]');
+  if (checked) {
+    lookup.style.display = 'block';
+    tempRow.style.display = 'none';
+    if (tempInput) tempInput.value = '';
+  } else {
+    lookup.style.display = 'none';
+    tempRow.style.display = 'flex';
+    existingUser = null;
+    // Re-enable fields
+    setFormFieldsDisabled(false);
+    document.getElementById('lookupResult').style.display = 'none';
+  }
+}
+
+async function lookupExistingUser() {
+  try {
+    const phone = (document.getElementById('lookupPhone').value || '').trim();
+    const email = (document.getElementById('lookupEmail').value || '').trim();
+    const username = (document.getElementById('lookupUsername').value || '').trim();
+    if (!phone && !email && !username) {
+      return showAlert('error', 'Enter phone, email, or username to lookup');
+    }
+    hideAlert();
+    const user = await apiService.findUser({ phone, email, username });
+    existingUser = user;
+    // Autofill
+    const name = [user.firstName || '', user.lastName || ''].filter(Boolean).join(' ').trim();
+    if (name) document.querySelector('input[name="tenantName"]').value = name;
+    if (user.phoneNumber) document.querySelector('input[name="phoneNumber"]').value = user.phoneNumber;
+    if (user.email) document.querySelector('input[name="emailAddress"]').value = user.email;
+    // Lock fields to avoid accidental changes
+    setFormFieldsDisabled(true, ['propertyId','flatRoomNumber','rentAmount','securityDeposit','rentDueDateDate','leaseStartDate','leaseEndDate','status']);
+
+    const resEl = document.getElementById('lookupResult');
+    resEl.style.display = 'block';
+    resEl.textContent = `Found user: ${user.username} (${user.email || 'no email'})`;
+  } catch (err) {
+    console.warn('Lookup failed', err);
+    existingUser = null;
+    const resEl = document.getElementById('lookupResult');
+    resEl.style.display = 'block';
+    if (err && err.status === 404) {
+      resEl.textContent = 'No matching user found.';
+    } else if (err && err.message) {
+      resEl.textContent = 'Lookup failed: ' + err.message;
+    } else {
+      resEl.textContent = 'Lookup failed. Please try again.';
+    }
+  }
+}
+
+function setFormFieldsDisabled(disabled, exceptions = []) {
+  const form = document.getElementById('addTenantForm');
+  const except = new Set(exceptions);
+  Array.from(form.elements).forEach(el => {
+    if (el.name && except.has(el.name)) return;
+    // keep buttons active
+    if (el.tagName === 'BUTTON') return;
+    el.disabled = disabled;
+  });
+}
+
+window.onExistingToggleChange = onExistingToggleChange;
+window.lookupExistingUser = lookupExistingUser;

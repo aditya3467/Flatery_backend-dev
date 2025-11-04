@@ -14,13 +14,51 @@
 <body>
   <div id="navbar-container" data-component="components/navbar.html"></div>
 
-  <section class="form-section" style="max-width: 720px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.06);">
-    <h2 style="margin-bottom: 8px;">Add Tenant</h2>
-    <p style="color:#666; margin-bottom: 20px;">Create a tenant account linked to one of your properties.</p>
+  <!-- Hero Header Section -->
+  <section class="add-tenant-hero">
+    <div class="container">
+      <h1 class="hero-title">Add New Tenant</h1>
+      <p class="hero-subtitle">Create and manage tenant accounts linked to your properties</p>
+    </div>
+  </section>
 
-    <div id="alertMessage" class="alert" style="display:none;"></div>
+  <section class="section-padding add-tenant-page">
+    <div class="container">
+      <div class="form-card form-section">
+        <h2 class="page-title">Add Tenant</h2>
+        <p class="page-subtitle">Create a tenant account linked to one of your properties.</p>
 
-    <form id="addTenantForm" onsubmit="handleSubmit(event)">
+        <div id="alertMessage" class="alert" style="display:none;"></div>
+
+        <form id="addTenantForm" onsubmit="handleSubmit(event)">
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="existingToggle" onchange="onExistingToggleChange(this.checked)"> Tenant already registered?
+        </label>
+        <small style="color:#666;">If the tenant already has an account, look them up by phone or email to autofill details. We'll not create a temporary password.</small>
+      </div>
+
+  <div id="existingLookup" class="lookup-box" style="display:none;">
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Lookup by Phone</label>
+            <input type="text" id="lookupPhone" placeholder="10-digit phone" maxlength="10" />
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Lookup by Email</label>
+            <input type="email" id="lookupEmail" placeholder="name@example.com" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Lookup by Username (optional)</label>
+            <input type="text" id="lookupUsername" placeholder="username" />
+          </div>
+        </div>
+        <button type="button" class="btn-2" onclick="lookupExistingUser()">Lookup</button>
+        <div id="lookupResult" style="display:none; margin-top:8px; font-size:14px; color:#333;"></div>
+      </div>
+
       <div class="form-group">
         <label>Tenant Name</label>
         <input type="text" name="tenantName" required placeholder="Full name" />
@@ -87,27 +125,29 @@
         </div>
       </div>
 
-      <div class="form-row">
+      <div class="form-row" id="tempPasswordRow">
         <div class="form-group" style="flex:1;">
           <label>Temporary Password (optional)</label>
-          <div style="display:flex; gap:8px;">
+          <div class="inline-row">
             <input type="text" name="temporaryPassword" placeholder="Leave empty to auto-generate" style="flex:1;" />
-            <button type="button" class="btn" onclick="generateTempPassword()">Generate</button>
+            <button type="button" class="btn-2" onclick="generateTempPassword()">Generate</button>
           </div>
         </div>
       </div>
 
-      <button type="submit" class="btn primary">Create Tenant</button>
+      <button type="submit" class="btn-1">Create Tenant</button>
     </form>
 
-    <div id="loadingIndicator" style="display:none; padding: 20px;">Creating tenant...</div>
+    <div id="loadingIndicator" class="loading" style="display:none;">Creating tenant...</div>
 
-    <div id="successMessage" style="display:none; padding: 16px; border: 1px solid #e1f3e8; background:#f6fffa; border-radius: 8px; margin-top: 16px;">
+    <div id="successMessage" class="success-card" style="display:none;">
       <h3>Tenant Created</h3>
       <p><strong>Tenant ID:</strong> <span id="displayTenantId"></span></p>
       <p><strong>Username:</strong> <span id="displayUsername"></span></p>
-      <p><strong>Temporary Password:</strong> <span id="displayPassword"></span></p>
+      <p id="passwordRow"><strong>Temporary Password:</strong> <span id="displayPassword"></span></p>
       <p style="color:#666; font-size: 14px;">Share these credentials with the tenant. The password will only be shown once.</p>
+    </div>
+      </div>
     </div>
   </section>
 

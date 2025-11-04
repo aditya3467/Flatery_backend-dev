@@ -59,38 +59,59 @@ public class TenantService {
     if (req.getLeaseEndDate() != null && !req.getLeaseEndDate().isBlank()) {
         tenant.setLeaseEndDate(java.time.LocalDate.parse(req.getLeaseEndDate()));
     }
-    String rawPassword = (req.getTemporaryPassword() != null && !req.getTemporaryPassword().isBlank())
-        ? req.getTemporaryPassword()
-        : generateTemporaryPassword();
-    tenant.setTemporaryPassword(rawPassword);
-    tenant.setPasswordChanged(false);
     Tenant.TenantStatus status = parseStatusOrDefault(req.getStatus());
     tenant.setStatus(status);
+
+    // Check if user already exists by phone or email
+    User existing = null;
+    if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
+        existing = userRepository.findByPhoneNumber(req.getPhoneNumber().trim()).orElse(null);
+    }
+    if (existing == null && req.getEmailAddress() != null && !req.getEmailAddress().isBlank()) {
+        existing = userRepository.findByEmail(req.getEmailAddress().trim()).orElse(null);
+    }
+
+    String username;
+    String rawPassword = null;
+    if (existing != null) {
+        // Link to existing user account: do not create temp password
+        tenant.setTemporaryPassword(null);
+        tenant.setPasswordChanged(true);
+        username = existing.getUsername();
+    } else {
+        // Create a new user with a temporary password
+        rawPassword = (req.getTemporaryPassword() != null && !req.getTemporaryPassword().isBlank())
+                ? req.getTemporaryPassword()
+                : generateTemporaryPassword();
+        tenant.setTemporaryPassword(rawPassword);
+        tenant.setPasswordChanged(false);
+        username = (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank())
+                ? req.getPhoneNumber()
+                : tenant.getTenantId().toLowerCase(Locale.ROOT);
+    }
+
     tenant = tenantRepository.save(tenant);
 
-    // Create user account for tenant
-    String username = (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank())
-        ? req.getPhoneNumber()
-        : tenant.getTenantId().toLowerCase(Locale.ROOT);
+    if (existing == null) {
+        User user = new User();
+        user.setFirstName(req.getTenantName());
+        user.setLastName("");
+        user.setUsername(username.toLowerCase(Locale.ROOT));
+        // Use provided email or synthetic to satisfy unique + not null
+        String email = (req.getEmailAddress() != null && !req.getEmailAddress().isBlank())
+                ? req.getEmailAddress()
+                : (tenant.getTenantId().toLowerCase(Locale.ROOT) + "@tenant.local");
+        user.setEmail(email);
+        user.setPhoneNumber(req.getPhoneNumber());
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRoles(Set.of(RoleName.USER));
+        userRepository.save(user);
+    }
 
-    User user = new User();
-    user.setFirstName(req.getTenantName());
-    user.setLastName("");
-    user.setUsername(username.toLowerCase(Locale.ROOT));
-    // Use provided email or synthetic to satisfy unique + not null
-    String email = (req.getEmailAddress() != null && !req.getEmailAddress().isBlank())
-        ? req.getEmailAddress()
-        : (tenant.getTenantId().toLowerCase(Locale.ROOT) + "@tenant.local");
-    user.setEmail(email);
-    user.setPhoneNumber(req.getPhoneNumber());
-    user.setPassword(passwordEncoder.encode(rawPassword));
-    user.setRoles(Set.of(RoleName.USER));
-    userRepository.save(user);
-
-    // Build response with credentials (not persisted beyond entity field copy here)
+    // Build response
     TenantResponse response = TenantResponse.of(tenant);
     response.setUsername(username);
-    response.setTemporaryPassword(rawPassword);
+    response.setTemporaryPassword(rawPassword); // null when existing user
         return response;
     }
 
