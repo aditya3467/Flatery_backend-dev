@@ -545,7 +545,7 @@ function getFloorName(floorId) {
 function getUnitName(unitId) {
   if (!unitId) return null;
   const unit = units.find(u => u.id === unitId);
-  return unit ? unit.roomNumber : null;
+  return unit ? unit.number : null;
 }
 
 function toggleTenantMenu(tenantId) {
