@@ -268,6 +268,15 @@ function closeSignupModal() {
 function openChangePasswordModal() {
     document.getElementById('changePasswordModal').classList.add('active');
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    
+    // Ensure event listener is attached
+    const form = document.getElementById('changePasswordForm');
+    if (form) {
+        // Remove any existing listeners to prevent duplicates
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        newForm.addEventListener('submit', handleChangePassword);
+    }
 }
 
 function closeChangePasswordModal() {
@@ -389,10 +398,14 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     
     // Check if password change is required
     if (authResponse.requiresPasswordChange) {
-        console.log('Password change required');
+        console.log('Password change required - new tenant detected');
         document.getElementById('loginModal')?.classList.remove('active');
         document.getElementById('signupModal')?.classList.remove('active');
         updateUIForLoggedInUser();
+        
+        // Mark as new tenant who needs to complete profile
+        localStorage.removeItem('profileCompleted');
+        localStorage.removeItem('profilePromptSeen');
         
         // Show notification and open change password modal
         showSuccess('Login successful! Please change your temporary password.');

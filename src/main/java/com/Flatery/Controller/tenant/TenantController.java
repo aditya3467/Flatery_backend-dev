@@ -44,6 +44,13 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.getOwnerTenants(ownerId));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<TenantSummary> getCurrentTenantInfo(Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
+        return ResponseEntity.ok(tenantService.getCurrentTenantInfo(username));
+    }
+
     // Debug/Utility: list tenants for a specific unit to verify occupancy
     @GetMapping("/by-unit/{unitId}")
     public ResponseEntity<List<TenantSummary>> getTenantsByUnit(

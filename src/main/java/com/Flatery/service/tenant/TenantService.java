@@ -179,8 +179,11 @@ public class TenantService {
         return tenantRepository.findByOwnerId(ownerId).stream()
                 .map(t -> new TenantSummary(
             t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
-            t.getRentAmount(), t.getSecurityDeposit(), t.getPropertyId(), t.getPhoneNumber(),
-            t.getFloorId(), t.getUnitId(), t.getBedIndex()
+            t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
+            t.getFloorId(), t.getUnitId(), t.getBedIndex(),
+            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+            t.getEmailAddress(),
+            t.getFlatRoomNumber()
                 ))
                 .collect(Collectors.toList());
     }
@@ -190,8 +193,11 @@ public class TenantService {
     return tenantRepository.findByUnitId(unitId).stream()
         .map(t -> new TenantSummary(
             t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(),
-            t.getRentAmount(), t.getSecurityDeposit(), t.getPropertyId(), t.getPhoneNumber(),
-            t.getFloorId(), t.getUnitId(), t.getBedIndex()
+            t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
+            t.getFloorId(), t.getUnitId(), t.getBedIndex(),
+            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+            t.getEmailAddress(),
+            t.getFlatRoomNumber()
         ))
         .collect(Collectors.toList());
     }
@@ -205,6 +211,32 @@ public class TenantService {
         } catch (IllegalArgumentException ex) {
             return Tenant.TenantStatus.ACTIVE;
         }
+    }
+
+    /**
+     * Get current tenant's information by username (phone number)
+     */
+    public TenantSummary getCurrentTenantInfo(String username) {
+        Tenant tenant = tenantRepository.findByPhoneNumber(username)
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found for user: " + username));
+        
+        return new TenantSummary(
+                tenant.getId(),
+                tenant.getTenantId(),
+                tenant.getTenantName(),
+                tenant.getStatus().name(),
+                tenant.getRentAmount(),
+                tenant.getSecurityDeposit(),
+                tenant.getRentDueDate(),
+                tenant.getPropertyId(),
+                tenant.getPhoneNumber(),
+                tenant.getFloorId(),
+                tenant.getUnitId(),
+                tenant.getBedIndex(),
+                tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null,
+                tenant.getEmailAddress(),
+                tenant.getFlatRoomNumber()
+        );
     }
 
     private String generateTenantId() {

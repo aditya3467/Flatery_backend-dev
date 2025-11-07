@@ -18,7 +18,7 @@
         <form class="modal-form">
             <div class="form-group">
                 <label for="login-username">Email or Username</label>
-                <input type="text" id="login-username" name="username" placeholder="you@example.com" required>
+                <input type="text" id="login-username" name="username" placeholder="you@example.com" required autocomplete="username">
             </div>
             
             <div class="form-group">
@@ -26,7 +26,7 @@
                     <label for="login-password">Password</label>
                     <a href="#" class="forgot-link">Forgot password?</a>
                 </div>
-                <input type="password" id="login-password" name="password" placeholder="••••••••" required minlength="6" maxlength="100">
+                <input type="password" id="login-password" name="password" placeholder="••••••••" required minlength="6" maxlength="100" autocomplete="current-password">
             </div>
             
             <button type="submit" class="login-btn">Log In</button>
@@ -188,20 +188,21 @@
             <p class="modal-subtitle">Update your password to keep your account secure.</p>
         </div>
         
-        <form class="modal-form" id="changePasswordForm">
+        
+        <form class="modal-form" id="changePasswordForm" method="POST" onsubmit="return false;">
             <div class="form-group">
                 <label for="current-password">Current Password</label>
-                <input type="password" id="current-password" name="currentPassword" placeholder="••••••••" required minlength="6">
+                <input type="password" id="current-password" name="currentPassword" placeholder="••••••••" required minlength="6" autocomplete="current-password">
             </div>
             
             <div class="form-group">
                 <label for="new-password">New Password</label>
-                <input type="password" id="new-password" name="newPassword" placeholder="••••••••" required minlength="6">
+                <input type="password" id="new-password" name="newPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
             </div>
             
             <div class="form-group">
                 <label for="confirm-password">Confirm New Password</label>
-                <input type="password" id="confirm-password" name="confirmPassword" placeholder="••••••••" required minlength="6">
+                <input type="password" id="confirm-password" name="confirmPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
             </div>
             
             <div id="changePasswordError" class="error-message" style="display:none; color:#f44336; font-size:14px; margin-bottom:12px;"></div>
@@ -210,8 +211,9 @@
         </form>
         
         <p class="signup-link">
-            <a href="#" onclick="closeChangePasswordModal()">Cancel</a>
+            <a href="#" onclick="closeChangePasswordModal(); return false;">Cancel</a>
         </p>
     </div>
 </div>
 <!--===== Modals End =====-->
+
