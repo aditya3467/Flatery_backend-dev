@@ -375,6 +375,95 @@ class ApiService {
     getToken() {
         return this.token;
     }
+
+    // ============================
+    // TENANT DASHBOARD APIs
+    // ============================
+
+    // Get current tenant's active tenancy summary
+    async getCurrentTenantSummary() {
+        return this.makeRequest('/tenants/me', {
+            method: 'GET'
+        });
+    }
+
+    // Get current tenant's unit details
+    async getTenantUnit() {
+        return this.makeRequest('/tenants/me/unit', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's active stay details
+    async getTenantActiveStay() {
+        return this.makeRequest('/tenants/me/active-stay', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's payment history
+    async getTenantPaymentHistory() {
+        return this.makeRequest('/tenants/me/payments', {
+            method: 'GET'
+        });
+    }
+
+    // Upload payment proof
+    async uploadPaymentProof(formData) {
+        const url = `${this.baseURL}/tenants/me/payment-proof`;
+        const config = {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.token}`
+            },
+            body: formData
+        };
+        
+        const response = await fetch(url, config);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to upload payment proof');
+        }
+        
+        return response.json();
+    }
+
+    // Get tenant unit details
+    async getTenantUnit() {
+        return this.makeRequest('/tenants/me/unit', {
+            method: 'GET'
+        });
+    }
+
+    // Get comprehensive tenant property details
+    async getTenantPropertyDetails() {
+        return this.makeRequest('/tenants/me/property', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant documents
+    async getTenantDocuments() {
+        return this.makeRequest('/tenants/me/documents', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant complaints
+    async getTenantComplaints() {
+        return this.makeRequest('/tenants/me/complaints', {
+            method: 'GET'
+        });
+    }
+
+    // Submit new complaint
+    async submitComplaint(complaintData) {
+        return this.makeRequest('/tenants/me/complaints', {
+            method: 'POST',
+            body: JSON.stringify(complaintData)
+        });
+    }
 }
 
 // Create global API service instance
