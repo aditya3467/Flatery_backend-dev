@@ -1,5 +1,6 @@
 <!--===== Login Modal =====-->
 <div class="login-modal" id="loginModal">
+<<<<<<< HEAD
     <!-- Floating Shapes Background -->
     <div class="modal-floating-shapes">
         <div class="float-shape shape-1"></div>
@@ -63,11 +64,25 @@
         <p class="signup-link">
             Don't have an account? <a href="#">Sign up</a>
         </p>
+=======
+    <div class="login-box">
+        <button class="close-btn" onclick="closeLoginModal()">&times;</button>
+        <h2>Login to Flatery</h2>
+        <form>
+            <input type="text" name="username" placeholder="Username or Email" required>
+            <input type="password" name="password" placeholder="Password (min 6 characters)" required minlength="6" maxlength="100">
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+        <div class="signup-link">
+            Not registered? <a href="#">Sign up</a>
+        </div>
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     </div>
 </div>
 
 <!--===== Signup Modal =====-->
 <div class="signup-modal" id="signupModal">
+<<<<<<< HEAD
     <!-- Floating Shapes Background -->
     <div class="modal-floating-shapes">
         <div class="float-shape shape-1"></div>
@@ -217,3 +232,36 @@
 </div>
 <!--===== Modals End =====-->
 
+=======
+    <div class="signup-box">
+        <button class="close-btn" onclick="closeSignupModal()">&times;</button>
+        <h2>Sign Up for Flatery</h2>
+        <form>
+            <div class="name-row">
+                <input type="text" name="firstName" placeholder="First name" required>
+                <input type="text" name="lastName" placeholder="Last name" required>
+            </div>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="text" name="phoneNumber" placeholder="Phone (optional)">
+            <input type="password" name="password" placeholder="Password (min 6 characters)" required minlength="6" maxlength="100">
+            <fieldset class="role-selection">
+                <legend>Sign up as a:</legend>
+                <div class="role-options">
+                    <label>
+                        <input type="radio" name="role" value="USER" checked> Tenant
+                    </label>
+                    <label>
+                        <input type="radio" name="role" value="ADMIN"> Owner
+                    </label>
+                </div>
+            </fieldset>
+            <button type="submit" class="signup-btn">Sign Up</button>
+        </form>
+        <div class="login-link">
+            Already have an account? <a href="#" id="showLogin">Login</a>
+        </div>
+    </div>
+</div>
+<!--===== Modals End =====-->
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f

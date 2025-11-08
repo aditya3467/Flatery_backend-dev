@@ -1,5 +1,6 @@
 package com.Flatery.service.property;
 
+<<<<<<< HEAD
 import com.Flatery.model.property.PropertyImage;
 import com.Flatery.repository.property.PropertyImageRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +43,18 @@ public class PropertyImageService {
         
         // Delete records from database
         propertyImageRepository.deleteAll(images);
+=======
+import org.springframework.stereotype.Service;
+
+@Service
+public class PropertyImageService {
+
+    public String getPrimaryImageUrl(Long propertyId) {
+        return null; // implement in Phase 2
+    }
+
+    public void deleteAllForProperty(Long propertyId) {
+        // implement in Phase 2
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
 }

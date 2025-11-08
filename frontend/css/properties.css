@@ -1,14 +1,22 @@
 /* ===== Properties Listing Page Styles ===== */
 
 .properties-section {
+<<<<<<< HEAD
     padding: 120px 30px 80px;
+=======
+    padding: 120px 20px 80px;
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
 }
 
 .properties-section .container {
+<<<<<<< HEAD
     max-width: 100%;
     width: 100%;
+=======
+    max-width: 1400px;
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     margin: 0 auto;
 }
 
@@ -111,7 +119,11 @@
 /* Properties Grid */
 .properties-grid {
     display: grid;
+<<<<<<< HEAD
     grid-template-columns: repeat(4, 1fr);
+=======
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     gap: 30px;
     margin-bottom: 40px;
 }
@@ -163,7 +175,10 @@
 /* Property Card */
 .property-card {
     background: var(--white);
+<<<<<<< HEAD
     width: 430px;
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
@@ -205,6 +220,7 @@
     font-weight: 600;
 }
 
+<<<<<<< HEAD
 .favorite-btn {
     position: absolute;
     top: 15px;
@@ -242,6 +258,8 @@
     transform: scale(0.95);
 }
 
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 .property-content {
     padding: 20px;
 }
@@ -253,7 +271,10 @@
     font-weight: 600;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+<<<<<<< HEAD
     line-clamp: 2;
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -293,6 +314,7 @@
     font-size: 1rem;
 }
 
+<<<<<<< HEAD
 .property-info-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -341,6 +363,8 @@
     font-weight: 600;
 }
 
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 .property-amenities {
     display: flex;
     flex-wrap: wrap;
@@ -461,6 +485,7 @@
 }
 
 /* Responsive Design */
+<<<<<<< HEAD
 @media (max-width: 1400px) {
     .properties-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -471,6 +496,11 @@
 @media (max-width: 1024px) {
     .properties-grid {
         grid-template-columns: repeat(2, 1fr);
+=======
+@media (max-width: 1024px) {
+    .properties-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
         gap: 25px;
     }
 }

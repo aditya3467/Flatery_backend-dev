@@ -135,11 +135,16 @@ class ApiService {
 
     async createProperty(propertyData) {
         try {
+<<<<<<< HEAD
             return await this.makeRequest('/admin/properties', {
+=======
+            return await this.makeRequest('/properties', {
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
                 method: 'POST',
                 body: JSON.stringify(propertyData)
             });
         } catch (error) {
+<<<<<<< HEAD
             throw error; // Re-throw original error to preserve status and message
         }
     }
@@ -363,6 +368,9 @@ class ApiService {
             });
         } catch (error) {
             throw error;
+=======
+            throw new Error('Failed to create property: ' + error.message);
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
         }
     }
 
@@ -375,6 +383,7 @@ class ApiService {
     getToken() {
         return this.token;
     }
+<<<<<<< HEAD
 
     // ============================
     // TENANT DASHBOARD APIs
@@ -464,6 +473,8 @@ class ApiService {
             body: JSON.stringify(complaintData)
         });
     }
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 }
 
 // Create global API service instance

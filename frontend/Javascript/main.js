@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+<<<<<<< HEAD
   /**
    * Attach Change Password form submit listener
    */
@@ -80,6 +81,8 @@ document.addEventListener('DOMContentLoaded', function () {
     changePasswordForm.addEventListener('submit', handleChangePassword);
   }
 
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   // =========================
   // 🔹 MODAL TOGGLE HELPERS
   // =========================
@@ -94,8 +97,11 @@ document.addEventListener('DOMContentLoaded', function () {
   function toggleModals(hideId, showId) {
     document.getElementById(hideId)?.classList.remove('active');
     document.getElementById(showId)?.classList.add('active');
+<<<<<<< HEAD
     // Keep body overflow hidden when switching between modals
     document.body.style.overflow = 'hidden';
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   }
 
   // Switch from login → signup
@@ -251,17 +257,24 @@ function openLoginModal(e) {
     // Only open login modal if user is NOT logged in
     if (!apiService.isAuthenticated()) {
         document.getElementById('loginModal').classList.add('active');
+<<<<<<< HEAD
         document.body.style.overflow = 'hidden'; // Prevent background scrolling
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
 }
 
 function closeLoginModal() {
     document.getElementById('loginModal').classList.remove('active');
+<<<<<<< HEAD
     document.body.style.overflow = ''; // Restore scrolling
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 }
 
 function closeSignupModal() {
     document.getElementById('signupModal').classList.remove('active');
+<<<<<<< HEAD
     document.body.style.overflow = ''; // Restore scrolling
 }
 
@@ -290,6 +303,10 @@ function closeChangePasswordModal() {
 window.openChangePasswordModal = openChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
 
+=======
+}
+
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 // 🔸 AUTH HANDLERS
 // ========================================================
 
@@ -382,6 +399,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
 
   try {
     const authResponse = await apiService.login({ username, password });
+<<<<<<< HEAD
     
     // Fetch user details to get firstName
     const userDetails = await apiService.getCurrentUser();
@@ -415,6 +433,12 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return;
     }
     
+=======
+    // Store user data in localStorage
+    localStorage.setItem('username', username);
+    localStorage.setItem('firstName', authResponse.firstName || username); // Store first name
+    localStorage.setItem('roles', JSON.stringify(authResponse.roles)); // Store roles for redirection
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     showSuccess('Login successful!');
     updateUIForLoggedInUser();
     document.getElementById('loginModal')?.classList.remove('active');
@@ -423,6 +447,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     document.getElementById('signupModal')?.classList.remove('active');
 
     const roles = authResponse.roles || [];
+<<<<<<< HEAD
     console.log('User roles:', roles); // Debug log
     console.log('Full auth response:', authResponse); // Debug log
     
@@ -443,6 +468,10 @@ async function handleLogin(e) { // e can be a form event or an object with crede
             window.location.href = '/frontend/tenant.html';
         }, 100);
         return;
+=======
+    if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
+        window.location.href = 'Owner.html';
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
   } catch (error) {
     showError(error.message || 'Login failed. Please try again.');
@@ -517,7 +546,10 @@ async function handleLogout() {
 function updateUIForLoggedInUser() {
   const username = localStorage.getItem('username') || 'User';
   const firstName = localStorage.getItem('firstName') || username;
+<<<<<<< HEAD
   console.log('Updating UI with firstName:', firstName);
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   const loginNavItem = document.getElementById('loginNavItem');
   const profileSection = document.getElementById('profileSection');
   const burgerLoginBtn = document.getElementById('burgerLoginBtn');
@@ -532,9 +564,12 @@ function updateUIForLoggedInUser() {
     const dropdownUsername = document.getElementById('dropdownUsername');
     if (dropdownUsername) {
       dropdownUsername.textContent = `${firstName}`;
+<<<<<<< HEAD
       console.log('Dropdown username set to:', firstName);
     } else {
       console.error('dropdownUsername element not found');
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
     // Setup profile dropdown handlers after showing the profile section
     setTimeout(() => {
@@ -560,10 +595,14 @@ function updateUIForLoggedInUser() {
   const roles = JSON.parse(localStorage.getItem('roles') || '[]');
   const dashboardLink = document.querySelector('.nav-menu ul li a[href="#Dashboard"]'); // Assuming this is the dashboard link
   if (dashboardLink) {
+<<<<<<< HEAD
       if (roles.includes('SUPERADMIN')) {
           dashboardLink.href = 'superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
       } else if (roles.includes('ADMIN')) {
+=======
+      if (roles.includes('ADMIN')) {
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
           dashboardLink.href = 'Owner.html';
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) {
@@ -573,12 +612,15 @@ function updateUIForLoggedInUser() {
           dashboardLink.href = 'index.html'; // Default or hide
           dashboardLink.textContent = 'Dashboard';
       }
+<<<<<<< HEAD
 
       // Show/hide superadmin menu items
       const superadminItems = document.querySelectorAll('.superadmin-only');
       superadminItems.forEach(item => {
           item.style.display = roles.includes('SUPERADMIN') ? 'block' : 'none';
       });
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   }
 }
 
@@ -632,6 +674,7 @@ function showSuccess(msg) {
 function showError(msg) {
   showNotification(msg, 'error');
 }
+<<<<<<< HEAD
 
 // Change Password Handler
 async function handleChangePassword(e) {
@@ -703,3 +746,5 @@ async function handleChangePassword(e) {
     hideLoading(submitBtn);
   }
 }
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f

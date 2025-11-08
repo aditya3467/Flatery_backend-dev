@@ -12,7 +12,10 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
     Page<Property> findByOwnerId(Long ownerId, Pageable pageable);
 
     Optional<Property> findByIdAndOwnerId(Long id, Long ownerId);
+<<<<<<< HEAD
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT p.ownerId) FROM com.Flatery.model.property.Property p")
     long countDistinctOwnerIds();
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 }
