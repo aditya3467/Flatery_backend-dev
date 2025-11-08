@@ -37,6 +37,14 @@ public class AdminPropertyController {
     private final FileStorageService fileStorageService;
     private final PropertyImageRepository propertyImageRepository;
 
+        // Get total active security deposits for the authenticated owner
+        @GetMapping("/security-deposits")
+        public ResponseEntity<Integer> getTotalSecurityDeposits(Authentication auth) {
+            Long ownerId = getUserId(auth);
+            int totalDeposits = propertyService.getTotalActiveSecurityDeposits(ownerId);
+            return ResponseEntity.ok(totalDeposits);
+        }
+
     // Create new property (owner = current admin)
     @PostMapping
     public ResponseEntity<PropertyResponse> create(

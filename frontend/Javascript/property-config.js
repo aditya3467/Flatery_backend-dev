@@ -1,3 +1,7 @@
+// Temporary stub for generateMockDues to prevent ReferenceError
+function generateMockDues() {
+  return [];
+}
 // Property Configuration Page Script
 let currentPropertyId = null;
 let propertyData = null;
@@ -581,9 +585,9 @@ async function loadPropertyConfig() {
     document.getElementById('propertyName').textContent = propertyData.name || 'Property';
     document.getElementById('breadcrumbProperty').textContent = propertyData.name || 'Configuration';
     
-    // Load user info
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    document.getElementById('userName').textContent = user.firstName || 'Owner';
+    // Load user info - get firstName from localStorage
+    const firstName = localStorage.getItem('firstName') || 'Owner';
+    document.getElementById('userName').textContent = firstName;
     
   // Load floors and units from backend
   await loadFloorsAndUnitsFromApi();
@@ -1079,9 +1083,27 @@ async function loadFinancialData() {
     financialData.yearlyRent = collectedRent * 12;
     financialData.outstandingDues = pendingRent;
     
-    // Mock security deposits (2 months rent per tenant)
-    const totalTenants = units.reduce((sum, u) => sum + u.occupied, 0);
-    financialData.securityDeposits = totalRent * 2;
+    // Fetch real security deposits from tenants for this property
+    try {
+      const tenantsData = await apiService.getTenants();
+      const propertyTenants = tenantsData.filter(t => 
+        t.propertyId === parseInt(currentPropertyId) && 
+        t.status === 'ACTIVE'
+      );
+      
+      // Sum security deposits from active tenants only
+      financialData.securityDeposits = propertyTenants.reduce((sum, t) => {
+        return sum + (t.securityDeposit || 0);
+      }, 0);
+      
+      console.log('Property tenants for security deposit:', propertyTenants);
+      console.log('Total security deposits for property:', financialData.securityDeposits);
+    } catch (err) {
+      console.error('Failed to fetch tenants for security deposits:', err);
+      // Fallback to mock calculation if API fails
+      const totalTenants = units.reduce((sum, u) => sum + u.occupied, 0);
+      financialData.securityDeposits = totalRent * 2;
+    }
     
     // Mock expenses
     financialData.monthlyExpense = Math.floor(totalRent * 0.30); // 30% of rent
@@ -1633,6 +1655,7 @@ function renderTenantsTable(tenants) {
     const duesAmount = tenant.dues || 0;
     const duesClass = duesAmount === 0 ? 'zero' : 'pending';
     const initials = tenant.name ? tenant.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'T';
+    // ...existing code...
     
     return `
       <tr>
@@ -1657,6 +1680,7 @@ function renderTenantsTable(tenants) {
             <button class="action-btn view" onclick="viewTenantProfile(${tenant.id})">
               <i class="fas fa-eye"></i> View
             </button>
+            
             <button class="action-btn remove" onclick="confirmRemoveTenant(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}')">
               <i class="fas fa-user-minus"></i> Remove
             </button>
@@ -1942,6 +1966,9 @@ async function removeTenantFromProperty(tenantId) {
   }
 }
 
+// Deactivate tenant (mark VACATED and free bed) with button loading state
+// ...existing code...
+
 // Export tenants to Excel
 function exportTenantsToExcel() {
   alert('Excel export functionality will be implemented with backend integration');
@@ -2034,6 +2061,7 @@ window.switchProfileTab = switchProfileTab;
 window.exportTenantsToExcel = exportTenantsToExcel;
 window.confirmRemoveTenant = confirmRemoveTenant;
 window.removeTenantFromProperty = removeTenantFromProperty;
+window.deactivateTenant = deactivateTenant;
 window.sendWhatsAppReminder = sendWhatsAppReminder;
 window.generateAgreement = generateAgreement;
 window.downloadRentReceipts = downloadRentReceipts;

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
+    List<Tenant> findByOwnerIdAndStatus(Long ownerId, com.Flatery.model.tenant.Tenant.TenantStatus status);
     Optional<Tenant> findByTenantId(String tenantId);
     List<Tenant> findByOwnerId(Long ownerId);
     List<Tenant> findByPropertyId(Long propertyId);
@@ -17,5 +18,9 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     // Unit-based queries
     long countByUnitIdAndLeaseEndDateIsNull(Long unitId);
     List<Tenant> findByUnitId(Long unitId);
+
+        // Sum of security deposits for all tenants of an owner
+        @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(t.securityDeposit),0) FROM Tenant t WHERE t.ownerId = :ownerId AND t.status = 'ACTIVE'")
+        Integer sumActiveSecurityDepositsByOwnerId(@org.springframework.data.repository.query.Param("ownerId") Long ownerId);
 }
 

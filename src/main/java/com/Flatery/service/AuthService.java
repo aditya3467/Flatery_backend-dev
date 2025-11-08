@@ -24,6 +24,7 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    
     private final UserRepository userRepo;
     private final UserService userService;
     private final TenantRepository tenantRepository;

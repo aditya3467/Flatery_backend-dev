@@ -2860,3 +2860,59 @@ img
     padding: 0.5rem 1rem;
   }
 }
+
+/* ===== Notification Styles ===== */
+.notification {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 500;
+  font-size: 15px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  z-index: 10000;
+  animation: slideInRight 0.3s ease-out;
+  max-width: 400px;
+  word-wrap: break-word;
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.notification.success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.notification.error {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.notification.info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+.notification.fade-out {
+  opacity: 0;
+  transform: translateX(100px);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .notification {
+    right: 15px;
+    left: 15px;
+    bottom: 20px;
+    max-width: none;
+    font-size: 14px;
+  }
+}

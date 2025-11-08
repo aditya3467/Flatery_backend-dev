@@ -306,25 +306,17 @@ window.closeChangePasswordModal = closeChangePasswordModal;
  */
 async function handleSignup(e) {
   const form = e.target;
-  const firstName = form.querySelector('input[name="firstName"]').value;
-  const lastName = form.querySelector('input[name="lastName"]').value;
-  const username = form.querySelector('input[name="username"]').value;
-  const email = form.querySelector('input[name="email"]').value;
-  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value;
+  const firstName = form.querySelector('input[name="firstName"]').value.trim();
+  const lastName = form.querySelector('input[name="lastName"]').value.trim();
+  const username = form.querySelector('input[name="username"]').value.trim();
+  const email = form.querySelector('input[name="email"]').value.trim();
+  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value.trim();
   const password = form.querySelector('input[name="password"]').value;
-  const role = form.querySelector('input[name="role"]:checked').value;
+  const role = form.querySelector('input[name="role"]:checked')?.value;
 
   // Client-side validation
-  if (password.length < 6) {
-    showError('Password must be at least 6 characters long.');
-    return;
-  }
-  if (password.length > 100) {
-    showError('Password must be less than 100 characters.');
-    return;
-  }
-  if (username.length < 3) {
-    showError('Username must be at least 3 characters long.');
+  if (!firstName || !lastName || !username || !email || !password || !role) {
+    showError('Please fill in all required fields.');
     return;
   }
   if (firstName.length < 2) {
@@ -333,6 +325,24 @@ async function handleSignup(e) {
   }
   if (lastName.length < 2) {
     showError('Last name must be at least 2 characters long.');
+    return;
+  }
+  if (username.length < 3) {
+    showError('Username must be at least 3 characters long.');
+    return;
+  }
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showError('Please enter a valid email address.');
+    return;
+  }
+  if (password.length < 6) {
+    showError('Password must be at least 6 characters long.');
+    return;
+  }
+  if (password.length > 100) {
+    showError('Password must be less than 100 characters.');
     return;
   }
 
@@ -344,7 +354,7 @@ async function handleSignup(e) {
     // Automatically attempt to log in the new user
     await handleLogin({ target: form, credentials: { username, password } }); // Pass credentials directly
   } catch (error) {
-    showError(error.message || 'Signup failed. Try again.');
+    showError(error.message || 'Signup failed. Please check your details and try again.');
   } finally {
     hideLoading(form.querySelector('button[type="submit"]'));
   }
@@ -378,18 +388,24 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     return;
   }
 
-  showLoading(form?.querySelector('button[type="submit"]'));
+  // Validate empty fields
+  if (!username || !password) {
+    showError('Please enter both username and password.');
+    return;
+  }
+
+  if (form) {
+    showLoading(form.querySelector('button[type="submit"]'));
+  }
 
   try {
     const authResponse = await apiService.login({ username, password });
     
     // Fetch user details to get firstName
     const userDetails = await apiService.getCurrentUser();
-    console.log('User details fetched:', userDetails);
     
     // Extract first name from fullName
     const firstName = userDetails.fullName ? userDetails.fullName.split(' ')[0] : username;
-    console.log('First name extracted:', firstName);
     
     // Store user data in localStorage
     localStorage.setItem('username', username);
@@ -398,7 +414,6 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     
     // Check if password change is required
     if (authResponse.requiresPasswordChange) {
-        console.log('Password change required - new tenant detected');
         document.getElementById('loginModal')?.classList.remove('active');
         document.getElementById('signupModal')?.classList.remove('active');
         updateUIForLoggedInUser();
@@ -415,7 +430,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return;
     }
     
-    showSuccess('Login successful!');
+    showSuccess('Login successful! Redirecting...');
     updateUIForLoggedInUser();
     document.getElementById('loginModal')?.classList.remove('active');
 
@@ -423,12 +438,9 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     document.getElementById('signupModal')?.classList.remove('active');
 
     const roles = authResponse.roles || [];
-    console.log('User roles:', roles); // Debug log
-    console.log('Full auth response:', authResponse); // Debug log
     
     // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {
-        console.log('Redirecting to superadmin dashboard...'); // Debug log
         setTimeout(() => {
             window.location.href = '/frontend/superadmin-dashboard.html';
         }, 100);
@@ -445,7 +457,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return;
     }
   } catch (error) {
-    showError(error.message || 'Login failed. Please try again.');
+    showError(error.message || 'Login failed. Please check your username and password.');
   } finally {
     if (form) { // Ensure form exists before trying to hide loading
       hideLoading(form.querySelector('button[type="submit"]'));
