@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Properties Listing Page JavaScript
  * Handles property listing, filtering, and pagination
  */
@@ -11,10 +11,7 @@ const itemsPerPage = 9;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadProperties();
-<<<<<<< HEAD
     applyUrlFilters();
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 });
 
 /**
@@ -24,7 +21,6 @@ async function loadProperties() {
     const propertiesGrid = document.getElementById('propertiesGrid');
     
     try {
-<<<<<<< HEAD
         // Call the public properties API
         const response = await apiService.getProperties();
         
@@ -39,18 +35,6 @@ async function loadProperties() {
         // Apply URL filters after loading
         applyUrlFilters();
         
-=======
-        // TODO: Replace with actual API call
-        // const response = await apiService.getProperties();
-        // allProperties = response.data;
-        
-        // Simulate API call with sample data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        allProperties = generateSampleProperties();
-        filteredProperties = [...allProperties];
-        
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
         displayProperties();
         setupPagination();
         
@@ -67,7 +51,6 @@ async function loadProperties() {
 }
 
 /**
-<<<<<<< HEAD
  * Fetch full details for PG and APARTMENT properties to get their names
  */
 async function enrichPropertiesWithNames() {
@@ -129,8 +112,6 @@ function applyUrlFilters() {
 }
 
 /**
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
  * Generate sample properties data
  */
 function generateSampleProperties() {
@@ -200,12 +181,9 @@ function displayProperties() {
     
     propertiesGrid.innerHTML = currentProperties.map(property => createPropertyCard(property)).join('');
     
-<<<<<<< HEAD
     // Update favorite icons based on localStorage
     updateFavoriteIcons();
     
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     // Add click listeners to property cards
     document.querySelectorAll('.property-card').forEach(card => {
         card.addEventListener('click', function() {
@@ -219,7 +197,6 @@ function displayProperties() {
  * Create property card HTML
  */
 function createPropertyCard(property) {
-<<<<<<< HEAD
     // Handle API response format (PropertySummary)
     const bhkType = property.bhkType || property.bhk;
     const seater = property.pgSeater || property.seater;
@@ -255,24 +232,15 @@ function createPropertyCard(property) {
     const preferredTenants = Array.isArray(property.preferredTenants) && property.preferredTenants.length > 0 
         ? property.preferredTenants[0].replace('_', ' ') 
         : 'Any';
-=======
-    const title = property.propertyName || 
-                  `${property.bhkType ? property.bhkType + ' BHK' : property.seater + ' Seater'} ${property.propertyType}`;
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     
     return `
         <div class="property-card" data-property-id="${property.id}">
             <div class="property-image">
-<<<<<<< HEAD
                 <img src="${imageUrl}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'">
                 <span class="property-badge">${property.type}</span>
                 <button class="favorite-btn" onclick="toggleFavorite(event, ${property.id})">
                     <i class="far fa-heart"></i>
                 </button>
-=======
-                <img src="${property.image}" alt="${title}" onerror="this.src='img/properties/default.jpg'">
-                <span class="property-badge">${property.propertyType}</span>
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
             </div>
             <div class="property-content">
                 <h3 class="property-title">${title}</h3>
@@ -280,7 +248,6 @@ function createPropertyCard(property) {
                     <i class="fas fa-map-marker-alt"></i>
                     <span>${property.location}, ${property.city}</span>
                 </div>
-<<<<<<< HEAD
                 <div class="property-info-grid">
                     <div class="property-info-item">
                         <div class="property-info-icon">
@@ -318,24 +285,10 @@ function createPropertyCard(property) {
                             <span class="property-info-value">${availableDate}</span>
                         </div>
                     </div>
-=======
-                <div class="property-details">
-                    ${property.bhkType ? `<div class="detail-item"><i class="fas fa-bed"></i> ${property.bhkType} BHK</div>` : ''}
-                    ${property.seater ? `<div class="detail-item"><i class="fas fa-users"></i> ${property.seater} Seater</div>` : ''}
-                    <div class="detail-item"><i class="fas fa-ruler-combined"></i> ${property.builtUpArea} sq.ft</div>
-                    <div class="detail-item"><i class="fas fa-bath"></i> ${property.bathrooms} Bath</div>
-                    <div class="detail-item"><i class="fas fa-couch"></i> ${property.furnishing}</div>
-                </div>
-                <div class="property-amenities">
-                    ${property.amenities.slice(0, 3).map(amenity => 
-                        `<span class="amenity-badge">${amenity}</span>`
-                    ).join('')}
-                    ${property.amenities.length > 3 ? `<span class="amenity-badge">+${property.amenities.length - 3} more</span>` : ''}
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
                 </div>
                 <div class="property-footer">
                     <div class="property-price">
-                        <span class="price-amount">₹${formatNumber(property.expectedRent)}</span>
+                        <span class="price-amount">â‚¹${formatNumber(property.expectedRent)}</span>
                         <span class="price-label">per month</span>
                     </div>
                     <button class="view-details-btn">View Details</button>
@@ -346,7 +299,6 @@ function createPropertyCard(property) {
 }
 
 /**
-<<<<<<< HEAD
  * Toggle BHK/Seater filter based on property type
  */
 function toggleBhkSeaterFilter() {
@@ -364,14 +316,11 @@ function toggleBhkSeaterFilter() {
 }
 
 /**
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
  * Apply filters
  */
 function applyFilters() {
     const propertyType = document.getElementById('filterPropertyType').value;
     const bhk = document.getElementById('filterBHK').value;
-<<<<<<< HEAD
     const seater = document.getElementById('filterSeater').value;
     const city = document.getElementById('filterCity').value.toLowerCase();
     const maxRent = parseInt(document.getElementById('filterMaxRent').value) || Infinity;
@@ -431,18 +380,6 @@ function applyFilters() {
         const matchFurnishing = !furnishing || property.furnishing === furnishing;
         
         return matchType && matchBhkSeater && matchCity && matchRent && matchAvailability && matchTenant && matchFurnishing;
-=======
-    const city = document.getElementById('filterCity').value.toLowerCase();
-    const maxRent = parseInt(document.getElementById('filterMaxRent').value) || Infinity;
-    
-    filteredProperties = allProperties.filter(property => {
-        const matchType = !propertyType || property.propertyType === propertyType;
-        const matchBHK = !bhk || property.bhkType === bhk;
-        const matchCity = !city || property.city.toLowerCase().includes(city);
-        const matchRent = property.expectedRent <= maxRent;
-        
-        return matchType && matchBHK && matchCity && matchRent;
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     });
     
     currentPage = 1;
@@ -461,7 +398,6 @@ function applyFilters() {
 function clearFilters() {
     document.getElementById('filterPropertyType').value = '';
     document.getElementById('filterBHK').value = '';
-<<<<<<< HEAD
     document.getElementById('filterSeater').value = '';
     document.getElementById('filterCity').value = '';
     document.getElementById('filterMaxRent').value = '';
@@ -472,10 +408,6 @@ function clearFilters() {
     // Reset BHK/Seater visibility
     document.getElementById('bhkFilterGroup').style.display = 'flex';
     document.getElementById('seaterFilterGroup').style.display = 'none';
-=======
-    document.getElementById('filterCity').value = '';
-    document.getElementById('filterMaxRent').value = '';
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     
     filteredProperties = [...allProperties];
     currentPage = 1;
@@ -550,18 +482,8 @@ function previousPage() {
  * View property details
  */
 function viewPropertyDetails(propertyId) {
-<<<<<<< HEAD
     console.log('Viewing property:', propertyId);
     window.location.href = `property-details.html?id=${propertyId}`;
-=======
-    // TODO: Navigate to property details page
-    console.log('Viewing property:', propertyId);
-    // window.location.href = `property-details.html?id=${propertyId}`;
-    
-    if (typeof showNotification === 'function') {
-        showNotification('Property details page coming soon!', 'info');
-    }
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 }
 
 /**
@@ -571,7 +493,6 @@ function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-<<<<<<< HEAD
 /**
  * Toggle favorite property
  */
@@ -629,17 +550,12 @@ function updateFavoriteIcons() {
     });
 }
 
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 // Make functions globally available
 window.applyFilters = applyFilters;
 window.clearFilters = clearFilters;
 window.nextPage = nextPage;
 window.previousPage = previousPage;
-<<<<<<< HEAD
 window.toggleFavorite = toggleFavorite;
 window.toggleBhkSeaterFilter = toggleBhkSeaterFilter;
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 
 console.log('Properties page initialized');

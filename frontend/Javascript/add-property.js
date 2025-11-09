@@ -1,10 +1,9 @@
-/**
+﻿/**
  * Add Property Page JavaScript
  * Handles form validation, image upload, and submission
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-<<<<<<< HEAD
     // Guard: Only authenticated ADMINs can access this page
     try {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
@@ -18,8 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'index.html';
         return;
     }
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     const addPropertyForm = document.getElementById('addPropertyForm');
     const propertyTypeSelect = document.getElementById('propertyType');
     const bhkTypeGroup = document.getElementById('bhkTypeGroup');
@@ -35,14 +32,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store uploaded images
     let uploadedImages = [];
 
-<<<<<<< HEAD
-    // Images are optional for now – remove required attribute if present
+    // Images are optional for now â€“ remove required attribute if present
     if (propertyImagesInput) {
         propertyImagesInput.removeAttribute('required');
     }
 
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     // Toggle fields based on property type
     propertyTypeSelect.addEventListener('change', function() {
         const propertyType = this.value;
@@ -199,15 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
     addPropertyForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-<<<<<<< HEAD
-=======
-        // Validate images
-        if (uploadedImages.length === 0) {
-            showNotification('Please upload at least one property image', 'error');
-            return;
-        }
-
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
         // Validate custom time if selected
         const timeSlot = document.getElementById('timeSlot').value;
         if (timeSlot === 'Custom') {
@@ -231,33 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-<<<<<<< HEAD
-=======
-        // Collect form data
-        const formData = new FormData();
-
-        // Add all form fields
-        const formFields = new FormData(addPropertyForm);
-        for (let [key, value] of formFields.entries()) {
-            if (key !== 'propertyImages' && key !== 'amenities') {
-                formData.append(key, value);
-            }
-        }
-
-        // Add amenities as array
-        const amenities = Array.from(document.querySelectorAll('input[name="amenities"]:checked'))
-            .map(checkbox => checkbox.value);
-        formData.append('amenities', JSON.stringify(amenities));
-
-        // Add images
-        uploadedImages.forEach((file, index) => {
-            formData.append('propertyImages', file);
-        });
-
-        // Add posted date
-        formData.append('postedOn', new Date().toISOString());
-
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
         try {
             // Show loading state
             const submitBtn = addPropertyForm.querySelector('button[type="submit"]');
@@ -265,7 +223,6 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
-<<<<<<< HEAD
             // Build the property data object matching backend CreatePropertyRequest
             const propertyData = buildPropertyData();
             
@@ -287,25 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Reset form after 2 seconds and redirect
-=======
-            // TODO: Replace with actual API call
-            // const response = await apiService.addProperty(formData);
-            
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Success
-            showNotification('Property listed successfully!', 'success');
-            
-            // Reset form after 2 seconds
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
             setTimeout(() => {
                 addPropertyForm.reset();
                 uploadedImages = [];
                 imagePreviewContainer.innerHTML = '';
                 charCountSpan.textContent = '0';
                 
-<<<<<<< HEAD
                 // Redirect to owner dashboard
                 window.location.href = 'Owner.html';
             }, 2000);
@@ -314,19 +258,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error submitting property:', error);
             const errorMsg = error.message || 'Failed to submit property. Please try again.';
             showNotification(errorMsg, 'error');
-=======
-                // Redirect to properties list or owner dashboard
-                // window.location.href = 'Owner.html';
-            }, 2000);
-
-            // Reset button
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnContent;
-
-        } catch (error) {
-            console.error('Error submitting property:', error);
-            showNotification('Failed to submit property. Please try again.', 'error');
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
             
             // Reset button
             const submitBtn = addPropertyForm.querySelector('button[type="submit"]');
@@ -335,7 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-<<<<<<< HEAD
     // Function to build property data matching backend CreatePropertyRequest
     function buildPropertyData() {
         const propertyType = document.getElementById('propertyType').value;
@@ -505,8 +435,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return selected;
     }
 
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     // Notification function (if not already defined in main.js)
     function showNotification(message, type = 'info') {
         // Check if global showNotification exists

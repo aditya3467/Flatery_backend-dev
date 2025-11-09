@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Component Loader Utility
  * Loads HTML components into elements with data-component attribute
  */
@@ -109,7 +109,7 @@ class ComponentLoader {
      * Setup modal toggle handlers
      */
     setupModalToggleHandlers() {
-        // Switch from login → signup
+        // Switch from login â†’ signup
         const loginToSignupLink = document.querySelector('.login-modal .signup-link a');
         if (loginToSignupLink) {
             loginToSignupLink.removeEventListener('click', this.toggleToSignup);
@@ -119,7 +119,7 @@ class ComponentLoader {
             });
         }
 
-        // Switch from signup → login
+        // Switch from signup â†’ login
         const signupToLoginLink = document.getElementById('showLogin');
         if (signupToLoginLink) {
             signupToLoginLink.removeEventListener('click', this.toggleToLogin);
@@ -186,11 +186,8 @@ class ComponentLoader {
     toggleModals(hideId, showId) {
         document.getElementById(hideId)?.classList.remove('active');
         document.getElementById(showId)?.classList.add('active');
-<<<<<<< HEAD
         // Keep body overflow hidden when switching between modals
         document.body.style.overflow = 'hidden';
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
 
     /**
