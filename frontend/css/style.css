@@ -188,14 +188,16 @@ img
 /* Navbar starts */
 
 .navbar{
-    position: fixed;
-    z-index: 999;
-    width: 100%;
-    padding: 15px 40px;
-    transition: all 0.5s ease;
-    background-color: var(--dark-bg);
-    box-shadow: none;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: fixed;
+  top: 0; /* ensure the bar hugs the top without a white gap */
+  left: 0;
+  z-index: 999;
+  width: 100%;
+  padding: 15px 40px;
+  transition: all 0.5s ease;
+  background-color: var(--dark-bg);
+  box-shadow: none;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 
@@ -238,7 +240,7 @@ img
 
 
 
-.nav-bar .menu{
+.navbar .menu{ /* corrected selector (previously .nav-bar) */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -345,9 +347,10 @@ img
   justify-content: center;
 }
 .burger-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
+  position: absolute; /* keep the icon inside the navbar */
+  top: 50%;
+  right: 40px; /* match navbar horizontal padding */
+  transform: translateY(-50%);
   z-index: 1000;
   cursor: pointer;
   width: 35px;
@@ -357,8 +360,8 @@ img
   justify-content: space-between;
   padding: 5px;
   border-radius: 5px;
-  background: hwb(0 100% 0% / 0.1);
-  backdrop-filter: blur(10px);
+  background: hwb(0 100% 0% / 0.08);
+  backdrop-filter: blur(8px);
   box-shadow: 0 4px 6px #0000001a;
 }
 

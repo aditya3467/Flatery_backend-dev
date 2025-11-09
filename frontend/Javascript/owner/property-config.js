@@ -9,21 +9,34 @@ let floors = [];
 let units = [];
 let tenants = [];
 let currentView = 'dashboard'; // 'dashboard', 'floors' or 'tenants'
+// Charts/state used across sections
+// Global chart instance (defined once)
+let rentCollectionChart = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
+  console.log('[Property Config] Initializing...');
+  console.log('[Property Config] Current URL:', window.location.href);
+  
   // Get property ID from URL
   const urlParams = new URLSearchParams(window.location.search);
   currentPropertyId = urlParams.get('id');
   
+  console.log('[Property Config] Property ID:', currentPropertyId);
+  
   if (!currentPropertyId) {
+    console.error('[Property Config] No property ID in URL');
     showAlert('error', 'No property selected');
     setTimeout(() => window.location.href = 'Owner.html', 2000);
     return;
   }
 
   // Ensure authenticated and owner role
+  console.log('[Property Config] Checking authentication...');
   const ok = await ensureOwnerSession();
+  console.log('[Property Config] Auth check result:', ok);
+  
   if (ok) {
+    console.log('[Property Config] Loading property configuration...');
     await loadPropertyConfig();
     setupNavigationHandlers();
   }
@@ -368,101 +381,6 @@ function renderOccupancyTrendChart() {
   });
 }
 
-function renderRentCollectionChart() {
-  const ctx = document.getElementById('rentCollectionChart');
-  if (!ctx) return;
-  
-  // Destroy existing chart if it exists
-  if (window.rentCollectionChart && typeof window.rentCollectionChart.destroy === 'function') {
-    window.rentCollectionChart.destroy();
-  }
-  
-  // Generate data for last 6 months
-  const months = [];
-  const collectedData = [];
-  const pendingData = [];
-  const today = new Date();
-  const baseRevenue = units.reduce((sum, u) => sum + (u.rent * u.occupied), 0);
-  
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    months.push(date.toLocaleDateString('en-IN', { month: 'short' }));
-    
-    const variance = Math.random() * 0.3 - 0.15;
-    const totalRent = baseRevenue * (1 + variance);
-    const collected = totalRent * (0.7 + Math.random() * 0.25); // 70-95% collected
-    const pending = totalRent - collected;
-    
-    collectedData.push(Math.floor(collected));
-    pendingData.push(Math.floor(pending));
-  }
-  
-  window.rentCollectionChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: months,
-      datasets: [
-        {
-          label: 'Collected',
-          data: collectedData,
-          backgroundColor: '#10b981',
-          borderRadius: 6,
-          borderSkipped: false
-        },
-        {
-          label: 'Pending',
-          data: pendingData,
-          backgroundColor: '#f59e0b',
-          borderRadius: 6,
-          borderSkipped: false
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            padding: 15
-          }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: 12,
-          callbacks: {
-            label: function(context) {
-              return `${context.dataset.label}: ₹${formatNumber(context.parsed.y)}`;
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          stacked: true,
-          grid: {
-            display: false
-          }
-        },
-        y: {
-          stacked: true,
-          beginAtZero: true,
-          ticks: {
-            callback: function(value) {
-              return '₹' + formatNumber(value);
-            }
-          },
-          grid: {
-            color: 'rgba(0, 0, 0, 0.05)'
-          }
-        }
-      }
-    }
-  });
-}
 
 function renderOccupancyHeatmap() {
   const container = document.getElementById('occupancyHeatmap');
@@ -537,7 +455,7 @@ async function ensureOwnerSession() {
   try {
     if (!apiService.isAuthenticated()) {
       showAlert('error', 'Please log in as an owner.');
-      setTimeout(() => window.location.href = 'index.html', 2000);
+      setTimeout(() => window.location.href = '../index.html', 2000);
       return false;
     }
     
@@ -556,7 +474,7 @@ async function ensureOwnerSession() {
     const isOwner = roles.includes('ADMIN') || roles.includes('SUPERADMIN');
     if (!isOwner) {
       showAlert('error', 'Only property owners can access this page.');
-      setTimeout(() => window.location.href = 'index.html', 2000);
+      setTimeout(() => window.location.href = '../index.html', 2000);
       return false;
     }
     
@@ -2077,7 +1995,6 @@ window.downloadDocument = downloadDocument;
 
 let allPayments = [];
 let currentPaymentId = null;
-let rentCollectionChart = null;
 
 // Load and display payments
 async function loadPayments() {

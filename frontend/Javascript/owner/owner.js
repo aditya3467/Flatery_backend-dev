@@ -18,26 +18,40 @@
 (function () {
   document.addEventListener('DOMContentLoaded', async function () {
     try {
+      console.log('[Owner Dashboard] Initializing...');
+      
       // Ensure apiService is available
       if (typeof apiService === 'undefined') {
-        console.error('API Service not loaded. Make sure api.js is included before owner.js');
+        console.error('[Owner Dashboard] API Service not loaded. Make sure api.js is included before owner.js');
+        alert('API Service not loaded. Please refresh the page.');
         return;
       }
 
+      console.log('[Owner Dashboard] Checking authentication...');
+      console.log('[Owner Dashboard] Is authenticated:', apiService.isAuthenticated());
+      
       // Guard: Only authenticated ADMINs should access owner dashboard
       const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+      console.log('[Owner Dashboard] User roles:', roles);
+      
       if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
         // Notify and redirect
+        console.warn('[Owner Dashboard] Access denied - not authenticated or not ADMIN role');
         safeNotify('Please login as an owner to view the dashboard.', 'info');
-        window.location.href = 'index.html';
+        setTimeout(() => {
+          window.location.href = '../index.html';
+        }, 1500);
         return;
       }
 
+      console.log('[Owner Dashboard] Loading dashboard metrics...');
       // Load dashboard metrics and properties
       await loadDashboardMetrics();
+      console.log('[Owner Dashboard] Loading owner properties...');
       await loadOwnerProperties();
+      console.log('[Owner Dashboard] Initialization complete');
     } catch (err) {
-      console.error('Failed to load owner dashboard:', err);
+      console.error('[Owner Dashboard] Failed to load owner dashboard:', err);
       safeNotify(err.message || 'Failed to load dashboard data.', 'error');
     }
   });
@@ -214,9 +228,9 @@
     card.addEventListener('click', () => {
         const type = (property.type || '').toString().toUpperCase();
         if (type === 'PG') {
-          window.location.href = `owner/property-config.html?id=${property.id}`;
+          window.location.href = `/frontend/owner/property-config.html?id=${property.id}`;
         } else {
-          window.location.href = `property-details.html?id=${property.id}`;
+          window.location.href = `/frontend/property-details.html?id=${property.id}`;
         }
     });
 
@@ -273,7 +287,7 @@
   }
 
   function handleEdit(property) {
-  window.location.href = `owner/edit-property.html?id=${property.id}`;
+    window.location.href = `/frontend/owner/edit-property.html?id=${property.id}`;
   }
 
   function safeNotify(message, type) {
@@ -331,10 +345,10 @@
       console.log('👤 User roles:', roles);
       if (!roles.includes('ADMIN')) {
         notify('Only owners (ADMIN) can edit properties.', 'error');
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
       }
-    } catch { window.location.href = 'index.html'; return; }
+    } catch { window.location.href = '../index.html'; return; }
 
     const params = new URLSearchParams(window.location.search);
     propertyId = params.get('id');

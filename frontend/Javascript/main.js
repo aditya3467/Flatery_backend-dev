@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
    * Closes hamburger menu when clicking outside of it
    */
   document.addEventListener('click', function (event) {
-    const burgerMenu = document.querySelector('.burger-menu');
+    const burgerMenu = document.querySelector('.nav-menu') || document.querySelector('.burger-menu');
     const burgerBtn = document.querySelector('.burger-btn');
     const burgerToggle = document.getElementById('burger-toggle'); // Get the checkbox
 
@@ -189,8 +189,9 @@ function handleListPropertyClick(e) {
     
     // Check if user is authenticated
     if (typeof apiService !== 'undefined' && apiService.isAuthenticated()) {
-        // User is logged in, redirect to add-property page
-        window.location.href = 'add-property.html';
+    // User is logged in, redirect to add-property page
+    const inOwner = window.location.pathname.includes('/owner/');
+    window.location.href = inOwner ? 'add-property.html' : 'owner/add-property.html';
     } else {
         // User is not logged in, show login modal
         document.getElementById('loginModal')?.classList.add('active');
@@ -449,7 +450,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return; // Stop further execution
     } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
         setTimeout(() => {
-            window.location.href = '/frontend/Owner.html';
+            window.location.href = '/frontend/owner/Owner.html';
         }, 100);
         return;
     } else if (roles.includes('USER')) {
@@ -510,8 +511,8 @@ async function handleLogout() {
     // Re-setup login button listeners to make them active again
     setupLoginButtonListeners();
 
-    // Redirect to home page after logout
-    window.location.href = 'index.html';
+  // Redirect to home page after logout (use absolute path to avoid folder-relative issues)
+  window.location.href = '/frontend/index.html';
 
   } catch (error) {
     showError('Logout failed: ' + error.message);
@@ -578,7 +579,7 @@ function updateUIForLoggedInUser() {
           dashboardLink.href = 'superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
       } else if (roles.includes('ADMIN')) {
-          dashboardLink.href = 'Owner.html';
+          dashboardLink.href = 'owner/Owner.html';
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) {
           dashboardLink.href = 'tenant.html';
@@ -699,7 +700,7 @@ async function handleChangePassword(e) {
       if (roles.includes('USER')) {
         window.location.href = '/frontend/tenant.html';
       } else if (roles.includes('ADMIN')) {
-        window.location.href = '/frontend/Owner.html';
+        window.location.href = '/frontend/owner/Owner.html';
       } else if (roles.includes('SUPERADMIN')) {
         window.location.href = '/frontend/superadmin-dashboard.html';
       } else {

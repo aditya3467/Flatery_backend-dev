@@ -137,7 +137,7 @@ class ComponentLoader {
         // Close hamburger menu when clicking outside
         document.removeEventListener('click', this.handleOutsideClick);
         document.addEventListener('click', (e) => {
-            const burgerMenu = document.querySelector('.burger-menu');
+            const burgerMenu = document.querySelector('.nav-menu') || document.querySelector('.burger-menu');
             const burgerBtn = document.querySelector('.burger-btn');
             const burgerToggle = document.getElementById('burger-toggle');
 
