@@ -259,7 +259,7 @@ class ApiService {
         }
     }
 
-    // Floors API
+    // Floors API starts here
     async getFloors(propertyId) {
         try {
             return await this.makeRequest(`/admin/properties/${propertyId}/floors`);
