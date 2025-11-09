@@ -1,4 +1,4 @@
-package com.Flatery.security;
+﻿package com.Flatery.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +39,6 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-<<<<<<< HEAD
             .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Allow CORS preflight
                         .requestMatchers("/api/auth/**").permitAll() // Allow all auth endpoints
                         .requestMatchers("/api/properties/**").permitAll() // Allow public property listing
@@ -47,16 +46,6 @@ public class SecurityConfig {
                         .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
                         .requestMatchers("/").permitAll() // Allow access to root
                         .requestMatchers("/uploads/properties/**").permitAll() // Allow access to uploaded images
-=======
-                        .requestMatchers("/api/auth/**").permitAll() // Allow all auth endpoints
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
-                        .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
-                        .requestMatchers("/").permitAll() // Allow access to root
-                        .requestMatchers("/swagger-ui/**","/v3/api-docs/**","/swagger-resources/**").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/properties/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN","SUPERADMIN")
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
