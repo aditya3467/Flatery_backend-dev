@@ -72,7 +72,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-<<<<<<< HEAD
   /**
    * Attach Change Password form submit listener
    */
@@ -81,8 +80,6 @@ document.addEventListener('DOMContentLoaded', function () {
     changePasswordForm.addEventListener('submit', handleChangePassword);
   }
 
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   // =========================
   // 🔹 MODAL TOGGLE HELPERS
   // =========================
@@ -97,11 +94,8 @@ document.addEventListener('DOMContentLoaded', function () {
   function toggleModals(hideId, showId) {
     document.getElementById(hideId)?.classList.remove('active');
     document.getElementById(showId)?.classList.add('active');
-<<<<<<< HEAD
     // Keep body overflow hidden when switching between modals
     document.body.style.overflow = 'hidden';
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   }
 
   // Switch from login → signup
@@ -257,24 +251,17 @@ function openLoginModal(e) {
     // Only open login modal if user is NOT logged in
     if (!apiService.isAuthenticated()) {
         document.getElementById('loginModal').classList.add('active');
-<<<<<<< HEAD
         document.body.style.overflow = 'hidden'; // Prevent background scrolling
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
 }
 
 function closeLoginModal() {
     document.getElementById('loginModal').classList.remove('active');
-<<<<<<< HEAD
     document.body.style.overflow = ''; // Restore scrolling
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 }
 
 function closeSignupModal() {
     document.getElementById('signupModal').classList.remove('active');
-<<<<<<< HEAD
     document.body.style.overflow = ''; // Restore scrolling
 }
 
@@ -303,10 +290,6 @@ function closeChangePasswordModal() {
 window.openChangePasswordModal = openChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
 
-=======
-}
-
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 // 🔸 AUTH HANDLERS
 // ========================================================
 
@@ -323,25 +306,17 @@ window.closeChangePasswordModal = closeChangePasswordModal;
  */
 async function handleSignup(e) {
   const form = e.target;
-  const firstName = form.querySelector('input[name="firstName"]').value;
-  const lastName = form.querySelector('input[name="lastName"]').value;
-  const username = form.querySelector('input[name="username"]').value;
-  const email = form.querySelector('input[name="email"]').value;
-  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value;
+  const firstName = form.querySelector('input[name="firstName"]').value.trim();
+  const lastName = form.querySelector('input[name="lastName"]').value.trim();
+  const username = form.querySelector('input[name="username"]').value.trim();
+  const email = form.querySelector('input[name="email"]').value.trim();
+  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value.trim();
   const password = form.querySelector('input[name="password"]').value;
-  const role = form.querySelector('input[name="role"]:checked').value;
+  const role = form.querySelector('input[name="role"]:checked')?.value;
 
   // Client-side validation
-  if (password.length < 6) {
-    showError('Password must be at least 6 characters long.');
-    return;
-  }
-  if (password.length > 100) {
-    showError('Password must be less than 100 characters.');
-    return;
-  }
-  if (username.length < 3) {
-    showError('Username must be at least 3 characters long.');
+  if (!firstName || !lastName || !username || !email || !password || !role) {
+    showError('Please fill in all required fields.');
     return;
   }
   if (firstName.length < 2) {
@@ -350,6 +325,24 @@ async function handleSignup(e) {
   }
   if (lastName.length < 2) {
     showError('Last name must be at least 2 characters long.');
+    return;
+  }
+  if (username.length < 3) {
+    showError('Username must be at least 3 characters long.');
+    return;
+  }
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showError('Please enter a valid email address.');
+    return;
+  }
+  if (password.length < 6) {
+    showError('Password must be at least 6 characters long.');
+    return;
+  }
+  if (password.length > 100) {
+    showError('Password must be less than 100 characters.');
     return;
   }
 
@@ -361,7 +354,7 @@ async function handleSignup(e) {
     // Automatically attempt to log in the new user
     await handleLogin({ target: form, credentials: { username, password } }); // Pass credentials directly
   } catch (error) {
-    showError(error.message || 'Signup failed. Try again.');
+    showError(error.message || 'Signup failed. Please check your details and try again.');
   } finally {
     hideLoading(form.querySelector('button[type="submit"]'));
   }
@@ -395,19 +388,24 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     return;
   }
 
-  showLoading(form?.querySelector('button[type="submit"]'));
+  // Validate empty fields
+  if (!username || !password) {
+    showError('Please enter both username and password.');
+    return;
+  }
+
+  if (form) {
+    showLoading(form.querySelector('button[type="submit"]'));
+  }
 
   try {
     const authResponse = await apiService.login({ username, password });
-<<<<<<< HEAD
     
     // Fetch user details to get firstName
     const userDetails = await apiService.getCurrentUser();
-    console.log('User details fetched:', userDetails);
     
     // Extract first name from fullName
     const firstName = userDetails.fullName ? userDetails.fullName.split(' ')[0] : username;
-    console.log('First name extracted:', firstName);
     
     // Store user data in localStorage
     localStorage.setItem('username', username);
@@ -416,7 +414,6 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     
     // Check if password change is required
     if (authResponse.requiresPasswordChange) {
-        console.log('Password change required - new tenant detected');
         document.getElementById('loginModal')?.classList.remove('active');
         document.getElementById('signupModal')?.classList.remove('active');
         updateUIForLoggedInUser();
@@ -433,13 +430,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return;
     }
     
-=======
-    // Store user data in localStorage
-    localStorage.setItem('username', username);
-    localStorage.setItem('firstName', authResponse.firstName || username); // Store first name
-    localStorage.setItem('roles', JSON.stringify(authResponse.roles)); // Store roles for redirection
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
-    showSuccess('Login successful!');
+    showSuccess('Login successful! Redirecting...');
     updateUIForLoggedInUser();
     document.getElementById('loginModal')?.classList.remove('active');
 
@@ -447,13 +438,11 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     document.getElementById('signupModal')?.classList.remove('active');
 
     const roles = authResponse.roles || [];
-<<<<<<< HEAD
     console.log('User roles:', roles); // Debug log
     console.log('Full auth response:', authResponse); // Debug log
     
     // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {
-        console.log('Redirecting to superadmin dashboard...'); // Debug log
         setTimeout(() => {
             window.location.href = '/frontend/superadmin-dashboard.html';
         }, 100);
@@ -468,13 +457,9 @@ async function handleLogin(e) { // e can be a form event or an object with crede
             window.location.href = '/frontend/tenant.html';
         }, 100);
         return;
-=======
-    if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
-        window.location.href = 'Owner.html';
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
   } catch (error) {
-    showError(error.message || 'Login failed. Please try again.');
+    showError(error.message || 'Login failed. Please check your username and password.');
   } finally {
     if (form) { // Ensure form exists before trying to hide loading
       hideLoading(form.querySelector('button[type="submit"]'));
@@ -546,10 +531,7 @@ async function handleLogout() {
 function updateUIForLoggedInUser() {
   const username = localStorage.getItem('username') || 'User';
   const firstName = localStorage.getItem('firstName') || username;
-<<<<<<< HEAD
   console.log('Updating UI with firstName:', firstName);
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   const loginNavItem = document.getElementById('loginNavItem');
   const profileSection = document.getElementById('profileSection');
   const burgerLoginBtn = document.getElementById('burgerLoginBtn');
@@ -564,12 +546,9 @@ function updateUIForLoggedInUser() {
     const dropdownUsername = document.getElementById('dropdownUsername');
     if (dropdownUsername) {
       dropdownUsername.textContent = `${firstName}`;
-<<<<<<< HEAD
       console.log('Dropdown username set to:', firstName);
     } else {
       console.error('dropdownUsername element not found');
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
     // Setup profile dropdown handlers after showing the profile section
     setTimeout(() => {
@@ -595,14 +574,10 @@ function updateUIForLoggedInUser() {
   const roles = JSON.parse(localStorage.getItem('roles') || '[]');
   const dashboardLink = document.querySelector('.nav-menu ul li a[href="#Dashboard"]'); // Assuming this is the dashboard link
   if (dashboardLink) {
-<<<<<<< HEAD
       if (roles.includes('SUPERADMIN')) {
           dashboardLink.href = 'superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
       } else if (roles.includes('ADMIN')) {
-=======
-      if (roles.includes('ADMIN')) {
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
           dashboardLink.href = 'Owner.html';
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) {
@@ -612,15 +587,12 @@ function updateUIForLoggedInUser() {
           dashboardLink.href = 'index.html'; // Default or hide
           dashboardLink.textContent = 'Dashboard';
       }
-<<<<<<< HEAD
 
       // Show/hide superadmin menu items
       const superadminItems = document.querySelectorAll('.superadmin-only');
       superadminItems.forEach(item => {
           item.style.display = roles.includes('SUPERADMIN') ? 'block' : 'none';
       });
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
   }
 }
 
@@ -674,7 +646,6 @@ function showSuccess(msg) {
 function showError(msg) {
   showNotification(msg, 'error');
 }
-<<<<<<< HEAD
 
 // Change Password Handler
 async function handleChangePassword(e) {
@@ -746,5 +717,3 @@ async function handleChangePassword(e) {
     hideLoading(submitBtn);
   }
 }
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f

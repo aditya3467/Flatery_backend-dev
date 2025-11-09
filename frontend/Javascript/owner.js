@@ -60,37 +60,34 @@
     try {
       const totalEl = document.getElementById('totalPropertiesCount');
       const tenantsEl = document.getElementById('activeTenantsCount');
-      
+      const depositsEl = document.getElementById('totalSecurityDeposits');
+
       if (totalEl) totalEl.textContent = '…';
       if (tenantsEl) tenantsEl.textContent = '…';
+      if (depositsEl) depositsEl.textContent = '…';
 
       // Fetch a minimal page to read totalElements
-      // all=false -> only my properties; page=0; size=1 to reduce payload
       const page = await apiService.getMyProperties(false, 0, 1);
-
-      // Spring Data Page typically has totalElements; fallback to other shapes if customized
       const total = (page && (page.totalElements ?? page.total ?? page.total_items)) || 0;
       if (totalEl) totalEl.textContent = Number.isFinite(total) ? String(total) : '0';
 
       // Fetch active tenants count
       try {
-        console.log('Fetching tenants from backend...');
         const tenants = await apiService.getTenants();
-        console.log('Tenants response:', tenants);
-        console.log('Is array?', Array.isArray(tenants));
-        
         const activeTenants = Array.isArray(tenants) 
-          ? tenants.filter(t => {
-              console.log('Tenant:', t.tenantName, 'Status:', t.status);
-              return t.status === 'ACTIVE';
-            }).length 
+          ? tenants.filter(t => t.status === 'ACTIVE').length 
           : 0;
-        
-        console.log('Active tenants count:', activeTenants);
         if (tenantsEl) tenantsEl.textContent = String(activeTenants);
       } catch (tenantErr) {
-        console.error('Failed to load tenants count:', tenantErr);
         if (tenantsEl) tenantsEl.textContent = '0';
+      }
+
+      // Fetch total security deposits
+      try {
+        const deposits = await apiService.getOwnerSecurityDeposits();
+        if (depositsEl) depositsEl.textContent = `₹${Number(deposits).toLocaleString()}`;
+      } catch (depositsErr) {
+        if (depositsEl) depositsEl.textContent = '₹0';
       }
     } catch (err) {
       console.error('Failed to load dashboard metrics:', err);

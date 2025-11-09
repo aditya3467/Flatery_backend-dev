@@ -4,13 +4,9 @@ import com.Flatery.dto.RegisterRequest;
 import com.Flatery.dto.AuthResponse;
 import com.Flatery.dto.LoginRequest;
 import com.Flatery.model.User;
-<<<<<<< HEAD
 import com.Flatery.model.tenant.Tenant;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.repository.tenant.TenantRepository;
-=======
-import com.Flatery.repository.UserRepository;
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 import com.Flatery.security.JwtService;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,13 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-<<<<<<< HEAD
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-=======
-import org.springframework.stereotype.Service;
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +24,11 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    
     private final UserRepository userRepo;
     private final UserService userService;
-<<<<<<< HEAD
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -60,7 +50,6 @@ public class AuthService {
         resp.setTokenType("Bearer");
         resp.setExpiresIn(expiresIn);
         resp.setRoles(roles);
-<<<<<<< HEAD
         
         // Check if user is a tenant with temporary password
         boolean requiresPasswordChange = false;
@@ -77,15 +66,12 @@ public class AuthService {
         }
         
         resp.setRequiresPasswordChange(requiresPasswordChange);
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
         return resp;
     }
 
     public void signup(RegisterRequest registerRequest) {
         userService.register(registerRequest);
     }
-<<<<<<< HEAD
 
     public UserDetailsResponse getUserFromToken(String token) {
         String username = jwtService.extractUsername(token);
@@ -135,6 +121,4 @@ public class AuthService {
             String phoneNumber,
             Set<String> roles
     ) {}
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 }

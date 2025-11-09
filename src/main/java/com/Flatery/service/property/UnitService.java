@@ -120,10 +120,12 @@ public class UnitService {
         Unit unit = unitRepository.findById(unitId)
                 .orElseThrow(() -> new IllegalArgumentException("Unit not found"));
 
-        // Count active tenancies: end date is null OR in the future (still active)
+    // Count active tenancies: status ACTIVE AND (lease end date null or in future)
+    java.time.LocalDate today = java.time.LocalDate.now();
     long activeCount = tenantRepository.findByUnitId(unitId).stream()
-                .filter(t -> t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(java.time.LocalDate.now()))
-                .count();
+        .filter(t -> t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE)
+        .filter(t -> t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(today))
+        .count();
 
         Integer capacity = unit.getCapacity() == null ? 1 : unit.getCapacity();
         if (activeCount == 0) {
@@ -151,9 +153,10 @@ public class UnitService {
         List<Unit> units = unitRepository.findByPropertyId(propertyId);
         java.time.LocalDate today = java.time.LocalDate.now();
         for (Unit u : units) {
-            long activeCount = tenantRepository.findByUnitId(u.getId()).stream()
-                    .filter(t -> t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(today))
-                    .count();
+        long activeCount = tenantRepository.findByUnitId(u.getId()).stream()
+            .filter(t -> t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE)
+            .filter(t -> t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(today))
+            .count();
             int capacity = u.getCapacity() == null ? 1 : u.getCapacity();
             if (activeCount == 0) {
                 u.setStatus(UnitStatus.AVAILABLE);

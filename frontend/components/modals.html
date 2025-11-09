@@ -1,6 +1,5 @@
-<!--===== Login Modal =====-->
+﻿<!--===== Login Modal =====-->
 <div class="login-modal" id="loginModal">
-<<<<<<< HEAD
     <!-- Floating Shapes Background -->
     <div class="modal-floating-shapes">
         <div class="float-shape shape-1"></div>
@@ -27,7 +26,7 @@
                     <label for="login-password">Password</label>
                     <a href="#" class="forgot-link">Forgot password?</a>
                 </div>
-                <input type="password" id="login-password" name="password" placeholder="••••••••" required minlength="6" maxlength="100" autocomplete="current-password">
+                <input type="password" id="login-password" name="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required minlength="6" maxlength="100" autocomplete="current-password">
             </div>
             
             <button type="submit" class="login-btn">Log In</button>
@@ -64,25 +63,11 @@
         <p class="signup-link">
             Don't have an account? <a href="#">Sign up</a>
         </p>
-=======
-    <div class="login-box">
-        <button class="close-btn" onclick="closeLoginModal()">&times;</button>
-        <h2>Login to Flatery</h2>
-        <form>
-            <input type="text" name="username" placeholder="Username or Email" required>
-            <input type="password" name="password" placeholder="Password (min 6 characters)" required minlength="6" maxlength="100">
-            <button type="submit" class="login-btn">Login</button>
-        </form>
-        <div class="signup-link">
-            Not registered? <a href="#">Sign up</a>
-        </div>
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     </div>
 </div>
 
 <!--===== Signup Modal =====-->
 <div class="signup-modal" id="signupModal">
-<<<<<<< HEAD
     <!-- Floating Shapes Background -->
     <div class="modal-floating-shapes">
         <div class="float-shape shape-1"></div>
@@ -127,7 +112,7 @@
             
             <div class="form-group">
                 <label for="signup-password">Password</label>
-                <input type="password" id="signup-password" name="password" placeholder="••••••••" required minlength="6" maxlength="100" autocomplete="new-password">
+                <input type="password" id="signup-password" name="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required minlength="6" maxlength="100" autocomplete="new-password">
             </div>
             
             <fieldset class="role-selection">
@@ -136,14 +121,14 @@
                     <label class="role-label">
                         <input type="radio" name="role" value="USER" checked>
                         <span class="role-text">
-                            <span class="role-icon">👤</span>
+                            <span class="role-icon">ðŸ‘¤</span>
                             <span class="role-name">Tenant</span>
                         </span>
                     </label>
                     <label class="role-label">
                         <input type="radio" name="role" value="ADMIN">
                         <span class="role-text">
-                            <span class="role-icon">🏠</span>
+                            <span class="role-icon">ðŸ </span>
                             <span class="role-name">Owner</span>
                         </span>
                     </label>
@@ -207,17 +192,17 @@
         <form class="modal-form" id="changePasswordForm" method="POST" onsubmit="return false;">
             <div class="form-group">
                 <label for="current-password">Current Password</label>
-                <input type="password" id="current-password" name="currentPassword" placeholder="••••••••" required minlength="6" autocomplete="current-password">
+                <input type="password" id="current-password" name="currentPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required minlength="6" autocomplete="current-password">
             </div>
             
             <div class="form-group">
                 <label for="new-password">New Password</label>
-                <input type="password" id="new-password" name="newPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+                <input type="password" id="new-password" name="newPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required minlength="6" autocomplete="new-password">
             </div>
             
             <div class="form-group">
                 <label for="confirm-password">Confirm New Password</label>
-                <input type="password" id="confirm-password" name="confirmPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+                <input type="password" id="confirm-password" name="confirmPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required minlength="6" autocomplete="new-password">
             </div>
             
             <div id="changePasswordError" class="error-message" style="display:none; color:#f44336; font-size:14px; margin-bottom:12px;"></div>
@@ -232,36 +217,3 @@
 </div>
 <!--===== Modals End =====-->
 
-=======
-    <div class="signup-box">
-        <button class="close-btn" onclick="closeSignupModal()">&times;</button>
-        <h2>Sign Up for Flatery</h2>
-        <form>
-            <div class="name-row">
-                <input type="text" name="firstName" placeholder="First name" required>
-                <input type="text" name="lastName" placeholder="Last name" required>
-            </div>
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="text" name="phoneNumber" placeholder="Phone (optional)">
-            <input type="password" name="password" placeholder="Password (min 6 characters)" required minlength="6" maxlength="100">
-            <fieldset class="role-selection">
-                <legend>Sign up as a:</legend>
-                <div class="role-options">
-                    <label>
-                        <input type="radio" name="role" value="USER" checked> Tenant
-                    </label>
-                    <label>
-                        <input type="radio" name="role" value="ADMIN"> Owner
-                    </label>
-                </div>
-            </fieldset>
-            <button type="submit" class="signup-btn">Sign Up</button>
-        </form>
-        <div class="login-link">
-            Already have an account? <a href="#" id="showLogin">Login</a>
-        </div>
-    </div>
-</div>
-<!--===== Modals End =====-->
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f

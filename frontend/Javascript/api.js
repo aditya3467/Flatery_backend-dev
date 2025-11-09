@@ -4,6 +4,14 @@ const API_BASE_URL = 'http://localhost:8081/api';
 
 // API Service Class
 class ApiService {
+    // Get total active security deposits for owner
+    async getOwnerSecurityDeposits() {
+        try {
+            return await this.makeRequest('/admin/properties/security-deposits');
+        } catch (error) {
+            throw new Error('Failed to fetch security deposits: ' + error.message);
+        }
+    }
     constructor() {
         this.baseURL = API_BASE_URL;
         this.token = localStorage.getItem('authToken');
@@ -124,6 +132,8 @@ class ApiService {
         }
     }
 
+    // Tenant API methods
+
     // Property API methods
     async getProperties() {
         try {
@@ -135,16 +145,11 @@ class ApiService {
 
     async createProperty(propertyData) {
         try {
-<<<<<<< HEAD
             return await this.makeRequest('/admin/properties', {
-=======
-            return await this.makeRequest('/properties', {
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
                 method: 'POST',
                 body: JSON.stringify(propertyData)
             });
         } catch (error) {
-<<<<<<< HEAD
             throw error; // Re-throw original error to preserve status and message
         }
     }
@@ -254,7 +259,7 @@ class ApiService {
         }
     }
 
-    // Floors API
+    // Floors API starts here
     async getFloors(propertyId) {
         try {
             return await this.makeRequest(`/admin/properties/${propertyId}/floors`);
@@ -368,9 +373,6 @@ class ApiService {
             });
         } catch (error) {
             throw error;
-=======
-            throw new Error('Failed to create property: ' + error.message);
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
         }
     }
 
@@ -383,7 +385,6 @@ class ApiService {
     getToken() {
         return this.token;
     }
-<<<<<<< HEAD
 
     // ============================
     // TENANT DASHBOARD APIs
@@ -473,8 +474,6 @@ class ApiService {
             body: JSON.stringify(complaintData)
         });
     }
-=======
->>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 }
 
 // Create global API service instance

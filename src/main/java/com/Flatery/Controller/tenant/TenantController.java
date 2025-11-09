@@ -76,6 +76,8 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.getTenantPropertyDetails(username));
     }
 
+    // ...existing code...
+
     // Debug/Utility: list tenants for a specific unit to verify occupancy
     @GetMapping("/by-unit/{unitId}")
     public ResponseEntity<List<TenantSummary>> getTenantsByUnit(
