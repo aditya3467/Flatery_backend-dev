@@ -1,6 +1,7 @@
 package com.Flatery.Controller.property;
 
 import com.Flatery.dto.property.CreatePropertyRequest;
+<<<<<<< HEAD
 import com.Flatery.dto.property.ImageUploadResponse;
 import com.Flatery.dto.property.PropertyResponse;
 import com.Flatery.dto.property.PropertySummary;
@@ -10,12 +11,18 @@ import com.Flatery.model.property.PropertyImage;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.repository.property.PropertyImageRepository;
 import com.Flatery.service.property.FileStorageService;
+=======
+import com.Flatery.dto.property.PropertyResponse;
+import com.Flatery.dto.property.PropertySummary;
+import com.Flatery.dto.property.UpdatePropertyRequest;
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 import com.Flatery.service.property.PropertyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+<<<<<<< HEAD
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -24,11 +31,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+=======
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 
 @RestController
 @RequestMapping("/api/admin/properties")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN','SUPERADMIN')")
+<<<<<<< HEAD
 @lombok.extern.slf4j.Slf4j
 public class AdminPropertyController {
 
@@ -36,6 +49,11 @@ public class AdminPropertyController {
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final PropertyImageRepository propertyImageRepository;
+=======
+public class AdminPropertyController {
+
+    private final PropertyService propertyService;
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
 
         // Get total active security deposits for the authenticated owner
         @GetMapping("/security-deposits")
@@ -102,6 +120,7 @@ public class AdminPropertyController {
         return ResponseEntity.ok(page);
     }
 
+<<<<<<< HEAD
     // Upload images for a property
     @PostMapping(value = "/{id}/images")
     public ResponseEntity<ImageUploadResponse> uploadImages(
@@ -234,5 +253,12 @@ public class AdminPropertyController {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return user.getId();
+=======
+    // Extract user id from Authentication principal (adapt to your JWT principal)
+    private Long getUserId(Authentication auth) {
+        // Example: if principal stores userId as name (string), or a custom ClaimsUser
+        // return ((ClaimsUser) auth.getPrincipal()).getUserId();
+        return Long.valueOf(auth.getName()); // replace with your actual principal mapping
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     }
 }

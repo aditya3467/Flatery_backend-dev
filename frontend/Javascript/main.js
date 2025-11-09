@@ -438,6 +438,8 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     document.getElementById('signupModal')?.classList.remove('active');
 
     const roles = authResponse.roles || [];
+    console.log('User roles:', roles); // Debug log
+    console.log('Full auth response:', authResponse); // Debug log
     
     // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {

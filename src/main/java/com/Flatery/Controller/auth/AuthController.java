@@ -39,6 +39,7 @@ public class AuthController {
         }
     }
 
+<<<<<<< HEAD
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
         try {
@@ -69,6 +70,8 @@ public class AuthController {
         }
     }
 
+=======
+>>>>>>> c3e6d02454c89c98dada3de88b207017dc57121f
     record ErrorResponse(String error) {}
     record MessageResponse(String message) {}
 }
