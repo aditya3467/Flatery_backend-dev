@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Carousel Test</title>
+    <style>
+        .property-image {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background: #f0f0f0;
+            margin: 20px;
+            overflow: hidden;
+        }
+        
+        .property-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        
+        .property-image img.active {
+            display: block;
+        }
+        
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 10;
+        }
+        
+        .carousel-btn.prev { left: 10px; }
+        .carousel-btn.next { right: 10px; }
+        
+        .carousel-btn:hover {
+            background: rgba(0,0,0,0.8);
+        }
+        
+        .carousel-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+        
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .carousel-dot.active {
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Carousel Test</h1>
+    
+    <div class="property-image" data-images='["https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400", "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400", "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400"]' data-image-index="0">
+        <img src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400" class="active" alt="Property">
+        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400" alt="Property">
+        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400" alt="Property">
+        
+        <button class="carousel-btn prev">‹</button>
+        <button class="carousel-btn next">›</button>
+        
+        <div class="carousel-dots">
+            <button class="carousel-dot active" data-index="0"></button>
+            <button class="carousel-dot" data-index="1"></button>
+            <button class="carousel-dot" data-index="2"></button>
+        </div>
+    </div>
+    
+    <button onclick="testManualCarousel()">Test Manual Carousel</button>
+    <button onclick="setupCarouselEventListeners()">Setup Event Listeners</button>
+    
+    <script>
+        // Simple carousel functions for testing
+        function changeCarouselImage(button, direction) {
+            console.log('changeCarouselImage called with:', button, direction);
+            const imageWrapper = button ? button.closest('.property-image') : null;
+            if (!imageWrapper) {
+                console.error('Image wrapper not found');
+                return;
+            }
+            
+            const imgs = imageWrapper.querySelectorAll('img');
+            const dots = imageWrapper.querySelectorAll('.carousel-dot');
+            let currentIndex = parseInt(imageWrapper.getAttribute('data-image-index')) || 0;
+            
+            console.log('Current index:', currentIndex, 'Direction:', direction, 'Images count:', imgs.length);
+            
+            // Hide current image and dot
+            imgs[currentIndex].classList.remove('active');
+            dots[currentIndex].classList.remove('active');
+            
+            // Calculate new index
+            currentIndex = (currentIndex + direction + imgs.length) % imgs.length;
+            
+            console.log('New index:', currentIndex);
+            
+            // Show new image and dot
+            imgs[currentIndex].classList.add('active');
+            dots[currentIndex].classList.add('active');
+            imageWrapper.setAttribute('data-image-index', currentIndex);
+        }
+        
+        function jumpToCarouselImage(dot, index) {
+            console.log('jumpToCarouselImage called with:', dot, index);
+            const imageWrapper = dot.closest('.property-image');
+            const imgs = imageWrapper.querySelectorAll('img');
+            const dots = imageWrapper.querySelectorAll('.carousel-dot');
+            let currentIndex = parseInt(imageWrapper.getAttribute('data-image-index')) || 0;
+            
+            // Hide current
+            imgs[currentIndex].classList.remove('active');
+            dots[currentIndex].classList.remove('active');
+            
+            // Show new
+            imgs[index].classList.add('active');
+            dots[index].classList.add('active');
+            imageWrapper.setAttribute('data-image-index', index);
+        }
+        
+        function setupCarouselEventListeners() {
+            console.log('Setting up carousel event listeners...');
+            
+            const prevButtons = document.querySelectorAll('.carousel-btn.prev');
+            const nextButtons = document.querySelectorAll('.carousel-btn.next');
+            const dots = document.querySelectorAll('.carousel-dot');
+            
+            console.log('Found:', { prev: prevButtons.length, next: nextButtons.length, dots: dots.length });
+            
+            // Remove existing listeners by cloning elements
+            prevButtons.forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', (e) => {
+                    console.log('Prev button clicked!');
+                    e.stopPropagation();
+                    changeCarouselImage(newBtn, -1);
+                });
+            });
+            
+            nextButtons.forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', (e) => {
+                    console.log('Next button clicked!');
+                    e.stopPropagation();
+                    changeCarouselImage(newBtn, 1);
+                });
+            });
+            
+            dots.forEach(dot => {
+                const newDot = dot.cloneNode(true);
+                dot.parentNode.replaceChild(newDot, dot);
+                
+                newDot.addEventListener('click', (e) => {
+                    console.log('Dot clicked!');
+                    e.stopPropagation();
+                    const index = parseInt(newDot.getAttribute('data-index'));
+                    jumpToCarouselImage(newDot, index);
+                });
+            });
+        }
+        
+        function testManualCarousel() {
+            const btn = document.querySelector('.carousel-btn.next');
+            changeCarouselImage(btn, 1);
+        }
+        
+        // Set up listeners on page load
+        document.addEventListener('DOMContentLoaded', setupCarouselEventListeners);
+    </script>
+</body>
+</html>

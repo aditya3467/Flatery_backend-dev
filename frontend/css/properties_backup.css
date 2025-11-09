@@ -1,4 +1,4 @@
-/* ===== Properties Page - Modern Sidebar Layout ===== */
+﻿/* ===== Properties Page - Modern Sidebar Layout ===== */
 
 :root {
     --bg-primary: #0D1321;
@@ -594,87 +594,6 @@ body {
     border-color: var(--accent-violet);
 }
 
-/* Card Image Section */
-.property-card-image {
-    width: 30%;
-    max-width: 280px;
-    position: relative;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.property-image-carousel {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    background: #232B3E;
-}
-
-.property-image-carousel img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
-}
-
-.property-card:hover .property-image-carousel img {
-    transform: scale(1.05);
-}
-
-.carousel-controls {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 4px;
-    z-index: 2;
-}
-
-.carousel-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.carousel-dot.active {
-    background: white;
-    width: 18px;
-    border-radius: 3px;
-}
-
-.property-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(39, 174, 96, 0.95);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.property-badge i {
-    font-size: 0.7rem;
-}
-
-/* Card Content Section */
-.property-card-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 1.25rem 1.5rem;
-}
-
 /* Header Row: Name + Rent */
 .property-header {
     display: flex;
@@ -924,16 +843,6 @@ body {
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
-/* Desktop (≥992px) - Image left 40% + Info right 60% */
-@media (min-width: 992px) {
-    .property-card-image {
-        width: 38%;
-    }
-    .property-card-content {
-        width: 62%;
-    }
-}
-
 /* Tablet (≥768px, <992px) - Stack vertically */
 @media (max-width: 991px) {
     .properties-main {
@@ -969,17 +878,6 @@ body {
         flex-direction: column;
         padding: 1rem;
     }
-    
-    .property-card-image {
-        width: 100%;
-        height: 220px;
-        margin-right: 0;
-        margin-bottom: 1rem;
-    }
-    
-    .property-card-content {
-        width: 100%;
-    }
 }
 
 /* Mobile (≤767px) - Full width stack */
@@ -999,10 +897,6 @@ body {
     
     .property-card {
         padding: 0.8rem;
-    }
-    
-    .property-card-image {
-        height: 200px;
     }
     
     .property-name {
@@ -1057,14 +951,6 @@ body {
     
     .property-card {
         padding: 0.6rem;
-    }
-    
-    .property-card-image {
-        height: 180px;
-    }
-    
-    .property-card-content {
-        padding: 0;
     }
     
     .property-header {
