@@ -1,4 +1,4 @@
-﻿package com.Flatery.dto;
+package com.Flatery.dto;
 import lombok.Data;
 import java.util.Set;
 

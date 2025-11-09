@@ -1,4 +1,4 @@
-﻿package com.Flatery.repository;
+package com.Flatery.repository;
 
 import com.Flatery.model.RoleName;
 import com.Flatery.model.User;

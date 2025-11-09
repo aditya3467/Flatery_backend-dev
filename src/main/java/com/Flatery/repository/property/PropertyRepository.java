@@ -1,4 +1,4 @@
-﻿package com.Flatery.repository.property;
+package com.Flatery.repository.property;
 
 import com.Flatery.model.property.Property;
 import org.springframework.data.domain.Page;

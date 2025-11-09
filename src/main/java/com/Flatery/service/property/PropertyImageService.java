@@ -1,4 +1,4 @@
-﻿package com.Flatery.service.property;
+package com.Flatery.service.property;
 
 import com.Flatery.model.property.PropertyImage;
 import com.Flatery.repository.property.PropertyImageRepository;

@@ -1,4 +1,4 @@
-﻿package com.Flatery.Controller.auth;
+package com.Flatery.Controller.auth;
 
 import com.Flatery.dto.AuthResponse;
 import com.Flatery.dto.LoginRequest;

@@ -1,4 +1,4 @@
-﻿package com.Flatery.Controller.property;
+package com.Flatery.Controller.property;
 
 import com.Flatery.dto.property.CreatePropertyRequest;
 import com.Flatery.dto.property.ImageUploadResponse;
