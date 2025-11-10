@@ -350,6 +350,16 @@ class ApiService {
         }
     }
 
+    async deactivateTenant(tenantId) {
+        try {
+            return await this.makeRequest(`/tenants/${tenantId}/deactivate`, {
+                method: 'POST'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     // User lookup for owners adding tenants
     async findUser({ username, email, phone }) {
         try {

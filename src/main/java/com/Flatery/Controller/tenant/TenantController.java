@@ -88,6 +88,26 @@ public class TenantController {
     return ResponseEntity.ok(tenantService.getTenantsByUnit(unitId));
     }
 
+    @PostMapping("/{tenantId}/deactivate")
+    public ResponseEntity<?> deactivateTenant(
+            @PathVariable String tenantId,
+            Authentication authentication
+    ) {
+        try {
+            Long ownerId = getAuthenticatedUserId(authentication);
+            TenantSummary updated = tenantService.deactivateTenant(ownerId, tenantId);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
+        } catch (RuntimeException ex) {
+            // Permission errors
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to deactivate tenant"));
+        }
+    }
+
     private Long getAuthenticatedUserId(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String username = userDetails.getUsername();

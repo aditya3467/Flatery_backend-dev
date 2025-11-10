@@ -405,5 +405,65 @@ public class TenantService {
         return sb.toString();
     }
 
+    /**
+     * Deactivate a tenant by external tenantId (TENxxxxx):
+     * - Validate ownership
+     * - Mark status VACATED
+     * - Set leaseEndDate to today (ensures not counted as active)
+     * - Clear bedIndex to free the bed
+     * - Recompute unit occupancy if assigned
+     * Returns updated TenantSummary
+     */
+    @Transactional
+    public TenantSummary deactivateTenant(Long ownerId, String externalTenantId) {
+        Tenant tenant = tenantRepository.findByTenantId(externalTenantId)
+                .orElseGet(() -> {
+                    try {
+                        Long internalId = Long.parseLong(externalTenantId);
+                        return tenantRepository.findById(internalId).orElse(null);
+                    } catch (NumberFormatException nfe) {
+                        return null;
+                    }
+                });
+        if (tenant == null) {
+            throw new IllegalArgumentException("Tenant not found");
+        }
+
+        if (!tenant.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("You do not have permission to modify this tenant");
+        }
+
+        // Update status and dates; set lease end date to today (ensures not active) and clear bed assignment
+        tenant.setStatus(Tenant.TenantStatus.VACATED);
+        tenant.setLeaseEndDate(java.time.LocalDate.now()); // even if already set, override to today to guarantee vacancy
+        tenant.setBedIndex(null); // free the bed explicitly
+
+        tenantRepository.save(tenant);
+
+        // Update unit occupancy if applicable
+        if (tenant.getUnitId() != null) {
+            unitService.recomputeUnitStatus(tenant.getUnitId());
+        }
+
+        return new TenantSummary(
+                tenant.getId(),
+                tenant.getTenantId(),
+                tenant.getTenantName(),
+                tenant.getStatus().name(),
+                tenant.getRentAmount(),
+                tenant.getSecurityDeposit(),
+                tenant.getRentDueDate(),
+                tenant.getPropertyId(),
+                tenant.getPhoneNumber(),
+                tenant.getFloorId(),
+                tenant.getUnitId(),
+                tenant.getBedIndex(),
+                tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null,
+                tenant.getEmailAddress(),
+                tenant.getFlatRoomNumber(),
+                null, null, null, null
+        );
+    }
+
     // ...existing code...
 }
