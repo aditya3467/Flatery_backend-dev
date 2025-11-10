@@ -925,7 +925,7 @@ function renderTenants() {
         <i class="fas fa-users"></i>
         <h3>No Tenants Yet</h3>
         <p>Start by adding tenants to your property</p>
-        <button class="btn-primary" onclick="window.location.href='add-tenant.html?propertyId=${currentPropertyId}'">
+        <button class="btn-primary" onclick="window.location.href='/frontend/owner/add-tenant.html?propertyId=${currentPropertyId}'">
           <i class="fas fa-plus"></i> Add Tenant
         </button>
       </div>

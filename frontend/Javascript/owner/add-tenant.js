@@ -152,7 +152,7 @@ async function handleSubmit(e) {
     return showAlert('error', 'Lease end date cannot be before lease start date');
   }
 
-  // Final check: verify no duplicate tenancy for this property + phone combination
+  // Final check: verify no duplicate ACTIVE tenancy for this property + phone combination
   try {
     const tenants = await apiService.getTenants();
     const normalizePhone = (phone) => {
@@ -162,14 +162,15 @@ async function handleSubmit(e) {
     
     const inputPhone = normalizePhone(data.phoneNumber);
     
-    // Check if tenant with same phone already exists for this property
+    // Check if tenant with same phone already has an ACTIVE tenancy for this property
     const duplicate = tenants.find(t => {
       const tenantPhone = normalizePhone(t.phoneNumber);
-      return t.propertyId === data.propertyId && tenantPhone === inputPhone;
+      // Only block if an ACTIVE tenancy exists - allow reassigning VACATED tenants
+      return t.propertyId === data.propertyId && tenantPhone === inputPhone && String(t.status).toUpperCase() === 'ACTIVE';
     });
     
     if (duplicate) {
-      return showAlert('error', 'This tenant is already assigned to this property. You can edit the tenancy details instead.');
+      return showAlert('error', 'This tenant already has an ACTIVE tenancy for this property. Deactivate the existing tenancy first, or edit it instead.');
     }
   } catch (err) {
     console.warn('Could not verify duplicate tenant', err);
@@ -353,23 +354,24 @@ async function checkDuplicateTenancy(user) {
       
       const userPhone = normalizePhone(user.phoneNumber);
       
-      // Check if this user already has a tenancy for the selected property
+      // Check if this user already has an ACTIVE tenancy for the selected property
       const existingTenancy = tenants.find(t => {
         const tenantPhone = normalizePhone(t.phoneNumber);
-        return tenantPhone === userPhone && t.propertyId === selectedPropertyId;
+        // Only block if status is ACTIVE - allow reassigning VACATED tenants
+        return tenantPhone === userPhone && t.propertyId === selectedPropertyId && String(t.status).toUpperCase() === 'ACTIVE';
       });
       
       if (existingTenancy) {
-        showAlert('error', `⚠️ Tenant already assigned to this property! You can edit the tenancy details instead.`);
-        // Disable submit button only for this specific property
+        showAlert('error', `⚠️ Tenant already has an ACTIVE tenancy for this property! Deactivate the existing tenancy first, or edit it instead.`);
+        // Disable submit button only for this specific property with active tenancy
         const submitBtn = document.querySelector('button[type="submit"]');
         if (submitBtn) {
           submitBtn.disabled = true;
-          submitBtn.title = 'Tenant already exists for this property';
+          submitBtn.title = 'Active tenancy exists for this property';
         }
       } else {
         hideAlert();
-        // Re-enable submit button - this is a new property for this tenant
+        // Re-enable submit button - no active tenancy for this property
         const submitBtn = document.querySelector('button[type="submit"]');
         if (submitBtn) {
           submitBtn.disabled = false;

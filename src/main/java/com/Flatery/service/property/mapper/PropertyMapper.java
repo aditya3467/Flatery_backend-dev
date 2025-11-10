@@ -4,10 +4,16 @@ import com.Flatery.dto.property.CreatePropertyRequest;
 import com.Flatery.dto.property.PropertyResponse;
 import com.Flatery.dto.property.PropertySummary;
 import com.Flatery.model.property.Property;
+import com.Flatery.model.User;
+import com.Flatery.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PropertyMapper {
+
+    @Autowired
+    private UserRepository userRepository;
 
     public Property toEntity(CreatePropertyRequest req, Long ownerId) {
         Property p = new Property();
@@ -94,6 +100,14 @@ public class PropertyMapper {
         res.setAllDay(p.isAllDay());
         res.setPrimaryImageUrl(primaryImageUrl);
         res.setPostedOn(p.getPostedOn());
+        // Set owner details
+        if (p.getOwnerId() != null) {
+            userRepository.findById(p.getOwnerId()).ifPresent(owner -> {
+                res.setOwnerName(owner.getFirstName() + (owner.getLastName() != null ? (" " + owner.getLastName()) : ""));
+                res.setOwnerPhone(owner.getPhoneNumber());
+                res.setOwnerEmail(owner.getEmail());
+            });
+        }
         return res;
     }
 
@@ -111,6 +125,14 @@ public class PropertyMapper {
         s.setAvailableFrom(p.getAvailableFrom());
         s.setPrimaryImageUrl(primaryImageUrl);
         s.setPostedOn(p.getPostedOn());
+        // Set owner details
+        if (p.getOwnerId() != null) {
+            userRepository.findById(p.getOwnerId()).ifPresent(owner -> {
+                s.setOwnerName(owner.getFirstName() + (owner.getLastName() != null ? (" " + owner.getLastName()) : ""));
+                s.setOwnerPhone(owner.getPhoneNumber());
+                s.setOwnerEmail(owner.getEmail());
+            });
+        }
         return s;
     }
 }

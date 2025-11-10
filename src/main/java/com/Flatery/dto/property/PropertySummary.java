@@ -19,4 +19,8 @@ public class PropertySummary {
     private LocalDate availableFrom;
     private String primaryImageUrl;
     private LocalDate postedOn;
+    // Owner details for display
+    private String ownerName;
+    private String ownerPhone;
+    private String ownerEmail;
 }
