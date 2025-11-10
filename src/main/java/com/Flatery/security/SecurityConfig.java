@@ -46,6 +46,10 @@ public class SecurityConfig {
                         .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
                         .requestMatchers("/").permitAll() // Allow access to root
                         .requestMatchers("/uploads/properties/**").permitAll() // Allow access to uploaded images
+                                // payment api's endpoint
+                                .requestMatchers("/api/transactions/**").authenticated()
+                                .requestMatchers("/api/owner-payment-info/**").authenticated()
+                                .requestMatchers("/api/receipts/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
