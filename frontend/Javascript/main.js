@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
    * Closes hamburger menu when clicking outside of it
    */
   document.addEventListener('click', function (event) {
-    const burgerMenu = document.querySelector('.burger-menu');
+    const burgerMenu = document.querySelector('.nav-menu') || document.querySelector('.burger-menu');
     const burgerBtn = document.querySelector('.burger-btn');
     const burgerToggle = document.getElementById('burger-toggle'); // Get the checkbox
 
@@ -189,8 +189,9 @@ function handleListPropertyClick(e) {
     
     // Check if user is authenticated
     if (typeof apiService !== 'undefined' && apiService.isAuthenticated()) {
-        // User is logged in, redirect to add-property page
-        window.location.href = 'add-property.html';
+    // User is logged in, redirect to add-property page
+    const inOwner = window.location.pathname.includes('/owner/');
+    window.location.href = inOwner ? 'add-property.html' : 'owner/add-property.html';
     } else {
         // User is not logged in, show login modal
         document.getElementById('loginModal')?.classList.add('active');
@@ -268,6 +269,15 @@ function closeSignupModal() {
 function openChangePasswordModal() {
     document.getElementById('changePasswordModal').classList.add('active');
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    
+    // Ensure event listener is attached
+    const form = document.getElementById('changePasswordForm');
+    if (form) {
+        // Remove any existing listeners to prevent duplicates
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        newForm.addEventListener('submit', handleChangePassword);
+    }
 }
 
 function closeChangePasswordModal() {
@@ -297,25 +307,17 @@ window.closeChangePasswordModal = closeChangePasswordModal;
  */
 async function handleSignup(e) {
   const form = e.target;
-  const firstName = form.querySelector('input[name="firstName"]').value;
-  const lastName = form.querySelector('input[name="lastName"]').value;
-  const username = form.querySelector('input[name="username"]').value;
-  const email = form.querySelector('input[name="email"]').value;
-  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value;
+  const firstName = form.querySelector('input[name="firstName"]').value.trim();
+  const lastName = form.querySelector('input[name="lastName"]').value.trim();
+  const username = form.querySelector('input[name="username"]').value.trim();
+  const email = form.querySelector('input[name="email"]').value.trim();
+  const phoneNumber = form.querySelector('input[name="phoneNumber"]').value.trim();
   const password = form.querySelector('input[name="password"]').value;
-  const role = form.querySelector('input[name="role"]:checked').value;
+  const role = form.querySelector('input[name="role"]:checked')?.value;
 
   // Client-side validation
-  if (password.length < 6) {
-    showError('Password must be at least 6 characters long.');
-    return;
-  }
-  if (password.length > 100) {
-    showError('Password must be less than 100 characters.');
-    return;
-  }
-  if (username.length < 3) {
-    showError('Username must be at least 3 characters long.');
+  if (!firstName || !lastName || !username || !email || !password || !role) {
+    showError('Please fill in all required fields.');
     return;
   }
   if (firstName.length < 2) {
@@ -324,6 +326,24 @@ async function handleSignup(e) {
   }
   if (lastName.length < 2) {
     showError('Last name must be at least 2 characters long.');
+    return;
+  }
+  if (username.length < 3) {
+    showError('Username must be at least 3 characters long.');
+    return;
+  }
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showError('Please enter a valid email address.');
+    return;
+  }
+  if (password.length < 6) {
+    showError('Password must be at least 6 characters long.');
+    return;
+  }
+  if (password.length > 100) {
+    showError('Password must be less than 100 characters.');
     return;
   }
 
@@ -335,7 +355,7 @@ async function handleSignup(e) {
     // Automatically attempt to log in the new user
     await handleLogin({ target: form, credentials: { username, password } }); // Pass credentials directly
   } catch (error) {
-    showError(error.message || 'Signup failed. Try again.');
+    showError(error.message || 'Signup failed. Please check your details and try again.');
   } finally {
     hideLoading(form.querySelector('button[type="submit"]'));
   }
@@ -369,18 +389,24 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     return;
   }
 
-  showLoading(form?.querySelector('button[type="submit"]'));
+  // Validate empty fields
+  if (!username || !password) {
+    showError('Please enter both username and password.');
+    return;
+  }
+
+  if (form) {
+    showLoading(form.querySelector('button[type="submit"]'));
+  }
 
   try {
     const authResponse = await apiService.login({ username, password });
     
     // Fetch user details to get firstName
     const userDetails = await apiService.getCurrentUser();
-    console.log('User details fetched:', userDetails);
     
     // Extract first name from fullName
     const firstName = userDetails.fullName ? userDetails.fullName.split(' ')[0] : username;
-    console.log('First name extracted:', firstName);
     
     // Store user data in localStorage
     localStorage.setItem('username', username);
@@ -389,10 +415,13 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     
     // Check if password change is required
     if (authResponse.requiresPasswordChange) {
-        console.log('Password change required');
         document.getElementById('loginModal')?.classList.remove('active');
         document.getElementById('signupModal')?.classList.remove('active');
         updateUIForLoggedInUser();
+        
+        // Mark as new tenant who needs to complete profile
+        localStorage.removeItem('profileCompleted');
+        localStorage.removeItem('profilePromptSeen');
         
         // Show notification and open change password modal
         showSuccess('Login successful! Please change your temporary password.');
@@ -402,7 +431,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return;
     }
     
-    showSuccess('Login successful!');
+    showSuccess('Login successful! Redirecting...');
     updateUIForLoggedInUser();
     document.getElementById('loginModal')?.classList.remove('active');
 
@@ -415,14 +444,13 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     
     // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {
-        console.log('Redirecting to superadmin dashboard...'); // Debug log
         setTimeout(() => {
             window.location.href = '/frontend/superadmin-dashboard.html';
         }, 100);
         return; // Stop further execution
     } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
         setTimeout(() => {
-            window.location.href = '/frontend/Owner.html';
+            window.location.href = '/frontend/owner/Owner.html';
         }, 100);
         return;
     } else if (roles.includes('USER')) {
@@ -432,7 +460,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return;
     }
   } catch (error) {
-    showError(error.message || 'Login failed. Please try again.');
+    showError(error.message || 'Login failed. Please check your username and password.');
   } finally {
     if (form) { // Ensure form exists before trying to hide loading
       hideLoading(form.querySelector('button[type="submit"]'));
@@ -483,8 +511,8 @@ async function handleLogout() {
     // Re-setup login button listeners to make them active again
     setupLoginButtonListeners();
 
-    // Redirect to home page after logout
-    window.location.href = 'index.html';
+  // Redirect to home page after logout (use absolute path to avoid folder-relative issues)
+  window.location.href = '/frontend/index.html';
 
   } catch (error) {
     showError('Logout failed: ' + error.message);
@@ -551,7 +579,7 @@ function updateUIForLoggedInUser() {
           dashboardLink.href = 'superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
       } else if (roles.includes('ADMIN')) {
-          dashboardLink.href = 'Owner.html';
+          dashboardLink.href = 'owner/Owner.html';
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) {
           dashboardLink.href = 'tenant.html';
@@ -672,7 +700,7 @@ async function handleChangePassword(e) {
       if (roles.includes('USER')) {
         window.location.href = '/frontend/tenant.html';
       } else if (roles.includes('ADMIN')) {
-        window.location.href = '/frontend/Owner.html';
+        window.location.href = '/frontend/owner/Owner.html';
       } else if (roles.includes('SUPERADMIN')) {
         window.location.href = '/frontend/superadmin-dashboard.html';
       } else {

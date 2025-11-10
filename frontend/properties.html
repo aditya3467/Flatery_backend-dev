@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Properties - Flatery</title>
+    <title>Browse Properties - Flatery</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/properties.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,118 +12,428 @@
     <!-- Navbar Component -->
     <div id="navbar-container" data-component="components/navbar.html"></div>
 
-    <!-- Properties Listing Section -->
-    <section class="properties-section">
-        <div class="container">
-            <!-- Header -->
-            <div class="properties-header">
-                <h1>Available Properties</h1>
-                <p>Find your perfect home</p>
+    <!-- Mobile Filter Toggle -->
+    <button class="mobile-filter-toggle" id="mobileFilterToggle">
+        <i class="fas fa-filter"></i> Filters
+    </button>
+
+    <!-- Mobile Filter & Sort Bar -->
+    <div class="mobile-filter-bar" id="mobileFilterBar">
+        <div class="mobile-filter-options">
+            <button class="mobile-filter-btn" id="mobileSortBtn">
+                <i class="fas fa-sort"></i> Sort
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <button class="mobile-filter-btn" id="mobileFiltersBtn">
+                <i class="fas fa-filter"></i> Filters
+            </button>
+        </div>
+        
+        <!-- Sort Dropdown -->
+        <div class="mobile-dropdown" id="mobileSortDropdown">
+            <div class="dropdown-content">
+                <label class="dropdown-item">
+                    <input type="radio" name="mobileSort" value="rent_low_high">
+                    <span>Rent: Low to High</span>
+                </label>
+                <label class="dropdown-item">
+                    <input type="radio" name="mobileSort" value="rent_high_low">
+                    <span>Rent: High to Low</span>
+                </label>
+                <label class="dropdown-item">
+                    <input type="radio" name="mobileSort" value="newest">
+                    <span>Newest First</span>
+                </label>
             </div>
+        </div>
+    </div>
 
-            <!-- Filters -->
-            <div class="filters-container">
-                <div class="filter-group">
-                    <label for="filterPropertyType">Property Type</label>
-                    <select id="filterPropertyType" onchange="toggleBhkSeaterFilter()">
-                        <option value="">All Types</option>
-                        <option value="PG">PG</option>
-                        <option value="FLAT">Flat</option>
-                        <option value="APARTMENT">Apartment</option>
-                    </select>
-                </div>
-
-                <div class="filter-group" id="bhkFilterGroup">
-                    <label for="filterBHK" id="bhkLabel">BHK</label>
-                    <select id="filterBHK">
-                        <option value="">All</option>
-                        <option value="BHK_1">1 BHK</option>
-                        <option value="BHK_2">2 BHK</option>
-                        <option value="BHK_3">3 BHK</option>
-                        <option value="BHK_4">4 BHK</option>
-                        <option value="BHK_4_PLUS">4+ BHK</option>
-                    </select>
-                </div>
-
-                <div class="filter-group" id="seaterFilterGroup" style="display: none;">
-                    <label for="filterSeater">Seater</label>
-                    <select id="filterSeater">
-                        <option value="">All</option>
-                        <option value="1">Single</option>
-                        <option value="2">Double</option>
-                        <option value="3">Triple</option>
-                        <option value="4">4+ Seater</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="filterCity">City</label>
-                    <input type="text" id="filterCity" placeholder="Enter city">
-                </div>
-
-                <div class="filter-group">
-                    <label for="filterMaxRent">Max Rent</label>
-                    <input type="number" id="filterMaxRent" placeholder="e.g., 20000">
-                </div>
-
-                <div class="filter-group">
-                    <label for="filterAvailability">Availability</label>
-                    <select id="filterAvailability">
-                        <option value="">All</option>
-                        <option value="immediate">Immediate</option>
-                        <option value="15days">Within 15 Days</option>
-                        <option value="30days">Within 30 Days</option>
-                        <option value="after30days">After 30 Days</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="filterPreferredTenant">Preferred Tenant</label>
-                    <select id="filterPreferredTenant">
-                        <option value="">All</option>
-                        <option value="FAMILY">Family</option>
-                        <option value="BACHELOR">Bachelor</option>
-                        <option value="COMPANY">Company</option>
-                        <option value="ANY">Any</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="filterFurnishing">Furnishing</label>
-                    <select id="filterFurnishing">
-                        <option value="">All</option>
-                        <option value="FURNISHED">Furnished</option>
-                        <option value="SEMI_FURNISHED">Semi Furnished</option>
-                        <option value="UNFURNISHED">Unfurnished</option>
-                    </select>
-                </div>
-
-                <button class="btn-filter" onclick="applyFilters()">
-                    <i class="fas fa-filter"></i> Apply Filters
-                </button>
-                
-                <button class="btn-clear" onclick="clearFilters()">
-                    <i class="fas fa-times"></i> Clear
+    <!-- Mobile Filters Popup -->
+    <div class="mobile-filters-popup" id="mobileFiltersPopup">
+        <div class="popup-overlay"></div>
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2><i class="fas fa-sliders-h"></i> Filters</h2>
+                <button class="popup-close" id="mobileFiltersClose">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
+            
+            <div class="popup-body">
+                <!-- Location Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-map-marker-alt"></i> Location</h3>
+                    <div class="filter-group">
+                        <label for="mobileFilterCity">City</label>
+                        <select id="mobileFilterCity">
+                            <option value="">Select City</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Kolkata">Kolkata</option>
+                            <option value="Ahmedabad">Ahmedabad</option>
+                            <option value="Noida">Noida</option>
+                            <option value="Gurgaon">Gurgaon</option>
+                            <option value="Chandigarh">Chandigarh</option>
+                            <option value="Mohali">Mohali</option>
+                        </select>
+                    </div>
+                </div>
 
-            <!-- Properties Grid -->
-            <div id="propertiesGrid" class="properties-grid">
-                <!-- Property cards will be dynamically inserted here -->
-                <div class="loading">
+                <!-- Budget Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-rupee-sign"></i> Budget</h3>
+                    <div class="filter-group">
+                        <label for="mobileFilterMaxRent">Max Rent</label>
+                        <input type="number" id="mobileFilterMaxRent" placeholder="₹15,000" min="0">
+                    </div>
+                </div>
+
+                <!-- Property Type Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-building"></i> Property Type</h3>
+                    <div class="filter-group">
+                        <select id="mobileFilterPropertyType">
+                            <option value="">All Types</option>
+                            <option value="FLAT">Flat</option>
+                            <option value="PG">PG</option>
+                            <option value="APARTMENT">Apartment</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Flat Type Filter -->
+                <div class="filter-section" id="mobileFlatTypeSection" style="display: none;">
+                    <h3><i class="fas fa-door-open"></i> Flat Type</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_1" class="mobile-filter-checkbox" data-filter="flatType">
+                            <span>1 BHK</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_2" class="mobile-filter-checkbox" data-filter="flatType">
+                            <span>2 BHK</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_3" class="mobile-filter-checkbox" data-filter="flatType">
+                            <span>3 BHK</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_4" class="mobile-filter-checkbox" data-filter="flatType">
+                            <span>4 BHK</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Amenities Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-check-circle"></i> Amenities</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="WiFi" class="mobile-filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-wifi"></i> WiFi</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Laundry" class="mobile-filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-tshirt"></i> Laundry</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="AC" class="mobile-filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-snowflake"></i> AC</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Food" class="mobile-filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-utensils"></i> Food</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Furnishing Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-couch"></i> Furnishing</h3>
+                    <div class="filter-group">
+                        <select id="mobileFilterFurnishing">
+                            <option value="">Any Furnishing</option>
+                            <option value="FULLY_FURNISHED">Fully Furnished</option>
+                            <option value="SEMI_FURNISHED">Semi Furnished</option>
+                            <option value="UNFURNISHED">Unfurnished</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popup-footer">
+                <button class="btn-reset" id="mobileResetBtn">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+                <button class="btn-apply" id="mobileApplyBtn">
+                    <i class="fas fa-check"></i> Apply
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Properties Container -->
+    <div class="properties-container">
+        <!-- Filters Sidebar -->
+        <aside class="filters-sidebar" id="filtersSidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-sliders-h"></i> Filters</h2>
+                <button class="close-sidebar" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Location Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-map-marker-alt"></i> Location</h3>
+                    <div class="filter-group">
+                        <label for="filterCity">City</label>
+                        <select id="filterCity">
+                            <option value="">Select City</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Kolkata">Kolkata</option>
+                            <option value="Ahmedabad">Ahmedabad</option>
+                            <option value="Noida">Noida</option>
+                            <option value="Gurgaon">Gurgaon</option>
+                            <option value="Chandigarh">Chandigarh</option>
+                            <option value="Mohali">Mohali</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterLocality">Locality</label>
+                        <input type="text" id="filterLocality" placeholder="e.g., Banjara Hills">
+                    </div>
+                </div>
+
+                <!-- Budget Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-rupee-sign"></i> Budget</h3>
+                    <div class="filter-group">
+                        <label for="filterMinRent">Min Rent</label>
+                        <input type="number" id="filterMinRent" placeholder="₹2,000" min="0">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMaxRent">Max Rent</label>
+                        <input type="number" id="filterMaxRent" placeholder="₹15,000" min="0">
+                    </div>
+                    <div class="filter-chips">
+                        <button class="chip" onclick="setRentRange(0, 5000)">Below 5k</button>
+                        <button class="chip" onclick="setRentRange(5000, 10000)">5k-10k</button>
+                        <button class="chip" onclick="setRentRange(10000, 15000)">10k-15k</button>
+                        <button class="chip" onclick="setRentRange(15000, 999999)">Above 15k</button>
+                    </div>
+                </div>
+
+                <!-- Property Type Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-building"></i> Property Type</h3>
+                    <div class="filter-group">
+                        <select id="filterPropertyType" onchange="togglePropertyTypeOptions()">
+                            <option value="">All Types</option>
+                            <option value="PG">PG</option>
+                            <option value="FLAT">Flat</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Flat Type Filter (shown when Flat is selected) -->
+                <div class="filter-section" id="flatTypeSection" style="display: none;">
+                    <h3><i class="fas fa-door-open"></i> Flat Type</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_1" class="filter-checkbox" data-filter="flatType">
+                            <span>1 BHK</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_2" class="filter-checkbox" data-filter="flatType">
+                            <span>2 BHK</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_3" class="filter-checkbox" data-filter="flatType">
+                            <span>3 BHK</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_4" class="filter-checkbox" data-filter="flatType">
+                            <span>4 BHK</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BHK_4_PLUS" class="filter-checkbox" data-filter="flatType">
+                            <span>4+ BHK</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- PG Type Filter (shown when PG is selected) -->
+                <div class="filter-section" id="pgTypeSection" style="display: none;">
+                    <h3><i class="fas fa-home"></i> PG Gender Type</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="BOYS" class="filter-checkbox" data-filter="pgType">
+                            <span>Boys</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="GIRLS" class="filter-checkbox" data-filter="pgType">
+                            <span>Girls</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="COED" class="filter-checkbox" data-filter="pgType">
+                            <span>Co-ed</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Room Type Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-bed"></i> Room Type</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="1" class="filter-checkbox" data-filter="sharing">
+                            <span>Single Sharing</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="2" class="filter-checkbox" data-filter="sharing">
+                            <span>Double Sharing</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="3" class="filter-checkbox" data-filter="sharing">
+                            <span>Triple Sharing</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Amenities Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-check-circle"></i> Amenities</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="WiFi" class="filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-wifi"></i> WiFi</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Laundry" class="filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-tshirt"></i> Laundry</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="AC" class="filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-snowflake"></i> AC</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Food" class="filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-utensils"></i> Food</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Cleaning" class="filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-broom"></i> Cleaning</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Parking" class="filter-checkbox" data-filter="amenities">
+                            <span><i class="fas fa-parking"></i> Parking</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Preferred Tenants Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-users"></i> Preferred Tenants</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Bachelors Male" class="filter-checkbox" data-filter="tenants">
+                            <span>Bachelors (Male)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Bachelors Female" class="filter-checkbox" data-filter="tenants">
+                            <span>Bachelors (Female)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Couple" class="filter-checkbox" data-filter="tenants">
+                            <span>Couple</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Family" class="filter-checkbox" data-filter="tenants">
+                            <span>Family</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Furnishing Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-couch"></i> Furnishing</h3>
+                    <div class="filter-group">
+                        <select id="filterFurnishing">
+                            <option value="">All</option>
+                            <option value="FURNISHED">Furnished</option>
+                            <option value="SEMI_FURNISHED">Semi Furnished</option>
+                            <option value="UNFURNISHED">Unfurnished</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sort By Filter -->
+                <div class="filter-section">
+                    <h3><i class="fas fa-sort"></i> Sort By</h3>
+                    <div class="filter-group">
+                        <select id="filterSortBy">
+                            <option value="rent_asc">Rent: Low to High</option>
+                            <option value="rent_desc">Rent: High to Low</option>
+                            <option value="newest">Newest First</option>
+                            <option value="rating">Rating</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="filter-actions">
+                    <button class="btn-apply" onclick="applyFilters()">
+                        <i class="fas fa-check"></i> Apply Filters
+                    </button>
+                    <button class="btn-reset" onclick="resetFilters()">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="properties-main">
+            <!-- Results Header -->
+            <div class="results-header">
+                <div class="results-info">
+                    <h1>Available Properties</h1>
+                    <p id="resultsCount">Loading properties...</p>
+                </div>
+            </div>
+
+            <!-- Properties List -->
+            <div class="properties-list" id="propertiesList">
+                <!-- Loading State -->
+                <div class="loading-state">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading properties...</p>
                 </div>
             </div>
 
             <!-- Pagination -->
-            <div class="pagination" id="pagination" style="display: none;">
-                <button class="page-btn" onclick="previousPage()"><i class="fas fa-chevron-left"></i> Previous</button>
+            <div class="pagination-container" id="paginationContainer" style="display: none;">
+                <button class="pagination-btn" id="prevBtn" onclick="previousPage()">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
                 <div class="page-numbers" id="pageNumbers"></div>
-                <button class="page-btn" onclick="nextPage()">Next <i class="fas fa-chevron-right"></i></button>
+                <button class="pagination-btn" id="nextBtn" onclick="nextPage()">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
-        </div>
-    </section>
+        </main>
+    </div>
 
     <!-- Footer Component -->
     <div id="footer-container" data-component="components/footer.html"></div>
@@ -136,5 +446,54 @@
     <script src="Javascript/component-loader.js"></script>
     <script src="Javascript/main.js"></script>
     <script src="Javascript/properties.js"></script>
+    
+    <script>
+        // Toggle property type specific filters
+        function togglePropertyTypeOptions() {
+            const propertyType = document.getElementById('filterPropertyType').value;
+            const flatTypeSection = document.getElementById('flatTypeSection');
+            const pgTypeSection = document.getElementById('pgTypeSection');
+            const roomTypeSection = document.querySelector('.filter-section:has(#filterRoomType)');
+            
+            if (propertyType === 'FLAT') {
+                flatTypeSection.style.display = 'block';
+                pgTypeSection.style.display = 'none';
+                if (roomTypeSection) roomTypeSection.style.display = 'none';
+            } else if (propertyType === 'PG') {
+                flatTypeSection.style.display = 'none';
+                pgTypeSection.style.display = 'block';
+                if (roomTypeSection) roomTypeSection.style.display = 'block';
+            } else {
+                flatTypeSection.style.display = 'none';
+                pgTypeSection.style.display = 'none';
+                if (roomTypeSection) roomTypeSection.style.display = 'block';
+            }
+        }
+        
+        // Mobile sidebar toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileFilterToggle = document.getElementById('mobileFilterToggle');
+            const filtersSidebar = document.getElementById('filtersSidebar');
+            const closeSidebar = document.getElementById('closeSidebar');
+            
+            if (mobileFilterToggle) {
+                mobileFilterToggle.addEventListener('click', function() {
+                    filtersSidebar.classList.add('active');
+                });
+            }
+            
+            if (closeSidebar) {
+                closeSidebar.addEventListener('click', function() {
+                    filtersSidebar.classList.remove('active');
+                });
+            }
+        });
+        
+        // Helper function for rent range chips
+        function setRentRange(min, max) {
+            document.getElementById('filterMinRent').value = min;
+            document.getElementById('filterMaxRent').value = max;
+        }
+    </script>
 </body>
 </html>

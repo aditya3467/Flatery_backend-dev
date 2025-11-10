@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
+<!-- moved to ./owner/Owner.html; paths adjusted to ../ -->
 <html lang="en">
 
 <head>
@@ -8,16 +9,16 @@
     <!--===== Font Awesome =====-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!--===== Main CSS =====-->
-    <link rel="stylesheet" href="css/style.css">
-    <script src="Javascript/component-loader.js" defer></script>
-    <script src="Javascript/api.js" defer></script>
-    <script src="Javascript/main.js" defer></script>
-    <script src="Javascript/owner.js" defer></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../Javascript/component-loader.js" defer></script>
+    <script src="../Javascript/api.js" defer></script>
+    <script src="../Javascript/main.js" defer></script>
+    <script src="../Javascript/owner.js" defer></script>
 </head>
 
 <body>
     <!--===== Navbar Component =====-->
-    <div id="navbar-container" data-component="components/navbar.html"></div>
+    <div id="navbar-container" data-component="../components/navbar.html"></div>
 
 
 
@@ -48,6 +49,10 @@
                 <div class="dashboard-card">
                     <span class="card-label">Pending Requests</span>
                     <span class="card-value pending">3</span>
+                </div>
+                <div class="dashboard-card">
+                    <span class="card-label">Total Security Deposits</span>
+                    <span class="card-value" id="totalSecurityDeposits">â‚¹0</span>
                 </div>
             </div>
         </div>
@@ -214,4 +219,4 @@
 
 </body>
     <!--===== Modals Component =====-->
-    <div id="modals-container" data-component="components/modals.html"></div>
+    <div id="modals-container" data-component="../components/modals.html"></div>

@@ -16,6 +16,9 @@ public class TenantResponse {
     private String emailAddress;
     private String flatRoomNumber;
     private Long propertyId;
+    private Long floorId;
+    private Long unitId;
+    private Integer bedIndex;
     private Integer rentAmount;
     private Integer securityDeposit;
     private Integer rentDueDate;
@@ -36,6 +39,9 @@ public class TenantResponse {
         r.setEmailAddress(t.getEmailAddress());
         r.setFlatRoomNumber(t.getFlatRoomNumber());
         r.setPropertyId(t.getPropertyId());
+        r.setFloorId(t.getFloorId());
+        r.setUnitId(t.getUnitId());
+        r.setBedIndex(t.getBedIndex());
         r.setRentAmount(t.getRentAmount());
         r.setSecurityDeposit(t.getSecurityDeposit());
         r.setRentDueDate(t.getRentDueDate());

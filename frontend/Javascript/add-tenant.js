@@ -59,15 +59,31 @@ async function loadOwnerProperties() {
       select.disabled = true;
       return;
     }
-    select.innerHTML = '<option value="">Select a property</option>';
+  select.innerHTML = '<option value="">Select property</option>';
     properties.forEach(p => {
       const option = document.createElement('option');
       option.value = p.id;
       const name = p.name || (p.type ? p.type : 'Property');
       const loc = p.location || p.city || '';
-      option.textContent = `${name} - ${loc}`;
+  option.textContent = `${name} - ${loc}`;
       select.appendChild(option);
     });
+
+    // Auto-select property from URL param if provided
+    const params = new URLSearchParams(window.location.search);
+    const urlPropId = params.get('propertyId') || params.get('id');
+    if (urlPropId) {
+      const match = properties.find(p => String(p.id) === String(urlPropId));
+      if (match) {
+  select.value = String(match.id);
+  // Trigger units load for PG properties
+  await loadPropertyUnits(match.id);
+      }
+    } else if (properties.length === 1) {
+      // If only one property, preselect it for convenience
+      select.value = String(properties[0].id);
+      await loadPropertyUnits(properties[0].id);
+    }
   } catch (e) {
     console.error('Failed to load properties', e);
     const msg = e?.message || 'Unauthorized or server error while fetching your properties.';
@@ -91,6 +107,8 @@ async function handleSubmit(e) {
     emailAddress: (fd.get('emailAddress') || '').trim() || null,
     propertyId: parseInt(fd.get('propertyId')),
     flatRoomNumber: (fd.get('flatRoomNumber') || '').trim(),
+    unitId: fd.get('unitId') ? parseInt(fd.get('unitId')) : null,
+    bedIndex: fd.get('bedIndex') ? parseInt(fd.get('bedIndex')) : null,
     rentAmount: parseInt(fd.get('rentAmount')),
     securityDeposit: parseInt(fd.get('securityDeposit')),
     rentDueDate: rentDueDate,
@@ -101,7 +119,12 @@ async function handleSubmit(e) {
   };
 
   if (!data.tenantName || !data.propertyId || isNaN(data.rentAmount) || isNaN(data.securityDeposit) || !data.flatRoomNumber) {
-    return showAlert('error', 'Please fill all required fields.');
+    // If PG unit section is visible, allowing unit assignment instead of flatRoomNumber
+    const pgSection = document.getElementById('pgUnitSection');
+    const requiresLocation = !(pgSection && pgSection.style.display !== 'none' && data.unitId);
+    if (requiresLocation) {
+      return showAlert('error', 'Please fill all required fields.');
+    }
   }
   if (!/^\d{10}$/.test(data.phoneNumber)) {
     return showAlert('error', 'Phone number must be 10 digits');
@@ -334,5 +357,145 @@ async function checkDuplicateTenancy(user) {
   propertySelect.addEventListener('change', checkHandler);
 }
 
+// Load floors and units for PG properties
+async function loadPropertyUnits(propertyId) {
+  try {
+    // If no property selected, hide PG section and reset dependent fields
+    if (!propertyId) {
+      const pgSection = document.getElementById('pgUnitSection');
+      if (pgSection) pgSection.style.display = 'none';
+      const flatRoomGroup = document.getElementById('flatRoomGroup');
+      if (flatRoomGroup) flatRoomGroup.style.display = '';
+      const floorSelect = document.getElementById('floorSelect');
+      const unitSelect = document.getElementById('unitSelect');
+      const unitInfo = document.getElementById('unitStatusInfo');
+      if (floorSelect) floorSelect.innerHTML = '<option value="">Select Floor</option>';
+      if (unitSelect) unitSelect.innerHTML = '<option value="">Select Unit</option>';
+      if (unitInfo) unitInfo.textContent = 'Select a unit to see availability';
+      return;
+    }
+
+    const property = await apiService.getMyProperty(propertyId);
+    const isPG = (property?.type || '').toString().toUpperCase() === 'PG';
+    
+    const pgSection = document.getElementById('pgUnitSection');
+    if (!isPG) {
+      pgSection.style.display = 'none';
+      // Show Flat/Room for non-PG
+      const flatRoomGroup = document.getElementById('flatRoomGroup');
+      if (flatRoomGroup) flatRoomGroup.style.display = '';
+      // Reset PG selectors if previously set
+      const floorSelect = document.getElementById('floorSelect');
+      const unitSelect = document.getElementById('unitSelect');
+      const unitInfo = document.getElementById('unitStatusInfo');
+      if (floorSelect) floorSelect.innerHTML = '<option value="">Select Floor</option>';
+      if (unitSelect) unitSelect.innerHTML = '<option value="">Select Unit</option>';
+      if (unitInfo) unitInfo.textContent = 'Select a unit to see availability';
+      return;
+    }
+    
+    pgSection.style.display = 'block';
+    // Hide Flat/Room for PG and clear any previous value
+    const flatRoomGroup = document.getElementById('flatRoomGroup');
+    if (flatRoomGroup) {
+      flatRoomGroup.style.display = 'none';
+      const frInput = flatRoomGroup.querySelector('input[name="flatRoomNumber"]');
+      if (frInput) frInput.value = '';
+    }
+    
+    // Load floors
+    const floors = await apiService.getFloors(propertyId);
+    const floorSelect = document.getElementById('floorSelect');
+  floorSelect.innerHTML = "<option value=\"\">Select Floor</option>";
+    floors.forEach(floor => {
+      const opt = document.createElement('option');
+      opt.value = floor.id;
+      opt.textContent = floor.name || `Floor ${floor.number}`;
+      floorSelect.appendChild(opt);
+    });
+    
+    // Load all units for the property
+    const units = await apiService.getUnits(propertyId);
+    window.propertyUnits = units; // Store for filtering by floor
+    
+    // Add floor change listener
+    floorSelect.addEventListener('change', () => {
+      const floorId = parseInt(floorSelect.value);
+      populateUnitsByFloor(floorId);
+    });
+    
+    // Add unit change listener to show unit info
+    const unitSelect = document.getElementById('unitSelect');
+    unitSelect.addEventListener('change', () => {
+      const unitId = parseInt(unitSelect.value);
+      showUnitInfo(unitId);
+    });
+    
+  } catch (err) {
+    console.error('Failed to load property units', err);
+    showAlert('error', 'Failed to load floors/units: ' + (err.message || 'Unknown error'));
+  }
+}
+
+function populateUnitsByFloor(floorId) {
+  const unitSelect = document.getElementById('unitSelect');
+  unitSelect.innerHTML = "<option value=\"\">Select Unit</option>";
+  
+  if (!floorId || !window.propertyUnits) return;
+  
+  const floorUnits = window.propertyUnits.filter(u => u.floorId === floorId);
+  floorUnits.forEach(unit => {
+    const opt = document.createElement('option');
+    opt.value = unit.id;
+    const statusLabel = unit.status || 'UNKNOWN';
+    opt.textContent = `${unit.code} - ${statusLabel} (${unit.capacity} beds)`;
+    opt.disabled = unit.status === 'OCCUPIED' || unit.status === 'MAINTENANCE';
+    unitSelect.appendChild(opt);
+  });
+  
+  document.getElementById('unitStatusInfo').textContent = floorUnits.length 
+    ? `${floorUnits.length} unit(s) on this floor` 
+    : 'No units on this floor';
+}
+
+function showUnitInfo(unitId) {
+  const infoDiv = document.getElementById('unitStatusInfo');
+  if (!unitId || !window.propertyUnits) {
+    infoDiv.textContent = 'Select a unit to see availability';
+    return;
+  }
+  
+  const unit = window.propertyUnits.find(u => u.id === unitId);
+  if (!unit) return;
+  
+  const statusColors = {
+    AVAILABLE: '#10b981',
+    PARTIAL: '#f59e0b',
+    OCCUPIED: '#ef4444',
+    RESERVED: '#8b5cf6',
+    MAINTENANCE: '#6b7280'
+  };
+  
+  const color = statusColors[unit.status] || '#666';
+  infoDiv.innerHTML = `
+    <div style="color:${color}; font-weight:600;">${unit.status}</div>
+    <div style="font-size:12px; margin-top:4px;">
+      Capacity: ${unit.capacity} bed(s) | Rent: ?${unit.rentAmount || 0}
+    </div>
+  `;
+  
+  // Suggest bed index if partial
+  const bedInput = document.getElementById('bedIndex');
+  if (unit.status === 'PARTIAL' && bedInput) {
+    bedInput.placeholder = 'Auto-assign next available bed';
+  }
+}
+
 window.onExistingToggleChange = onExistingToggleChange;
 window.lookupExistingUser = lookupExistingUser;
+window.loadPropertyUnits = loadPropertyUnits;
+window.populateUnitsByFloor = populateUnitsByFloor;
+window.showUnitInfo = showUnitInfo;
+
+
+

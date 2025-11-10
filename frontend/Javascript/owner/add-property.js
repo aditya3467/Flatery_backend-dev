@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Add Property Page JavaScript
  * Handles form validation, image upload, and submission
  */
@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
         if (!roles.includes('ADMIN')) {
             alert('Only owners (ADMIN) can list properties.');
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
             return;
         }
     } catch (_) {
         alert('Please login as owner to list properties.');
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
     const addPropertyForm = document.getElementById('addPropertyForm');
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store uploaded images
     let uploadedImages = [];
 
-    // Images are optional for now – remove required attribute if present
+    // Images are optional for now â€“ remove required attribute if present
     if (propertyImagesInput) {
         propertyImagesInput.removeAttribute('required');
     }

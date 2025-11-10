@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Component Loader Utility
  * Loads HTML components into elements with data-component attribute
  */
@@ -109,7 +109,7 @@ class ComponentLoader {
      * Setup modal toggle handlers
      */
     setupModalToggleHandlers() {
-        // Switch from login → signup
+        // Switch from login â†’ signup
         const loginToSignupLink = document.querySelector('.login-modal .signup-link a');
         if (loginToSignupLink) {
             loginToSignupLink.removeEventListener('click', this.toggleToSignup);
@@ -119,7 +119,7 @@ class ComponentLoader {
             });
         }
 
-        // Switch from signup → login
+        // Switch from signup â†’ login
         const signupToLoginLink = document.getElementById('showLogin');
         if (signupToLoginLink) {
             signupToLoginLink.removeEventListener('click', this.toggleToLogin);
@@ -137,7 +137,7 @@ class ComponentLoader {
         // Close hamburger menu when clicking outside
         document.removeEventListener('click', this.handleOutsideClick);
         document.addEventListener('click', (e) => {
-            const burgerMenu = document.querySelector('.burger-menu');
+            const burgerMenu = document.querySelector('.nav-menu') || document.querySelector('.burger-menu');
             const burgerBtn = document.querySelector('.burger-btn');
             const burgerToggle = document.getElementById('burger-toggle');
 

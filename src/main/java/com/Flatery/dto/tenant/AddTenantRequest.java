@@ -21,7 +21,7 @@ public class AddTenantRequest {
     @NotNull
     private Long propertyId;
 
-    @NotBlank
+    // Optional for PG when unit assignment is used
     @Size(max = 40)
     private String flatRoomNumber;
 
@@ -47,4 +47,8 @@ public class AddTenantRequest {
 
     // Status
     private String status; // ACTIVE | PENDING_INFO | VACATED
+
+    // PG unit assignment (optional)
+    private Long unitId;      // if provided, must belong to the selected property
+    private Integer bedIndex; // 1..capacity, optional -> auto-assign next free
 }

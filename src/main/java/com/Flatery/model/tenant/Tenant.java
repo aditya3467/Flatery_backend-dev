@@ -80,6 +80,16 @@ public class Tenant {
     @Column(name = "status", nullable = false, length = 16)
     private TenantStatus status;
 
+    // Unit assignment (PG/shared housing)
+    @Column(name = "floor_id")
+    private Long floorId;
+
+    @Column(name = "unit_id")
+    private Long unitId;
+
+    @Column(name = "bed_index")
+    private Integer bedIndex;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -94,3 +104,4 @@ public class Tenant {
         VACATED
     }
 }
+
