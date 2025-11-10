@@ -94,6 +94,14 @@ async function loadOwnerProperties() {
 
 async function handleSubmit(e) {
   e.preventDefault();
+  console.log('[Add Tenant] Form submitted');
+  
+  // Re-enable submit button in case it was disabled by duplicate check
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if (submitBtn && submitBtn.disabled) {
+    console.log('[Add Tenant] Submit button was disabled, checking if valid...');
+  }
+  
   const form = document.getElementById('addTenantForm');
   const fd = new FormData(form);
   const rentDueDateDate = fd.get('rentDueDateDate');
@@ -118,14 +126,19 @@ async function handleSubmit(e) {
     status: fd.get('status') || 'ACTIVE'
   };
 
-  if (!data.tenantName || !data.propertyId || isNaN(data.rentAmount) || isNaN(data.securityDeposit) || !data.flatRoomNumber) {
-    // If PG unit section is visible, allowing unit assignment instead of flatRoomNumber
-    const pgSection = document.getElementById('pgUnitSection');
-    const requiresLocation = !(pgSection && pgSection.style.display !== 'none' && data.unitId);
-    if (requiresLocation) {
-      return showAlert('error', 'Please fill all required fields.');
-    }
+  if (!data.tenantName || !data.propertyId || isNaN(data.rentAmount) || isNaN(data.securityDeposit)) {
+    return showAlert('error', 'Please fill all required fields (name, property, rent, deposit).');
   }
+  
+  // Check flatRoomNumber OR unitId is provided
+  const pgSection = document.getElementById('pgUnitSection');
+  const isPGVisible = pgSection && pgSection.style.display !== 'none';
+  const hasLocation = data.flatRoomNumber || (isPGVisible && data.unitId);
+  
+  if (!hasLocation) {
+    return showAlert('error', 'Please provide either a Flat/Room Number or assign a PG Unit.');
+  }
+  
   if (!/^\d{10}$/.test(data.phoneNumber)) {
     return showAlert('error', 'Phone number must be 10 digits');
   }
@@ -257,8 +270,8 @@ async function lookupExistingUser() {
       document.querySelector('input[name="phoneNumber"]').value = phone;
     }
     if (user.email) document.querySelector('input[name="emailAddress"]').value = user.email;
-    // Lock fields to avoid accidental changes
-    setFormFieldsDisabled(true, ['propertyId','flatRoomNumber','rentAmount','securityDeposit','rentDueDateDate','leaseStartDate','leaseEndDate','status']);
+    // Lock fields to avoid accidental changes, but keep PG unit fields enabled
+    setFormFieldsDisabled(true, ['propertyId','flatRoomNumber','rentAmount','securityDeposit','rentDueDateDate','leaseStartDate','leaseEndDate','status','unitId','bedIndex']);
 
     const resEl = document.getElementById('lookupResult');
     resEl.style.display = 'block';
@@ -284,12 +297,27 @@ async function lookupExistingUser() {
 function setFormFieldsDisabled(disabled, exceptions = []) {
   const form = document.getElementById('addTenantForm');
   const except = new Set(exceptions);
+  
+  // Explicitly handle PG unit selection elements (they may not be in form.elements)
+  const pgElements = ['floorSelect', 'unitSelect', 'bedIndex'];
+  pgElements.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = false; // Always keep PG fields enabled
+      el.style.backgroundColor = '';
+      el.style.cursor = '';
+    }
+  });
+  
   Array.from(form.elements).forEach(el => {
+    // Skip if in exceptions list
     if (el.name && except.has(el.name)) return;
+    // Skip if it's a PG field by ID
+    if (el.id && pgElements.includes(el.id)) return;
     // keep buttons active
     if (el.tagName === 'BUTTON') return;
     // Use readonly instead of disabled so fields are still submitted
-    if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.tagName === 'TEXTAREA') {
+    if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.type === 'number' || el.tagName === 'TEXTAREA') {
       el.readOnly = disabled;
       if (disabled) {
         el.style.backgroundColor = '#f3f4f6';
@@ -333,14 +361,20 @@ async function checkDuplicateTenancy(user) {
       
       if (existingTenancy) {
         showAlert('error', `⚠️ Tenant already assigned to this property! You can edit the tenancy details instead.`);
-        // Disable submit button
+        // Disable submit button only for this specific property
         const submitBtn = document.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.title = 'Tenant already exists for this property';
+        }
       } else {
         hideAlert();
-        // Re-enable submit button
+        // Re-enable submit button - this is a new property for this tenant
         const submitBtn = document.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.title = '';
+        }
       }
     } catch (err) {
       console.warn('Failed to check for duplicate tenancy', err);
