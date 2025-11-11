@@ -183,6 +183,16 @@ function setupListPropertyButton() {
     }
 }
 
+// Function to set up dashboard link
+function setupDashboardLink() {
+    const dashboardLink = document.getElementById('dashboardLink');
+    
+    if (dashboardLink) {
+        dashboardLink.removeEventListener('click', handleDashboardClick);
+        dashboardLink.addEventListener('click', handleDashboardClick);
+    }
+}
+
 // Handle list property button click
 function handleListPropertyClick(e) {
     e.preventDefault();
@@ -203,10 +213,41 @@ function handleListPropertyClick(e) {
     }
 }
 
+// Handle dashboard link click
+function handleDashboardClick(e) {
+    e.preventDefault();
+    
+    // Check if user is authenticated
+    if (typeof apiService !== 'undefined' && apiService.isAuthenticated()) {
+        const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+        const inOwner = window.location.pathname.includes('/owner/');
+        
+        if (roles.includes('SUPERADMIN')) {
+            window.location.href = '/frontend/superadmin-dashboard.html';
+        } else if (roles.includes('ADMIN')) {
+            window.location.href = inOwner ? 'Owner.html' : '/frontend/owner/Owner.html';
+        } else if (roles.includes('USER')) {
+            window.location.href = '/frontend/tenant.html';
+        } else {
+            window.location.href = '/frontend/index.html';
+        }
+    } else {
+        // User is not logged in, show login modal
+        document.getElementById('loginModal')?.classList.add('active');
+        
+        // Show notification
+        if (typeof showNotification === 'function') {
+            showNotification('Please login to view dashboard', 'info');
+        }
+    }
+}
+
 // Make functions globally available for component loader
 window.setupLoginButtonListeners = setupLoginButtonListeners;
 window.setupListPropertyButton = setupListPropertyButton;
+window.setupDashboardLink = setupDashboardLink;
 window.handleListPropertyClick = handleListPropertyClick;
+window.handleDashboardClick = handleDashboardClick;
 window.setupProfileDropdown = setupProfileDropdown;
 window.openLoginModal = openLoginModal;
 window.closeLoginModal = closeLoginModal;
@@ -573,13 +614,15 @@ function updateUIForLoggedInUser() {
 
   // Update Dashboard link in hamburger menu based on user role
   const roles = JSON.parse(localStorage.getItem('roles') || '[]');
-  const dashboardLink = document.querySelector('.nav-menu ul li a[href="#Dashboard"]'); // Assuming this is the dashboard link
+  const dashboardLink = document.getElementById('dashboardLink');
   if (dashboardLink) {
       if (roles.includes('SUPERADMIN')) {
           dashboardLink.href = 'superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
       } else if (roles.includes('ADMIN')) {
-          dashboardLink.href = 'owner/Owner.html';
+          // Check if we're in a subdirectory (owner folder)
+          const inOwner = window.location.pathname.includes('/owner/');
+          dashboardLink.href = inOwner ? 'Owner.html' : 'owner/Owner.html';
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) {
           dashboardLink.href = 'tenant.html';
@@ -587,6 +630,11 @@ function updateUIForLoggedInUser() {
       } else {
           dashboardLink.href = 'index.html'; // Default or hide
           dashboardLink.textContent = 'Dashboard';
+      }
+
+      // Setup dashboard link click handler
+      if (typeof setupDashboardLink === 'function') {
+          setupDashboardLink();
       }
 
       // Show/hide superadmin menu items

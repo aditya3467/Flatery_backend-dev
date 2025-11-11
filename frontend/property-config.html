@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Property Configuration - Flatery</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="../css/style.css" />
-  <link rel="stylesheet" href="../css/owner/property-config.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/property-config.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="../Javascript/api.js"></script>
-  <script src="../Javascript/component-loader.js" defer></script>
-  <script src="../Javascript/main.js" defer></script>
-  <script src="../Javascript/owner/property-config.js" defer></script>
+  <script src="Javascript/component-loader.js" defer></script>
+  <script src="Javascript/api.js" defer></script>
+  <script src="Javascript/property-config.js" defer></script>
+  <script src="Javascript/main.js" defer></script>
 </head>
 <body>
   <div id="navbar-container" data-component="../components/navbar.html"></div>
@@ -205,7 +205,7 @@
             <p class="subtitle">Real-time insights and performance metrics</p>
           </div>
           <div class="header-actions">
-            <button class="btn-action primary" onclick="window.location.href='/frontend/owner/add-tenant.html?propertyId='+currentPropertyId">
+            <button class="btn-action primary" onclick="window.location.href='add-tenant.html?propertyId='+currentPropertyId">
               <i class="fas fa-user-plus"></i> Add New Tenant
             </button>
             <button class="btn-action secondary" onclick="openAddUnitModal()">
@@ -949,7 +949,7 @@
             <button class="btn-action secondary" onclick="exportTenantsToExcel()">
               <i class="fas fa-file-excel"></i> Export
             </button>
-            <button class="btn-action primary" onclick="window.location.href='/frontend/owner/add-tenant.html?propertyId='+currentPropertyId">
+            <button class="btn-action primary" onclick="window.location.href='add-tenant.html?propertyId='+currentPropertyId">
               <i class="fas fa-user-plus"></i> Add Tenant
             </button>
           </div>
@@ -1411,7 +1411,7 @@
     </div>
   </div>
 
-  <div id="modals-container" data-component="../components/modals.html"></div>
+  <div id="modals-container" data-component="components/modals.html"></div>
 </body>
 </html>
 
