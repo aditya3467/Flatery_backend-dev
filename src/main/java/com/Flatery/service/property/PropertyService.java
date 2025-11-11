@@ -21,6 +21,7 @@ public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final PropertyMapper mapper;
     private final PropertyImageService imageService; // can be a no-op for now
+    private final com.Flatery.repository.tenant.TenantRepository tenantRepository;
 
     @Transactional
     public PropertyResponse create(CreatePropertyRequest req, Long ownerId) {
@@ -72,6 +73,25 @@ public class PropertyService {
         }
         Page<Property> page = propertyRepository.findByOwnerId(actorUserId, pageable);
         return page.map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())));
+    }
+
+    /**
+     * Returns total active security deposits for an owner (all ongoing tenancies).
+     */
+    @Transactional(readOnly = true)
+    public int getTotalActiveSecurityDeposits(Long ownerId) {
+        // Use repository method to fetch all active tenants for this owner
+        java.util.List<com.Flatery.model.tenant.Tenant> activeTenants = tenantRepository.findByOwnerIdAndStatus(ownerId, com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE);
+        int sum = 0;
+        System.out.println("DEBUG: Summing security deposits for ownerId=" + ownerId);
+        for (com.Flatery.model.tenant.Tenant t : activeTenants) {
+            System.out.println("Tenant: " + t.getTenantId() + ", Name: " + t.getTenantName() + ", Deposit: " + t.getSecurityDeposit());
+            if (t.getSecurityDeposit() != null) {
+                sum += t.getSecurityDeposit();
+            }
+        }
+        System.out.println("DEBUG: Total security deposit sum=" + sum);
+        return sum;
     }
 
     // ---------- validation and helpers ----------

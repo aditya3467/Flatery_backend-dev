@@ -39,6 +39,36 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
+        try {
+            // Extract token from "Bearer <token>"
+            String jwtToken = token.substring(7);
+            var userDetails = authService.getUserFromToken(jwtToken);
+            return ResponseEntity.ok(userDetails);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Invalid or expired token"));
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String token,
+            @Valid @RequestBody com.Flatery.dto.ChangePasswordRequest request) {
+        try {
+            String jwtToken = token.substring(7);
+            authService.changePassword(jwtToken, request.getCurrentPassword(), request.getNewPassword());
+            return ResponseEntity.ok(new MessageResponse("Password changed successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Invalid or expired token"));
+        }
+    }
+
     record ErrorResponse(String error) {}
     record MessageResponse(String message) {}
 }

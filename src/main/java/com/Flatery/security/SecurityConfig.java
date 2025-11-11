@@ -38,14 +38,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth
+        .authorizeHttpRequests(auth -> auth
             .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Allow CORS preflight
                         .requestMatchers("/api/auth/**").permitAll() // Allow all auth endpoints
                         .requestMatchers("/api/properties/**").permitAll() // Allow public property listing
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
-                        .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
-                        .requestMatchers("/").permitAll() // Allow access to root
+            .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
+            .requestMatchers("/css/**", "/Javascript/**", "/img/**").permitAll() // static assets
+            .requestMatchers("/").permitAll() // Allow access to root
+            .requestMatchers("/error", "/favicon.ico").permitAll() // Allow error page and favicon
                         .requestMatchers("/uploads/properties/**").permitAll() // Allow access to uploaded images
+                        .requestMatchers("/uploads/payment-proofs/**").permitAll() // Allow access to payment proofs
+                                // payment api's endpoint
+                                .requestMatchers("/api/transactions/**").authenticated()
+                                .requestMatchers("/api/owner-payment-info/**").authenticated()
+                                .requestMatchers("/api/receipts/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

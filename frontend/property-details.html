@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Details - Flatery</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/property-details.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Hint to browsers to not auto-request backend favicon -->
+    <link rel="icon" href="img/favicon.ico">
+    <script src="Javascript/component-loader.js" defer></script>
+    <script src="Javascript/api.js" defer></script>
+    <script src="Javascript/notifications.js" defer></script>
+</head>
+<body>
+    <!-- Navbar component placeholder (auto-loaded) -->
+    <div id="navbar-container" data-component="components/navbar.html"></div>
+
+    <!-- Main Content Container -->
+    <div class="page-container">
+        <!-- Left Section: Main Property Information -->
+        <main class="property-main">
+            <!-- Hero Image Gallery Section -->
+            <section class="hero-gallery" id="imageGallery">
+                <!-- Image gallery will be populated by JavaScript -->
+            </section>
+
+            <!-- Property Summary Card -->
+            <section class="property-summary-section" id="propertySummary">
+                <!-- Property summary will be populated by JavaScript -->
+            </section>
+
+            <!-- Property Overview Section -->
+            <section class="overview-section" id="propertyOverview">
+                <!-- Overview content will be populated by JavaScript -->
+            </section>
+
+            <!-- Amenities Section -->
+            <section class="amenities-section" id="propertyAmenities">
+                <!-- Amenities will be populated by JavaScript -->
+            </section>
+
+            <!-- Policies Section -->
+            <section class="policies-section" id="propertyPolicies">
+                <!-- Policies content will be populated by JavaScript -->
+            </section>
+
+            <!-- Location Section -->
+            <section class="location-section" id="propertyLocation">
+                <!-- Location content will be populated by JavaScript -->
+            </section>
+
+            <!-- Reviews Section (Optional) -->
+            <section class="reviews-section" id="propertyReviews" style="display: none;">
+                <div class="reviews-container">
+                    <h2 class="section-title">⭐ Reviews</h2>
+                    <div class="reviews-grid">
+                        <!-- Reviews will be populated by JavaScript if available -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Right Section: Sticky CTA Sidebar -->
+        <aside class="cta-container" id="ctaSidebar">
+            <!-- CTA sidebar content will be populated by JavaScript -->
+        </aside>
+    </div>
+
+    <!-- Footer component placeholder (auto-loaded) -->
+    <div id="footer-container" data-component="components/footer.html"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading property details...</p>
+        </div>
+    </div>
+
+    <!-- Error Container -->
+    <div class="error-container" id="errorContainer" style="display: none;">
+        <div class="error-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h2>Oops! Something went wrong</h2>
+            <p id="errorMessage">Failed to load property details</p>
+            <button onclick="location.reload()" class="retry-btn">Try Again</button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- JavaScript Files -->
+    <script src="Javascript/api.js"></script>
+    <script src="Javascript/component-loader.js"></script>
+    <script src="Javascript/property-details.js"></script>
+    
+    <script>
+        // Ensure proper loading order and provide fallback
+        if (typeof ApiService !== 'undefined' && typeof apiService === 'undefined') {
+            window.apiService = new ApiService();
+            console.log('API Service initialized as fallback');
+        }
+    </script>
+    </body>
+    </html>

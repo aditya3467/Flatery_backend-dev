@@ -1,11 +1,50 @@
 /**
  * Home Page JavaScript
- * Loads recommended properties for the homepage
+ * Loads recommended properties for the homepage and handles search
  */
 
 document.addEventListener('DOMContentLoaded', async function() {
     loadRecommendedProperties();
+    setupSearchButton();
 });
+
+/**
+ * Setup search button click handler
+ */
+function setupSearchButton() {
+    const searchButton = document.getElementById('searchButton');
+    const citySelect = document.getElementById('citySelect');
+    const searchTerm = document.getElementById('searchTerm');
+    
+    if (searchButton) {
+        searchButton.addEventListener('click', function() {
+            const city = citySelect ? citySelect.value : '';
+            const keyword = searchTerm ? searchTerm.value.trim() : '';
+            
+            // Build query parameters
+            const params = new URLSearchParams();
+            if (city) {
+                params.append('city', city);
+            }
+            if (keyword) {
+                params.append('keyword', keyword);
+            }
+            
+            // Navigate to properties page with filters
+            const queryString = params.toString();
+            window.location.href = queryString ? `properties.html?${queryString}` : 'properties.html';
+        });
+    }
+    
+    // Allow Enter key to trigger search
+    if (searchTerm) {
+        searchTerm.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchButton.click();
+            }
+        });
+    }
+}
 
 /**
  * Load recommended properties from API and display on homepage

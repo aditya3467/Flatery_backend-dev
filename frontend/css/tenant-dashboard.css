@@ -1,0 +1,3663 @@
+/* Tenant Dashboard Dark Theme Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Mobile-first base styles and optimizations */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Smooth scrolling for all elements */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Prevent zoom on form inputs on iOS */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+textarea,
+select {
+    font-size: 16px !important;
+}
+
+/* Content Section Visibility */
+.content-section {
+    display: none;
+}
+
+.content-section.active {
+    display: block;
+}
+
+/* Override main content background for dark theme */
+.config-content {
+    background: linear-gradient(180deg, #0D1321, #151C2B);
+    min-height: 100vh;
+    font-family: 'Inter', 'Poppins', sans-serif;
+}
+
+.tenant-room-info {
+    font-size: 0.9rem;
+    color: #B0B7C3;
+    margin-top: 0.5rem;
+}
+
+/* Page Title Section */
+.page-title-section {
+    margin-bottom: 2rem;
+    margin-left: .5rem;
+    padding: 1.5rem 0;
+    background: transparent;
+}
+
+.page-title-section h1 {
+    color: #B0B7C3;
+    font-weight: 800;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+/* Content Header Styling */
+.content-header {
+    background: transparent;
+    border-bottom: 1px solid #232B3E;
+}
+
+.breadcrumb a,
+.breadcrumb span {
+    color: #B0B7C3;
+}
+
+.breadcrumb a:hover {
+    color: #7A7AFF;
+    text-decoration: underline;
+}
+
+.user-menu {
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.user-menu:hover {
+    color: #7A7AFF;
+    filter: drop-shadow(0 0 5px rgba(122, 122, 255, 0.4));
+}
+
+/* =============================================
+   STAY INFORMATION PAGE STYLES
+   ============================================= */
+
+/* Common Stay Info Card Styling */
+.stay-info-card {
+    background: #1B2336;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+    border-left: 3px solid #7A7AFF;
+    transition: all 0.3s ease;
+}
+
+.stay-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.3);
+}
+
+.stay-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #232B3E;
+}
+
+.stay-card-header h3 {
+    color: #FFFFFF;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.stay-card-header i {
+    color: #7A7AFF;
+    font-size: 1.5rem;
+}
+
+/* Property Information Card */
+.property-info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+}
+
+.property-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.5rem 0;
+}
+
+.property-detail-row i {
+    color: #7A7AFF;
+    width: 20px;
+    text-align: center;
+}
+
+.property-detail-row .detail-text {
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+.property-detail-row .detail-subtext {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+}
+
+/* Amenities Grid */
+.amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.8rem;
+    margin-top: 1rem;
+}
+
+.amenity-chip {
+    background: #222B43;
+    color: #FFFFFF;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.amenity-chip:hover {
+    background: #2C3348;
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.3);
+}
+
+.amenity-chip i {
+    color: #7A7AFF;
+    font-size: 1.1rem;
+}
+
+/* Room & Unit Details Card */
+.room-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.room-info-section h4 {
+    color: #7A7AFF;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+}
+
+.room-detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #232B3E;
+}
+
+.room-detail-item:last-child {
+    border-bottom: none;
+}
+
+.room-detail-label {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+}
+
+.room-detail-value {
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+.rent-highlight {
+    color: #7A7AFF;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+/* Owner Information Card */
+.owner-info-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.2rem;
+    align-items: start;
+}
+
+.owner-avatar {
+    width: 60px;
+    height: 60px;
+    background: #7A7AFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: #FFFFFF;
+}
+
+.owner-details h4 {
+    color: #FFFFFF;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.owner-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0.5rem 0;
+    padding: 0.3rem;
+    border-radius: 0.3rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.owner-contact-item:hover {
+    background: rgba(122, 122, 255, 0.1);
+    color: #7A7AFF;
+}
+
+.owner-contact-item i {
+    color: #7A7AFF;
+    width: 16px;
+}
+
+.owner-contact-text {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+}
+
+.response-time {
+    color: #45FFB1;
+    font-size: 0.85rem;
+    margin-top: 0.8rem;
+    font-style: italic;
+}
+
+/* Stay Duration Card */
+.duration-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1.5rem;
+}
+
+.duration-info .duration-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #232B3E;
+}
+
+.duration-item:last-child {
+    border-bottom: none;
+}
+
+.duration-label {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+}
+
+.duration-value {
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+.progress-container {
+    margin: 1rem 0;
+}
+
+.progress-label {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #232B3E;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7A7AFF 0%, #45FFB1 100%);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.progress-text {
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.deposit-info {
+    text-align: right;
+}
+
+.deposit-amount {
+    color: #FFFFFF;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+
+.deposit-status {
+    padding: 0.3rem 0.8rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.deposit-status.paid {
+    background: rgba(69, 255, 177, 0.2);
+    color: #45FFB1;
+}
+
+.deposit-status.pending {
+    background: rgba(255, 200, 96, 0.2);
+    color: #FFC860;
+}
+
+/* Property Rules Card */
+.rules-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.rules-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 0.6rem 0;
+    color: #B0B7C3;
+    line-height: 1.5;
+}
+
+.rules-list li::before {
+    content: "•";
+    color: #7A7AFF;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: -0.1rem;
+}
+
+.rules-actions {
+    margin-top: 1.2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-rules {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-download {
+    background: #7A7AFF;
+    color: #FFFFFF;
+}
+
+.btn-download:hover {
+    background: #6A6AEF;
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.5);
+}
+
+.btn-acknowledge {
+    background: transparent;
+    color: #B0B7C3;
+    border: 1px solid #232B3E;
+}
+
+.btn-acknowledge:hover {
+    border-color: #7A7AFF;
+    color: #7A7AFF;
+}
+
+/* Documents Section */
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #222B43;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.document-item:hover {
+    background: #2C3348;
+    transform: translateX(3px);
+}
+
+.document-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.document-icon {
+    color: #7A7AFF;
+    font-size: 1.3rem;
+}
+
+.document-name {
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+.download-icon {
+    color: #B0B7C3;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+}
+
+.document-item:hover .download-icon {
+    color: #7A7AFF;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .room-details-grid,
+    .duration-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .owner-info-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .amenities-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+    
+    .deposit-info {
+        text-align: left;
+        margin-top: 1rem;
+    }
+}
+
+/* =============================================
+   END STAY INFORMATION STYLES
+   ============================================= */
+.active-stay-card {
+    background: #1B2336;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+    border-left: 4px solid #7A7AFF;
+    transition: all 0.3s ease;
+}
+
+.active-stay-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.3);
+}
+
+/* Property Header */
+.property-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #232B3E;
+}
+
+.property-header h2 {
+    font-size: 1.5rem;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-weight: 600;
+}
+
+.property-header h2 i {
+    color: #7A7AFF;
+    font-size: 1.8rem;
+}
+
+.property-subtext {
+    color: #B0B7C3;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* Summary Cards Row */
+.summary-cards-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mini-card {
+    background: #1B2336;
+    border-radius: 0.75rem;
+    padding: 1.2rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.mini-card:hover .card-icon {
+    filter: drop-shadow(0 0 5px rgba(122, 122, 255, 0.5));
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    background: #222B43;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.card-icon i {
+    font-size: 1.5rem;
+    color: #7A7AFF;
+}
+
+.card-title {
+    font-size: 0.85rem;
+    color: #B0B7C3;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.card-value {
+    font-size: 1.5rem;
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+.card-subtext {
+    font-size: 0.8rem;
+    color: #B0B7C3;
+    margin-top: 0.3rem;
+}
+
+/* Rent Timeline Bar */
+.rent-timeline-bar {
+    background: #1B2336;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.timeline-title {
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.timeline-segments {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.timeline-segment {
+    flex: 1;
+    min-width: 60px;
+    height: 60px;
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.timeline-segment.paid {
+    background: #45FFB1;
+    color: #0D1321;
+}
+
+.timeline-segment.pending {
+    background: #FFC860;
+    color: #0D1321;
+}
+
+.timeline-segment.upcoming {
+    background: #2C3348;
+    color: #B0B7C3;
+}
+
+.timeline-segment:hover {
+    transform: scale(1.05);
+}
+
+.timeline-segment .month-label {
+    font-size: 0.75rem;
+}
+
+.timeline-segment .status-icon {
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+}
+
+.timeline-progress-label {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+/* Quick Actions Section */
+.quick-actions {
+    margin-bottom: 2rem;
+}
+
+.quick-actions h3 {
+    font-size: 1.2rem;
+    color: #FFFFFF;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.action-buttons-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.btn-action {
+    padding: 0.9rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: none;
+    height: 45px;
+}
+
+.btn-action i {
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+.btn-action.btn-primary {
+    background: #7A7AFF;
+    color: white;
+}
+
+.btn-action.btn-primary:hover {
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.6);
+    transform: translateY(-2px);
+}
+
+.btn-action.btn-secondary {
+    background: #232B3E;
+    color: #FFFFFF;
+}
+
+.btn-action.btn-secondary:hover {
+    background: #2C3348;
+}
+
+.btn-action.btn-receipt {
+    background: transparent;
+    color: #7A7AFF;
+    border: 2px solid #7A7AFF;
+}
+
+.btn-action.btn-receipt:hover {
+    background: rgba(122, 122, 255, 0.1);
+}
+
+.btn-action.btn-complaint {
+    background: #F2A654;
+    color: #0D1321;
+}
+
+.btn-action.btn-complaint:hover {
+    background: #D78C3C;
+}
+
+/* Recent Activity Panel */
+.recent-activity-panel {
+    background: #1B2336;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.activity-header {
+    color: #FFFFFF;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid #232B3E;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.activity-item:hover {
+    background: rgba(122, 122, 255, 0.1);
+    border-left-color: #7A7AFF;
+}
+
+.activity-item.payment {
+    border-left-color: #7A7AFF;
+}
+
+.activity-item.complaint {
+    border-left-color: #F2A654;
+}
+
+.activity-item.notice {
+    border-left-color: #60D1FF;
+}
+
+.activity-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+}
+
+.activity-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.activity-item.payment .activity-icon {
+    color: #7A7AFF;
+}
+
+.activity-item.complaint .activity-icon {
+    color: #F2A654;
+}
+
+.activity-item.notice .activity-icon {
+    color: #60D1FF;
+}
+
+.activity-text {
+    flex: 1;
+    color: #B0B7C3;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.activity-text strong {
+    color: #FFFFFF;
+}
+
+.activity-separator {
+    height: 1px;
+    background: #232B3E;
+    margin: 0.5rem 0;
+}
+
+/* Rent Status Badge */
+.rent-status-badge {
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rent-status-badge.paid {
+    background: #45FFB1;
+    color: #0D1321;
+}
+
+.rent-status-badge.pending {
+    background: #FFC860;
+    color: #0D1321;
+}
+
+.rent-status-badge.overdue {
+    background: #FF6B6B;
+    color: #FFFFFF;
+}
+
+/* Countdown Section */
+.countdown-section {
+    background: linear-gradient(135deg, #FFC860 0%, #F2A654 100%);
+    padding: 1.2rem;
+    border-radius: 0.75rem;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0D1321;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-bottom: 2rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.countdown-section i {
+    font-size: 1.5rem;
+}
+
+/* Property Info Card */
+.property-info-card {
+    background: #1B2336;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+    border-left: 4px solid #7A7AFF;
+    transition: all 0.3s ease;
+}
+
+.property-info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.3);
+}
+
+.property-info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    color: #B0B7C3;
+    font-size: 0.95rem;
+}
+
+.property-info-row strong {
+    color: #FFFFFF;
+}
+
+.property-info-row i {
+    color: #7A7AFF;
+    margin-right: 0.3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .summary-cards-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .action-buttons-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-action {
+        width: 100%;
+    }
+
+    .timeline-segments {
+        justify-content: flex-start;
+    }
+
+    .timeline-segment {
+        min-width: 50px;
+        height: 50px;
+        font-size: 0.75rem;
+    }
+
+    .property-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .active-stay-card {
+        padding: 1.5rem;
+    }
+
+    .property-info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .summary-cards-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Action Buttons */
+.action-buttons-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    padding: 0.9rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+}
+
+.btn-action i {
+    font-size: 1.1rem;
+}
+
+.btn-action.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-action.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.btn-action.btn-secondary {
+    background: white;
+    color: #007bff;
+    border: 2px solid #007bff;
+}
+
+.btn-action.btn-secondary:hover {
+    background: #f8f9fa;
+}
+
+/* Rent Summary Card */
+.rent-summary-card {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.rent-summary-card h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.rent-summary-card h2 i {
+    margin-right: 0.5rem;
+    color: #007bff;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-item {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.summary-item label {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.summary-item span {
+    display: block;
+    font-size: 1.3rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Payment History Table */
+.payment-history-section {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+}
+
+.section-header h2 i {
+    margin-right: 0.5rem;
+    color: #007bff;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+}
+
+.filter-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.payment-table,
+.complaints-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payment-table th,
+.payment-table td,
+.complaints-table th,
+.complaints-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.payment-table th,
+.complaints-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.payment-table tbody tr:hover,
+.complaints-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.status-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-badge.verified {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.overdue {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.in-progress {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.status-badge.resolved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Documents Section */
+.documents-section-block {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.documents-section-block h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.documents-section-block h2 i {
+    margin-right: 0.5rem;
+    color: #007bff;
+}
+
+.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.document-card {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.document-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.document-card i {
+    font-size: 3rem;
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+.document-card h3 {
+    font-size: 1rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.document-card p {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.btn-download {
+    padding: 0.5rem 1rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-download:hover {
+    background: #0056b3;
+}
+
+/* Announcements */
+.announcements-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.announcement-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #007bff;
+}
+
+.announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.announcement-header h3 {
+    font-size: 1.2rem;
+    color: #2c3e50;
+}
+
+.announcement-header h3 i {
+    margin-right: 0.5rem;
+    color: #007bff;
+}
+
+.announcement-date {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.announcement-content p {
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Stay Information */
+.stay-info-detailed {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.info-section {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.info-section h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.info-section h2 i {
+    margin-right: 0.5rem;
+    color: #007bff;
+}
+
+.info-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row label {
+    font-weight: 600;
+    color: #666;
+}
+
+.info-row span {
+    color: #2c3e50;
+}
+
+.rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.rules-list p {
+    padding: 0.8rem;
+    background: #f8f9fa;
+    border-radius: 5px;
+    color: #666;
+}
+
+/* Past Stays */
+.past-stays-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.past-stay-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stay-image {
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stay-image i {
+    font-size: 3rem;
+    color: #007bff;
+}
+
+.stay-content h3 {
+    font-size: 1.2rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.stay-content p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.btn-view-details {
+    padding: 0.8rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-view-details:hover {
+    background: #0056b3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .info-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons-row {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+    }
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .info-row {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+    }
+
+    .property-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .summary-value {
+        font-size: 1.1rem;
+    }
+
+    .countdown-box {
+        font-size: 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .active-stay-card {
+        padding: 1.5rem;
+    }
+}
+
+/* ============================================ */
+/* RENT & PAYMENTS SECTION STYLING */
+/* ============================================ */
+
+/* 1. Current Month Rent Summary Card */
+.rent-summary-card {
+    background: #1B2336;
+    border-left: 3px solid #7A7AFF;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.rent-summary-header h2 {
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 1.4rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.rent-summary-header i {
+    color: #7A7AFF;
+    font-size: 1.2rem;
+}
+
+.rent-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.rent-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #232B3E;
+}
+
+.rent-detail-item:last-child {
+    border-bottom: none;
+}
+
+.rent-detail-item label {
+    color: #B0B7C3;
+    font-weight: 500;
+}
+
+.rent-detail-item span {
+    color: #7A7AFF;
+    font-weight: 600;
+}
+
+/* Payment Status Badges */
+.payment-status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.payment-status-badge.verified {
+    background: rgba(69, 255, 177, 0.1);
+    color: #45FFB1;
+    border: 1px solid rgba(69, 255, 177, 0.3);
+}
+
+.payment-status-badge.pending {
+    background: rgba(255, 200, 96, 0.1);
+    color: #FFC860;
+    border: 1px solid rgba(255, 200, 96, 0.3);
+}
+
+.payment-status-badge.overdue {
+    background: rgba(255, 105, 97, 0.1);
+    color: #FF6961;
+    border: 1px solid rgba(255, 105, 97, 0.3);
+}
+
+.payment-status-badge.upcoming {
+    background: rgba(44, 51, 72, 0.3);
+    color: #2C3348;
+    border: 1px solid rgba(44, 51, 72, 0.5);
+}
+
+.payment-status-badge.rejected {
+    background: rgba(244, 67, 54, 0.1);
+    color: #F44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.payment-status-badge.canceled {
+    background: rgba(158, 158, 158, 0.1);
+    color: #9E9E9E;
+    border: 1px solid rgba(158, 158, 158, 0.3);
+}
+
+/* 2. Payment Action Bar */
+.payment-action-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.payment-action-btn {
+    flex: 1;
+    min-width: 180px;
+    padding: 1rem 1.5rem;
+    border-radius: 0.8rem;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.payment-action-btn.primary {
+    background: linear-gradient(135deg, #7A7AFF, #6B6BFF);
+    color: white;
+}
+
+.payment-action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(122, 122, 255, 0.3);
+}
+
+.payment-action-btn.secondary {
+    background: #232B3E;
+    color: white;
+    border: 1px solid #7A7AFF33;
+}
+
+.payment-action-btn.secondary:hover {
+    background: #2A3346;
+    transform: translateY(-2px);
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.2);
+}
+
+.payment-action-btn.outline {
+    background: transparent;
+    color: #7A7AFF;
+    border: 1px solid #7A7AFF;
+}
+
+.payment-action-btn.outline:hover {
+    background: rgba(122, 122, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 0 8px rgba(122, 122, 255, 0.3);
+}
+
+.payment-action-btn i {
+    font-size: 1.1rem;
+}
+
+/* 3. Payment History Section */
+.payment-history-section {
+    background: #1B2336;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.payment-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.payment-history-header h2 {
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.payment-history-header i {
+    color: #7A7AFF;
+}
+
+.payment-filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.payment-filter-select {
+    padding: 0.6rem 1rem;
+    background: #232B3E;
+    border: 1px solid #7A7AFF33;
+    border-radius: 0.5rem;
+    color: #B0B7C3;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.payment-filter-select:focus {
+    outline: none;
+    border-color: #7A7AFF;
+}
+
+.payment-search {
+    position: relative;
+}
+
+.payment-search-input {
+    padding: 0.6rem 1rem;
+    background: #232B3E;
+    border: 1px solid #7A7AFF33;
+    border-radius: 0.5rem;
+    color: #B0B7C3;
+    font-size: 0.9rem;
+    width: 200px;
+}
+
+.payment-search-input:focus {
+    outline: none;
+    border-color: #7A7AFF;
+}
+
+.payment-table-wrapper {
+    overflow-x: auto;
+}
+
+.payment-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.payment-history-table thead th {
+    background: #232B3E;
+    color: #B0B7C3;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #7A7AFF;
+}
+
+.payment-history-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #232B3E;
+    color: #FFFFFF;
+}
+
+.payment-history-table tbody tr:hover {
+    background: rgba(122, 122, 255, 0.05);
+}
+
+/* Action column with multiple buttons */
+.payment-history-table tbody td:last-child {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.table-action-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.4rem;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.table-action-btn.download {
+    background: rgba(122, 122, 255, 0.1);
+    color: #7A7AFF;
+    border: 1px solid rgba(122, 122, 255, 0.3);
+}
+
+.table-action-btn.download:hover {
+    background: rgba(122, 122, 255, 0.2);
+}
+
+.table-action-btn.upload {
+    background: rgba(122, 122, 255, 0.1);
+    color: #7A7AFF;
+    border: 1px solid rgba(122, 122, 255, 0.3);
+}
+
+.table-action-btn.upload:hover {
+    background: rgba(122, 122, 255, 0.2);
+}
+
+.table-action-btn.remind {
+    background: rgba(255, 193, 7, 0.1);
+    color: #FFC107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.table-action-btn.remind:hover {
+    background: rgba(255, 193, 7, 0.2);
+}
+
+.table-action-btn.remind:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.table-action-btn.remind.reminded {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.table-action-btn.withdraw {
+    background: rgba(244, 67, 54, 0.1);
+    color: #F44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.table-action-btn.withdraw:hover {
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.table-action-btn.withdraw:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* 4. Rent Analytics Panel */
+.rent-analytics-panel {
+    background: #1B2336;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.analytics-header h2 {
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.analytics-header i {
+    color: #7A7AFF;
+}
+
+.analytics-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.analytics-stat-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: #232B3E;
+    border-radius: 0.8rem;
+    border: 1px solid rgba(122, 122, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.analytics-stat-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(122, 122, 255, 0.3);
+}
+
+.stat-label {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    color: #7A7AFF;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+/* 5. Payment Modal Styling */
+.payment-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.payment-modal-content {
+    background: #1B2336;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid #7A7AFF33;
+}
+
+.payment-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #232B3E;
+}
+
+.payment-modal-header h2 {
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.payment-modal-header i {
+    color: #7A7AFF;
+}
+
+.payment-modal-close {
+    background: none;
+    border: none;
+    color: #B0B7C3;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.payment-modal-close:hover {
+    background: rgba(255, 105, 97, 0.1);
+    color: #FF6961;
+}
+
+.payment-proof-form {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: #B0B7C3;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    background: #232B3E;
+    border: 1px solid rgba(122, 122, 255, 0.2);
+    border-radius: 0.5rem;
+    color: #FFFFFF;
+    font-size: 0.9rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #7A7AFF;
+    box-shadow: 0 0 0 2px rgba(122, 122, 255, 0.1);
+}
+
+.file-upload-hint {
+    color: #B0B7C3;
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+}
+
+.payment-modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.payment-modal-btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-modal-btn.submit {
+    background: linear-gradient(135deg, #7A7AFF, #6B6BFF);
+    color: white;
+}
+
+.payment-modal-btn.submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(122, 122, 255, 0.3);
+}
+
+.payment-modal-btn.cancel {
+    background: transparent;
+    color: #B0B7C3;
+    border: 1px solid #232B3E;
+}
+
+.payment-modal-btn.cancel:hover {
+    background: #232B3E;
+    color: #FFFFFF;
+}
+
+/* QR Code Modal Specific Styling */
+.qr-modal-content {
+    max-width: 600px;
+}
+
+.qr-code-content {
+    padding: 2rem;
+    text-align: center;
+}
+
+.qr-code-image {
+    margin-bottom: 1.5rem;
+}
+
+.qr-code-details {
+    background: #232B3E;
+    border-radius: 0.8rem;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.qr-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(122, 122, 255, 0.1);
+}
+
+.qr-detail-item:last-child {
+    border-bottom: none;
+}
+
+.qr-detail-item label {
+    color: #B0B7C3;
+    font-weight: 500;
+}
+
+.qr-detail-item span {
+    color: #7A7AFF;
+    font-weight: 600;
+}
+
+.copy-btn {
+    background: rgba(122, 122, 255, 0.1);
+    border: 1px solid rgba(122, 122, 255, 0.3);
+    color: #7A7AFF;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.3rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
+.copy-btn:hover {
+    background: rgba(122, 122, 255, 0.2);
+}
+
+.qr-instructions {
+    text-align: left;
+    background: rgba(122, 122, 255, 0.05);
+    border: 1px solid rgba(122, 122, 255, 0.1);
+    border-radius: 0.8rem;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.qr-instructions h4 {
+    color: #7A7AFF;
+    margin-bottom: 1rem;
+}
+
+.qr-instructions ol {
+    color: #B0B7C3;
+    padding-left: 1.5rem;
+}
+
+.qr-instructions li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .payment-action-bar {
+        flex-direction: column;
+    }
+    
+    .payment-action-btn {
+        min-width: auto;
+    }
+    
+    .payment-history-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .payment-filters {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .payment-search-input {
+        width: 100%;
+    }
+    
+    .rent-summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .analytics-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .payment-modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+    }
+    
+    .payment-proof-form {
+        padding: 1.5rem;
+    }
+    
+    .payment-modal-buttons {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .analytics-stats-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-action-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+    }
+}
+
+/* =============================================
+   COMPLAINTS & MAINTENANCE SECTION
+   ============================================= */
+
+/* Section Header */
+.section-header {
+    flex: 1;
+}
+
+.section-title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.section-title-with-icon i {
+    font-size: 1.4rem;
+    color: #7A7AFF;
+}
+
+.section-subtitle {
+    color: #B0B7C3;
+    font-size: 0.9rem;
+    margin: 0;
+    opacity: 0.8;
+}
+
+.raise-complaint-btn {
+    background: linear-gradient(135deg, #7A7AFF, #6B6BFF);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(122, 122, 255, 0.2);
+}
+
+.raise-complaint-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(122, 122, 255, 0.4);
+}
+
+.raise-complaint-btn i {
+    margin-right: 0.5rem;
+}
+
+/* Analytics Cards */
+.complaints-analytics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.analytics-card {
+    background: #1B2336;
+    border: 1px solid #7A7AFF30;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.analytics-card:hover {
+    border-color: #7A7AFF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(122, 122, 255, 0.1);
+}
+
+.analytics-card i {
+    font-size: 1.5rem;
+    color: #7A7AFF;
+    width: 40px;
+    text-align: center;
+}
+
+.analytics-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.analytics-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1;
+}
+
+.analytics-label {
+    font-size: 0.8rem;
+    color: #B0B7C3;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Complaints Filter */
+.complaints-filter {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: transparent;
+    border: 1px solid #7A7AFF30;
+    color: #B0B7C3;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+}
+
+.filter-btn:hover {
+    border-color: #7A7AFF;
+    color: #FFFFFF;
+}
+
+.filter-btn.active {
+    background: #7A7AFF;
+    border-color: #7A7AFF;
+    color: #FFFFFF;
+}
+
+/* Complaints Table */
+.complaints-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1B2336;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.complaints-table th {
+    background: #232B3E;
+    color: #FFFFFF;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid #7A7AFF30;
+}
+
+.complaints-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #7A7AFF20;
+    color: #B0B7C3;
+}
+
+.complaints-table tbody tr:hover {
+    background: #232B3E30;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.open {
+    background: rgba(255, 105, 97, 0.2);
+    color: #FF6961;
+    border: 1px solid rgba(255, 105, 97, 0.3);
+}
+
+.status-badge.in-progress {
+    background: rgba(255, 200, 96, 0.2);
+    color: #FFC860;
+    border: 1px solid rgba(255, 200, 96, 0.3);
+}
+
+.status-badge.resolved {
+    background: rgba(69, 255, 177, 0.2);
+    color: #45FFB1;
+    border: 1px solid rgba(69, 255, 177, 0.3);
+}
+
+.status-badge.rejected,
+.status-badge.closed {
+    background: rgba(85, 90, 107, 0.2);
+    color: #555A6B;
+    border: 1px solid rgba(85, 90, 107, 0.3);
+}
+
+.status-badge::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* View Button */
+.view-complaint-btn {
+    background: transparent;
+    border: 1px solid #7A7AFF;
+    color: #7A7AFF;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.view-complaint-btn:hover {
+    background: #7A7AFF;
+    color: #FFFFFF;
+    box-shadow: 0 0 10px rgba(122, 122, 255, 0.5);
+}
+
+/* Resolved Complaints Section */
+.resolved-complaints-section {
+    margin-top: 2rem;
+}
+
+.resolved-complaints-section h3 {
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.resolved-complaints-section i {
+    color: #7A7AFF;
+}
+
+.resolved-complaints-list {
+    background: #1B2336;
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid #7A7AFF30;
+}
+
+.resolved-complaint-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #7A7AFF20;
+}
+
+.resolved-complaint-item:last-child {
+    border-bottom: none;
+}
+
+.resolved-complaint-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.resolved-complaint-id {
+    color: #7A7AFF;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.resolved-complaint-title {
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+.resolved-complaint-category {
+    color: #B0B7C3;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.resolved-complaint-date {
+    color: #B0B7C3;
+    font-size: 0.8rem;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: #1B2336;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid #7A7AFF30;
+}
+
+.modal-header {
+    background: #232B3E;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #7A7AFF30;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+    color: #FFFFFF;
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #B0B7C3;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: #7A7AFF30;
+    color: #FFFFFF;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #7A7AFF30;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: #232B3E30;
+    border-radius: 0 0 16px 16px;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: #B0B7C3;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.required {
+    color: #FF6961;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    background: #232B3E;
+    border: 1px solid #7A7AFF30;
+    color: #FFFFFF;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #7A7AFF;
+    box-shadow: 0 0 0 3px rgba(122, 122, 255, 0.1);
+}
+
+.form-group input[type="file"] {
+    padding: 0.5rem;
+    background: #232B3E;
+    color: #B0B7C3;
+}
+
+.form-help {
+    display: block;
+    color: #B0B7C3;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    opacity: 0.8;
+}
+
+/* Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, #7A7AFF, #6B6BFF);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(122, 122, 255, 0.3);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #B0B7C3;
+    border: 1px solid #7A7AFF30;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    border-color: #7A7AFF;
+    color: #FFFFFF;
+}
+
+/* Complaint Details Modal */
+.complaint-details {
+    color: #FFFFFF;
+}
+
+.detail-row {
+    display: flex;
+    margin-bottom: 1rem;
+    align-items: flex-start;
+}
+
+.detail-row label {
+    color: #B0B7C3;
+    font-weight: 600;
+    width: 140px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+}
+
+.detail-row span,
+.detail-row div {
+    color: #FFFFFF;
+    flex: 1;
+}
+
+.description-text {
+    background: #232B3E;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #7A7AFF30;
+    line-height: 1.5;
+}
+
+.attachment-link {
+    color: #7A7AFF;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.attachment-link:hover {
+    text-decoration: underline;
+}
+
+.owner-response {
+    background: #232B3E;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #7A7AFF;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.owner-response i {
+    color: #7A7AFF;
+    margin-top: 0.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .complaints-analytics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 2% auto;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .detail-row label {
+        width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .complaints-analytics {
+        grid-template-columns: 1fr;
+    }
+    
+    .complaints-filter {
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .complaints-table {
+        font-size: 0.8rem;
+    }
+    
+    .complaints-table th,
+    .complaints-table td {
+        padding: 0.5rem;
+    }
+}
+
+/* =============================================
+   COMPREHENSIVE MOBILE RESPONSIVENESS
+   ============================================= */
+
+/* Mobile Navigation Toggle Button */
+.mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    top: 80px; /* Below the main navbar */
+    left: 20px; /* Moved to left side to avoid conflict with original navbar hamburger */
+    z-index: 1001;
+    background: #7A7AFF;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(122, 122, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.mobile-nav-toggle:hover {
+    background: #6B6BFF;
+    transform: scale(1.05);
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    backdrop-filter: blur(5px);
+}
+
+.mobile-overlay.active {
+    display: block;
+}
+
+/* Base responsive adjustments */
+@media (max-width: 1024px) {
+    .config-container {
+        flex-direction: column;
+    }
+    
+    .config-sidebar {
+        width: 100%;
+        max-width: none;
+        position: relative;
+        min-height: auto;
+    }
+    
+    .config-content {
+        margin-left: 0;
+        padding: 1rem;
+    }
+    
+    .dashboard-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .page-title-section {
+        padding: 1rem 0;
+    }
+    
+    .page-title-section h1 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Debug styles for mobile sidebar visibility */
+@media (max-width: 768px) {
+    /* Clean mobile sidebar styling */
+    .config-sidebar.mobile-open {
+        background: #151C2B !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+}
+
+/* Tablet optimizations */
+@media (max-width: 768px) {
+    /* Show mobile nav toggle */
+    .mobile-nav-toggle {
+        display: block;
+    }
+    
+    /* CRITICAL: Override property-config.css transform styles that hide sidebar */
+    .config-container .config-sidebar {
+        position: fixed !important;
+        left: -320px !important;
+        top: 0 !important;
+        height: 100vh !important;
+        width: 320px !important;
+        z-index: 1000 !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+        background: #151C2B !important;
+        border-right: 1px solid #232B3E !important;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3) !important;
+        display: block !important;
+        /* IMPORTANT: Override the translateX transform from property-config.css */
+        transform: none !important;
+        text-align: left !important;
+    }
+    
+    .config-container .config-sidebar.mobile-open {
+        left: 0 !important;
+        display: block !important;
+        /* IMPORTANT: Force override of translateX */
+        transform: translateX(0) !important;
+    }
+    
+    /* Override the property-config.css .open class behavior */
+    .config-container .config-sidebar.open {
+        transform: none !important;
+        left: 0 !important;
+    }
+    
+    /* Override any conflicting styles from property-config.css */
+    .config-container .config-sidebar * {
+        color: inherit;
+        display: block;
+        text-align: left !important;
+    }
+    
+    .config-container .config-sidebar .nav-section {
+        text-align: left !important;
+    }
+    
+    .config-container .config-sidebar .sidebar-footer {
+        padding: 1rem !important;
+        text-align: left !important;
+    }
+    
+    /* Adjust main content for mobile */
+    .config-content {
+        margin-left: 0 !important;
+        padding: 80px 1rem 1rem !important; /* Reduced top padding since no content-header */
+        min-height: 100vh;
+    }
+    
+    /* Hide content header/navigation for mobile to avoid conflicts */
+    .content-header {
+        display: none !important;
+    }
+    
+    /* Dashboard adjustments - 2x2 Grid for Stats Cards */
+    .dashboard-stats-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .stat-card {
+        background: #1E2A47 !important;
+        border: 1px solid #2A3B5C !important;
+        border-radius: 12px !important;
+        padding: 1.2rem 1rem !important;
+        text-align: center !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .stat-card h3 {
+        color: #B0B7C3 !important;
+        font-size: 0.75rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 0.5rem !important;
+        font-weight: 500 !important;
+    }
+    
+    .stat-card .stat-value {
+        color: #FFFFFF !important;
+        font-size: 1.3rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 0.2rem !important;
+    }
+    
+    .stat-card .stat-label {
+        color: #7A7AFF !important;
+        font-size: 0.7rem !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Status badge specific styling */
+    .stat-card .rent-status-badge {
+        display: inline-block !important;
+        padding: 0.3rem 0.8rem !important;
+        border-radius: 20px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        margin-top: 0.2rem !important;
+    }
+    
+    .rent-status-badge.pending {
+        background: rgba(255, 193, 7, 0.2) !important;
+        color: #FFC107 !important;
+        border: 1px solid rgba(255, 193, 7, 0.3) !important;
+    }
+    
+    .rent-status-badge.paid {
+        background: rgba(40, 167, 69, 0.2) !important;
+        color: #28A745 !important;
+        border: 1px solid rgba(40, 167, 69, 0.3) !important;
+    }
+    
+    .rent-status-badge.overdue {
+        background: rgba(220, 53, 69, 0.2) !important;
+        color: #DC3545 !important;
+        border: 1px solid rgba(220, 53, 69, 0.3) !important;
+    }
+    
+    /* Timeline Section for Mobile */
+    .rent-timeline-bar {
+        background: #1E2A47 !important;
+        border: 1px solid #2A3B5C !important;
+        border-radius: 12px !important;
+        padding: 1.2rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .timeline-segments {
+        gap: 0.3rem !important;
+        margin: 1rem 0 !important;
+    }
+    
+    .timeline-segment {
+        height: 25px !important;
+        border-radius: 6px !important;
+        flex: 1 !important;
+        min-width: 35px !important;
+        position: relative !important;
+    }
+    
+    .timeline-segment .month-label {
+        font-size: 0.65rem !important;
+        color: #B0B7C3 !important;
+        font-weight: 500 !important;
+        margin-bottom: 0.2rem !important;
+    }
+    
+    .timeline-segment.paid {
+        background: linear-gradient(135deg, #28A745, #20B550) !important;
+    }
+    
+    .timeline-segment.pending {
+        background: linear-gradient(135deg, #FFC107, #FFD700) !important;
+    }
+    
+    .timeline-segment.upcoming {
+        background: #2A3B5C !important;
+        border: 2px dashed #4A5568 !important;
+    }
+    
+    .timeline-progress-label {
+        color: #B0B7C3 !important;
+        font-size: 0.8rem !important;
+        text-align: center !important;
+        margin-top: 0.8rem !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Action Buttons for Mobile */
+    .quick-actions-section {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .btn-action {
+        width: 100% !important;
+        padding: 1rem 1.5rem !important;
+        border-radius: 12px !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.8rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+        transition: all 0.3s ease !important;
+        border: none !important;
+    }
+    
+    .btn-action.btn-primary {
+        background: linear-gradient(135deg, #7A7AFF, #6B6BFF) !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 15px rgba(122, 122, 255, 0.3) !important;
+    }
+    
+    .btn-action.btn-primary:hover {
+        background: linear-gradient(135deg, #6B6BFF, #5C5CFF) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(122, 122, 255, 0.4) !important;
+    }
+    
+    .btn-action.btn-secondary {
+        background: transparent !important;
+        color: #B0B7C3 !important;
+        border: 2px solid #2A3B5C !important;
+    }
+    
+    .btn-action.btn-secondary:hover {
+        background: #1E2A47 !important;
+        color: #FFFFFF !important;
+        border-color: #7A7AFF !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    .btn-action i {
+        font-size: 1.1rem !important;
+    }
+    
+    /* Page title responsive */
+    .page-title-section {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .page-title-section .btn-action {
+        align-self: flex-start;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Cards responsive */
+    .stay-info-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stay-card-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    /* Tables responsive */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .complaints-table,
+    .rent-payments-table {
+        min-width: 600px;
+    }
+    
+    .complaints-table th,
+    .complaints-table td,
+    .rent-payments-table th,
+    .rent-payments-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Buttons responsive */
+    .btn-action {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .view-complaint-btn,
+    .table-action-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Modal responsive */
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        max-height: 85vh;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    /* Form responsive */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    /* Analytics cards responsive */
+    .analytics-card {
+        padding: 1rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .analytics-card i {
+        font-size: 1.2rem;
+    }
+    
+    .analytics-number {
+        font-size: 1.3rem;
+    }
+    
+    /* Countdown section responsive */
+    .countdown-section {
+        padding: 1.5rem 1rem;
+        margin: 1rem 0;
+    }
+    
+    .countdown-display {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .countdown-unit {
+        padding: 0.75rem;
+    }
+    
+    .countdown-number {
+        font-size: 1.5rem;
+    }
+    
+    .countdown-label {
+        font-size: 0.7rem;
+    }
+    
+    /* Rent payment modal responsive */
+    .payment-methods {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .payment-modal-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .payment-modal-buttons .btn-action {
+        width: 100%;
+    }
+    
+    /* Sidebar navigation responsive */
+    .sidebar-nav .nav-section h4 {
+        font-size: 0.7rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-nav .nav-item {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .sidebar-nav .nav-item i {
+        width: 16px;
+        font-size: 0.9rem;
+    }
+    
+    /* Resolved complaints responsive */
+    .resolved-complaint-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 1rem 0;
+    }
+    
+    .resolved-complaint-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .resolved-complaint-date {
+        align-self: flex-end;
+    }
+    
+    /* Property information responsive */
+    .property-info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .owner-info-grid {
+        grid-template-columns: 1fr;
+        text-align: left;
+    }
+    
+    .amenities-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Document section responsive */
+    .documents-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .document-category h3 {
+        font-size: 1rem;
+    }
+    
+    .document-item {
+        padding: 0.75rem;
+    }
+    
+    /* Ensure sidebar content is visible and properly styled on mobile */
+    .config-container .config-sidebar .sidebar-header,
+    .config-container .config-sidebar .sidebar-nav,
+    .config-container .config-sidebar .sidebar-footer {
+        opacity: 1 !important;
+        visibility: visible !important;
+        color: #FFFFFF !important;
+        display: block !important;
+        text-align: left !important;
+    }
+    
+    .config-container .config-sidebar .sidebar-header {
+        padding: 1rem !important;
+        text-align: center !important;
+    }
+    
+    .config-container .config-sidebar .sidebar-header h3,
+    .config-container .config-sidebar .sidebar-header h4,
+    .config-container .config-sidebar .sidebar-header p {
+        text-align: center !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    .config-container .config-sidebar .nav-item {
+        color: #B0B7C3 !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0.75rem 1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        text-decoration: none !important;
+        transition: all 0.3s ease !important;
+        font-size: 0.9rem !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        text-align: left !important;
+    }
+    
+    .config-container .config-sidebar .nav-item:hover,
+    .config-container .config-sidebar .nav-item.active {
+        background: rgba(122, 122, 255, 0.1) !important;
+        color: #7A7AFF !important;
+        border-left: 3px solid #7A7AFF !important;
+    }
+    
+    .config-container .config-sidebar .nav-item i {
+        margin-right: 0.75rem !important;
+        width: 20px !important;
+        text-align: left !important;
+        color: inherit !important;
+        font-size: 1rem !important;
+    }
+    
+    .config-container .config-sidebar .nav-item span {
+        color: inherit !important;
+        font-size: inherit !important;
+    }
+    
+    .config-container .config-sidebar .nav-section h4 {
+        color: #7A7AFF !important;
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        margin: 1.5rem 1rem 0.5rem !important;
+        opacity: 0.8 !important;
+        text-align: left !important;
+    }
+    
+    .config-container .config-sidebar .sidebar-header {
+        background: #232B3E !important;
+        padding: 1.5rem 1rem !important;
+        border-bottom: 1px solid #7A7AFF30 !important;
+        text-align: center !important;
+    }
+    
+    .config-container .config-sidebar .sidebar-header h3 {
+        color: #FFFFFF !important;
+        margin: 0.5rem 0 !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+    }
+    
+    .config-container .config-sidebar .sidebar-header .tenant-room-info {
+        color: #B0B7C3 !important;
+        font-size: 0.85rem !important;
+        opacity: 0.8 !important;
+        text-align: center !important;
+    }
+    
+    /* Center all property-related content in mobile sidebar header */
+    @media (max-width: 768px) {
+        .config-container .config-sidebar .sidebar-header * {
+            text-align: center !important;
+        }
+        
+        .config-container .config-sidebar .sidebar-header .property-name,
+        .config-container .config-sidebar .sidebar-header .property-location,
+        .config-container .config-sidebar .sidebar-header .property-details {
+            text-align: center !important;
+            display: block !important;
+        }
+    }
+    
+    .config-container .config-sidebar .sidebar-footer {
+        margin-top: auto !important;
+        padding: 1rem !important;
+        border-top: 1px solid #232B3E !important;
+    }
+    
+    .config-container .config-sidebar .btn-back {
+        width: 100% !important;
+        background: transparent !important;
+        border: 1px solid #7A7AFF30 !important;
+        color: #B0B7C3 !important;
+        padding: 0.75rem !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        font-size: 0.85rem !important;
+        cursor: pointer !important;
+    }
+    
+    .config-container .config-sidebar .btn-back:hover {
+        border-color: #7A7AFF !important;
+        color: #FFFFFF !important;
+        background: rgba(122, 122, 255, 0.1) !important;
+    }
+    
+    .config-container .config-sidebar .property-logo {
+        width: 50px !important;
+        height: 50px !important;
+        background: #7A7AFF !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 auto 1rem !important;
+    }
+    
+    .config-container .config-sidebar .property-logo i {
+        color: #FFFFFF !important;
+        font-size: 1.5rem !important;
+        margin: 0 !important;
+    }
+}
+
+/* Mobile phone optimizations */
+@media (max-width: 480px) {
+    /* Further mobile adjustments */
+    .mobile-nav-toggle {
+        width: 45px;
+        height: 45px;
+        font-size: 1.1rem;
+    }
+    
+    .config-sidebar {
+        width: 280px;
+        left: -280px;
+    }
+    
+    .content-header {
+        padding: 0.75rem;
+        margin-left: 0;
+        top: 70px; /* Below the main navbar */
+    }
+    
+    .config-content {
+        padding: 140px 0.5rem 1rem; /* Increased top padding for navbar + header */
+    }
+    
+    /* Page titles */
+    .page-title-section h1 {
+        font-size: 1.2rem;
+        line-height: 1.3;
+    }
+    
+    .section-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    /* Cards further compressed */
+    .stay-info-card,
+    .analytics-card {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Buttons smaller */
+    .btn-action {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    .raise-complaint-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Modal further optimized */
+    .modal-content {
+        width: 98%;
+        margin: 1% auto;
+        max-height: 95vh;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 0.75rem;
+    }
+    
+    .modal-footer {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+    
+    .modal-footer .btn-primary,
+    .modal-footer .btn-secondary {
+        width: 100%;
+    }
+    
+    /* Tables more compact */
+    .complaints-table,
+    .rent-payments-table {
+        font-size: 0.75rem;
+    }
+    
+    .complaints-table th,
+    .complaints-table td,
+    .rent-payments-table th,
+    .rent-payments-table td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    /* Hide less important columns on very small screens */
+    .complaints-table th:nth-child(2),
+    .complaints-table td:nth-child(2) {
+        display: none;
+    }
+    
+    /* Mobile-friendly table cards for very small screens */
+    .mobile-table-cards {
+        display: none;
+    }
+    
+    /* Show mobile cards instead of table on tiny screens */
+    @media (max-width: 400px) {
+        .table-wrapper {
+            display: none;
+        }
+        
+        .mobile-table-cards {
+            display: block;
+        }
+        
+        .mobile-complaint-card {
+            background: #1B2336;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid #7A7AFF;
+        }
+        
+        .mobile-complaint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mobile-complaint-id {
+            color: #7A7AFF;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .mobile-complaint-title {
+            color: #FFFFFF;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .mobile-complaint-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #B0B7C3;
+            margin-bottom: 0.75rem;
+        }
+        
+        .mobile-complaint-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+    
+    /* Status badges smaller */
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    /* Analytics grid single column */
+    .complaints-analytics,
+    .dashboard-stats-row {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Countdown smaller */
+    .countdown-display {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .countdown-unit {
+        padding: 0.5rem;
+    }
+    
+    .countdown-number {
+        font-size: 1.2rem;
+    }
+    
+    .countdown-label {
+        font-size: 0.6rem;
+    }
+    
+    /* Filter buttons wrap better */
+    .complaints-filter {
+        gap: 0.25rem;
+    }
+    
+    .filter-btn {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    /* Sidebar footer */
+    .sidebar-footer {
+        padding: 0.75rem;
+    }
+    
+    .btn-back {
+        font-size: 0.8rem;
+        padding: 0.6rem;
+    }
+    
+    /* User menu adjustments */
+    .header-actions .user-menu {
+        font-size: 0.9rem;
+    }
+    
+    /* Property logo smaller */
+    .sidebar-header .property-logo {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .sidebar-header h3 {
+        font-size: 1rem;
+    }
+    
+    /* Amenities grid single column on tiny screens */
+    .amenities-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Breadcrumb smaller */
+    .breadcrumb {
+        font-size: 0.75rem;
+    }
+    
+    /* Detail rows in modals stack better */
+    .detail-row {
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .detail-row label {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* Landscape phone optimizations */
+@media (max-width: 812px) and (orientation: landscape) {
+    .config-content {
+        padding-top: 60px;
+    }
+    
+    .content-header {
+        padding: 0.5rem 1rem;
+    }
+    
+    .modal-content {
+        max-height: 90vh;
+    }
+    
+    .countdown-display {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase touch targets */
+    .nav-item,
+    .btn-action,
+    .filter-btn,
+    .view-complaint-btn,
+    .table-action-btn {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Remove hover effects on touch devices */
+    .stay-info-card:hover,
+    .analytics-card:hover,
+    .stat-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    /* Improved touch feedback */
+    .nav-item:active,
+    .btn-action:active {
+        background-color: rgba(122, 122, 255, 0.2);
+        transform: scale(0.98);
+    }
+}

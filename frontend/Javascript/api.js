@@ -4,6 +4,14 @@ const API_BASE_URL = 'http://localhost:8081/api';
 
 // API Service Class
 class ApiService {
+    // Get total active security deposits for owner
+    async getOwnerSecurityDeposits() {
+        try {
+            return await this.makeRequest('/admin/properties/security-deposits');
+        } catch (error) {
+            throw new Error('Failed to fetch security deposits: ' + error.message);
+        }
+    }
     constructor() {
         this.baseURL = API_BASE_URL;
         this.token = localStorage.getItem('authToken');
@@ -124,6 +132,8 @@ class ApiService {
         }
     }
 
+    // Tenant API methods
+
     // Property API methods
     async getProperties() {
         try {
@@ -228,6 +238,154 @@ class ApiService {
         }
     }
 
+    // Set primary image for a property
+    async setPrimaryPropertyImage(propertyId, imageId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/images/${imageId}/primary`, {
+                method: 'PUT',
+                body: JSON.stringify({}) // Some servers require a body for PUT requests
+            });
+        } catch (error) {
+            throw new Error('Failed to set primary image: ' + error.message);
+        }
+    }
+
+    // Get one of my properties (admin)
+    async getMyProperty(id) {
+        try {
+            return await this.makeRequest(`/admin/properties/${id}`);
+        } catch (error) {
+            throw new Error('Failed to fetch property: ' + error.message);
+        }
+    }
+
+    // Floors API starts here
+    async getFloors(propertyId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/floors`);
+        } catch (error) {
+            throw new Error('Failed to fetch floors: ' + error.message);
+        }
+    }
+
+    async createFloor(propertyId, { number, name }) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/floors`, {
+                method: 'POST',
+                body: JSON.stringify({ number, name })
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteFloor(floorId) {
+        try {
+            return await this.makeRequest(`/admin/properties/floors/${floorId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    // Units API
+    async getUnits(propertyId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/units`);
+        } catch (error) {
+            throw new Error('Failed to fetch units: ' + error.message);
+        }
+    }
+
+    async createUnit(propertyId, payload) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/units`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateUnitStatus(unitId, status) {
+        try {
+            return await this.makeRequest(`/admin/properties/units/${unitId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status })
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteUnit(unitId) {
+        try {
+            return await this.makeRequest(`/admin/properties/units/${unitId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    // Tenant Management API methods
+    async addTenant(tenantData) {
+        try {
+            return await this.makeRequest('/tenants', {
+                method: 'POST',
+                body: JSON.stringify(tenantData)
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getTenants() {
+        try {
+            return await this.makeRequest('/tenants');
+        } catch (error) {
+            throw new Error('Failed to fetch tenants: ' + error.message);
+        }
+    }
+
+    async deactivateTenant(tenantId) {
+        try {
+            return await this.makeRequest(`/tenants/${tenantId}/deactivate`, {
+                method: 'POST'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    // User lookup for owners adding tenants
+    async findUser({ username, email, phone }) {
+        try {
+            const params = new URLSearchParams();
+            if (username) params.append('username', username);
+            if (email) params.append('email', email);
+            if (phone) params.append('phone', phone);
+            return await this.makeRequest(`/users/search?${params.toString()}`);
+        } catch (error) {
+            // surface 404 as an error for the caller to handle
+            throw error;
+        }
+    }
+
+    // Change password
+    async changePassword(currentPassword, newPassword) {
+        try {
+            return await this.makeRequest('/auth/change-password', {
+                method: 'POST',
+                body: JSON.stringify({ currentPassword, newPassword })
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     // Check if user is authenticated
     isAuthenticated() {
         return !!this.token;
@@ -236,6 +394,211 @@ class ApiService {
     // Get token
     getToken() {
         return this.token;
+    }
+
+    // ============================
+    // TENANT DASHBOARD APIs
+    // ============================
+
+    // Get current tenant's active tenancy summary
+    async getCurrentTenantSummary() {
+        return this.makeRequest('/tenants/me', {
+            method: 'GET'
+        });
+    }
+
+    // Get current tenant's unit details
+    async getTenantUnit() {
+        return this.makeRequest('/tenants/me/unit', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's active stay details
+    async getTenantActiveStay() {
+        return this.makeRequest('/tenants/me/active-stay', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's payment history
+    async getTenantPaymentHistory() {
+        return this.makeRequest('/tenants/me/payments', {
+            method: 'GET'
+        });
+    }
+
+    // Upload payment proof
+    async uploadPaymentProof(formData) {
+        const url = `${this.baseURL}/tenants/me/payment-proof`;
+        const config = {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.token}`
+            },
+            body: formData
+        };
+        
+        const response = await fetch(url, config);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to upload payment proof');
+        }
+        
+        return response.json();
+    }
+
+    // Get tenant unit details
+    async getTenantUnit() {
+        return this.makeRequest('/tenants/me/unit', {
+            method: 'GET'
+        });
+    }
+
+    // Get comprehensive tenant property details
+    async getTenantPropertyDetails() {
+        return this.makeRequest('/tenants/me/property', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant documents
+    async getTenantDocuments() {
+        return this.makeRequest('/tenants/me/documents', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant complaints
+    async getTenantComplaints() {
+        return this.makeRequest('/tenants/me/complaints', {
+            method: 'GET'
+        });
+    }
+
+    // Submit new complaint
+    async submitComplaint(complaintData) {
+        return this.makeRequest('/tenants/me/complaints', {
+            method: 'POST',
+            body: JSON.stringify(complaintData)
+        });
+    }
+
+    // ========================================
+    // NOTIFICATION API METHODS
+    // ========================================
+
+    // Get all notifications for current user
+    async getAllNotifications() {
+        return this.makeRequest('/notifications', {
+            method: 'GET'
+        });
+    }
+
+    // Get unread notifications
+    async getUnreadNotifications() {
+        return this.makeRequest('/notifications/unread', {
+            method: 'GET'
+        });
+    }
+
+    // Get unread notification count
+    async getUnreadNotificationCount() {
+        return this.makeRequest('/notifications/count', {
+            method: 'GET'
+        });
+    }
+
+    // Mark a notification as read
+    async markNotificationAsRead(notificationId) {
+        return this.makeRequest(`/notifications/${notificationId}/read`, {
+            method: 'PUT'
+        });
+    }
+
+    // Mark all notifications as read
+    async markAllNotificationsAsRead() {
+        return this.makeRequest('/notifications/read-all', {
+            method: 'PUT'
+        });
+    }
+
+    // Delete a notification
+    async deleteNotification(notificationId) {
+        return this.makeRequest(`/notifications/${notificationId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Clear all read notifications
+    async clearReadNotifications() {
+        return this.makeRequest('/notifications/clear-read', {
+            method: 'DELETE'
+        });
+    }
+
+    // Create a notification (admin/system use)
+    async createNotification(notificationData) {
+        return this.makeRequest('/notifications', {
+            method: 'POST',
+            body: JSON.stringify(notificationData)
+        });
+    }
+
+    // ========================================
+    // PAYMENT/TRANSACTION API METHODS
+    // ========================================
+
+    // Get pending payment submissions for owner
+    async getOwnerPendingPayments() {
+        return this.makeRequest('/transactions/owner/pending', {
+            method: 'GET'
+        });
+    }
+
+    // Get all payment submissions for owner (any status)
+    async getOwnerAllPayments() {
+        return this.makeRequest('/transactions/owner/all', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's payment history
+    async getTenantPayments() {
+        return this.makeRequest('/transactions/tenant/my-payments', {
+            method: 'GET'
+        });
+    }
+
+    // Submit payment (tenant)
+    async submitPayment(paymentData) {
+        return this.makeRequest('/transactions', {
+            method: 'POST',
+            body: JSON.stringify(paymentData)
+        });
+    }
+
+    // Verify/Approve payment submission (owner)
+    async verifyPaymentSubmission(transactionId) {
+        return this.makeRequest(`/transactions/${transactionId}/verify`, {
+            method: 'POST'
+        });
+    }
+
+    // Reject payment submission (owner)
+    async rejectPaymentSubmission(transactionId, rejectionReason) {
+        return this.makeRequest(`/transactions/${transactionId}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason: rejectionReason })
+        });
+    }
+
+    // Withdraw/cancel payment submission (tenant)
+    async withdrawPaymentSubmission(transactionId) {
+        return this.makeRequest(`/transactions/${transactionId}/withdraw`, {
+            method: 'POST'
+        });
     }
 }
 

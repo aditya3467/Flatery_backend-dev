@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -11,7 +11,104 @@
     <link rel="stylesheet" href="css/style.css">
     <script src="Javascript/component-loader.js" defer></script>
     <script src="Javascript/api.js" defer></script>
+    <script src="Javascript/notifications.js" defer></script>
     <script src="Javascript/main.js" defer></script>
+    <script>
+        // Load tenant dashboard data
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadTenantName();
+            await loadTenantProperties();
+        });
+
+        async function loadTenantName() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) return;
+
+                const response = await fetch('http://localhost:8081/api/auth/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    const fullName = userData.fullName || userData.username || 'Tenant';
+                    document.getElementById('tenantName').textContent = fullName;
+                } else {
+                    document.getElementById('tenantName').textContent = 'Tenant';
+                }
+            } catch (error) {
+                console.error('Error loading tenant name:', error);
+                document.getElementById('tenantName').textContent = 'Tenant';
+            }
+        }
+
+        async function loadTenantProperties() {
+            const propertiesGrid = document.getElementById('tenantPropertiesGrid');
+            
+            try {
+                // Fetch properties from API (limit to 4 for dashboard)
+                const response = await apiService.getProperties();
+                const properties = response.content || [];
+                
+                if (properties.length === 0) {
+                    propertiesGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <i class="fas fa-home fa-3x" style="color: #ccc; margin-bottom: 15px;"></i>
+                            <p style="color: #666;">No properties available at the moment.</p>
+                            <a href="properties.html" style="color: #007bff; text-decoration: none; margin-top: 10px; display: inline-block;">
+                                Browse all properties
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Display only first 4 properties
+                const displayProperties = properties.slice(0, 4);
+                
+                propertiesGrid.innerHTML = displayProperties.map(property => {
+                    const bhkType = property.bhkType || property.bhk;
+                    const seater = property.pgSeater || property.seater;
+                    const title = property.name || 
+                                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
+                    const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
+                    
+                    return `
+                        <div class="property-card" onclick="window.location.href='property-details.html?id=${property.id}'" style="cursor: pointer;">
+                            <div class="property-image">
+                                <img src="${imageUrl}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60'">
+                            </div>
+                            <div class="property-details">
+                                <h3>${title}</h3>
+                                <p><i class="fas fa-tag"></i> ${property.type}</p>
+                                <p><i class="fas fa-map-marker-alt"></i> ${property.location}, ${property.city}</p>
+                                <p style="color: #007bff; font-weight: 600; margin-top: 10px;">
+                                    <i class="fas fa-rupee-sign"></i> ${formatNumber(property.expectedRent)}/month
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading properties:', error);
+                propertiesGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                        <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                        <p style="color: #666;">Failed to load properties. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
 </head>
 
 <body>
@@ -20,13 +117,14 @@
 
 
 
-    <!--===== Owner Dashboard Section Start =====-->
+    <!--===== Tenant Dashboard Header Start =====-->
     <section class="owner-dashboard">
         <div class="dashboard-container">
             <h2 class="dashboard-title">Tenant Dashboard</h2>
-            <p class="dashboard-subtitle">Welcome Back, XYZ</p>
+            <p class="dashboard-subtitle">Welcome Back, <span id="tenantName">...</span></p>
         </div>
     </section>
+    <!--===== Tenant Dashboard Header End =====-->
 
         <!--===== Service Requests Section Start =====-->
         <section class="tenant-service-requests-section">
@@ -82,47 +180,17 @@
 
     <section class="properties-dashboard">
         <div class="properties-container">
-            <h2 class="">Properties</h2>
-            <div class="properties-row">
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60" alt="Cozy Apartment in Downtown">
-                    </div>
-                    <div class="property-details">
-                        <h3>Cozy Apartment in Downtown</h3>
-                        <p>Apartment</p>
-                        <p>123 Oak Street, Anytown</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=60" alt="Spacious House with Garden">
-                    </div>
-                    <div class="property-details">
-                        <h3>Spacious House with Garden</h3>
-                        <p>House</p>
-                        <p>456 Maple Avenue, Anytown</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=60" alt="Studio Flat near University">
-                    </div>
-                    <div class="property-details">
-                        <h3>Studio Flat near University</h3>
-                        <p>Studio</p>
-                        <p>789 Pine Lane, Anytown</p>
-                    </div>
-                </div>
-                <div class="property-card">
-                    <div class="property-image">
-                        <img src="https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=1200&q=60" alt="Luxury Penthouse with City View">
-                    </div>
-                    <div class="property-details">
-                        <h3>Luxury Penthouse with City View</h3>
-                        <p>Penthouse</p>
-                        <p>101 Elm Road, Anytown</p>
-                    </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Available Properties</h2>
+                <a href="properties.html" class="view-all-link" style="color: #007bff; text-decoration: none; font-weight: 600;">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="properties-row" id="tenantPropertiesGrid">
+                <!-- Loading state -->
+                <div class="loading-properties" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #007bff;"></i>
+                    <p style="margin-top: 15px; color: #666;">Loading properties...</p>
                 </div>
             </div>
         </div>
@@ -130,4 +198,251 @@
 
 
     <!--===== Modals Component =====-->
+        <!--===== Modals Component =====-->
     <div id="modals-container" data-component="components/modals.html"></div>
+
+    <!--===== Profile Completion Prompt Modal =====-->
+    <div class="welcome-modal" id="profileCompletionModal" style="display: none;">
+        <div class="welcome-modal-overlay"></div>
+        <div class="welcome-modal-content">
+            <div class="welcome-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <h2>Welcome to Flatery! &#127881;</h2>
+            <p class="welcome-message">
+                You've been successfully added to a property tenancy. 
+                To get the most out of your experience, please complete your profile.
+            </p>
+            <div class="welcome-features">
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Update your personal information</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Add emergency contact details</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Secure your account with a new password</span>
+                </div>
+            </div>
+            <div class="welcome-actions">
+                <button class="btn-primary" onclick="goToProfileCompletion()">
+                    <i class="fas fa-user-edit"></i> Complete Profile Now
+                </button>
+                <button class="btn-secondary" onclick="closeProfileCompletionModal()">
+                    I'll do it later
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .welcome-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .welcome-modal-content {
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            color: white;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .welcome-icon i {
+            font-size: 40px;
+            color: white;
+        }
+
+        .welcome-modal-content h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .welcome-message {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            opacity: 0.95;
+        }
+
+        .welcome-features {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-item i {
+            color: #4ade80;
+            font-size: 18px;
+        }
+
+        .welcome-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .welcome-actions button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .welcome-actions .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .welcome-actions .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .welcome-actions .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .welcome-actions .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .welcome-modal-content {
+                padding: 30px 20px;
+            }
+
+            .welcome-modal-content h2 {
+                font-size: 24px;
+            }
+
+            .welcome-message {
+                font-size: 14px;
+            }
+        }
+    </style>
+
+    <script>
+        // Check if tenant needs to complete profile
+        async function checkProfileCompletion() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) return;
+
+                // Check if this is first login after being added
+                const profileCompleted = localStorage.getItem('profileCompleted');
+                const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+                
+                // Only show for USER role (tenants) who haven't completed profile
+                if (roles.includes('USER') && !profileCompleted) {
+                    // Get user info to check if password was changed
+                    const response = await fetch('http://localhost:8081/api/auth/me', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Show the profile completion modal
+                        setTimeout(() => {
+                            document.getElementById('profileCompletionModal').style.display = 'flex';
+                        }, 1000); // Delay to let page load
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking profile completion:', error);
+            }
+        }
+
+        function goToProfileCompletion() {
+            // Mark as acknowledged
+            closeProfileCompletionModal();
+            // Redirect to profile completion page
+            window.location.href = '/frontend/tenant-profile.html';
+        }
+
+        function closeProfileCompletionModal() {
+            document.getElementById('profileCompletionModal').style.display = 'none';
+            // Mark as seen (user can be reminded later if not completed)
+            localStorage.setItem('profilePromptSeen', 'true');
+        }
+
+        // Call on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkProfileCompletion();
+        });
+    </script>

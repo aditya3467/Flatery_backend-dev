@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superadmin Dashboard - Flatery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .stats-container {
+            padding: 40px;
+            max-width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #6c757d;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .stat-count {
+            font-size: 2.5em;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .stat-icon {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #007bff;
+        }
+    </style>
+    <script src="Javascript/component-loader.js" defer></script>
+    <script src="Javascript/api.js" defer></script>
+    <script src="Javascript/notifications.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Superadmin dashboard loading...');
+            
+            try {
+                // Check if user is authenticated and is superadmin
+                if (!apiService.isAuthenticated()) {
+                    console.log('Not authenticated, redirecting to home');
+                    window.location.href = '/frontend/index.html';
+                    return;
+                }
+
+                // Check if user has SUPERADMIN role
+                const storedRoles = JSON.parse(localStorage.getItem('roles') || '[]');
+                console.log('User roles:', storedRoles);
+                
+                if (!storedRoles.includes('SUPERADMIN')) {
+                    console.log('Not a superadmin, redirecting to home');
+                    window.location.href = '/frontend/index.html';
+                    return;
+                }
+
+                console.log('Fetching user counts...');
+                // Fetch user counts
+                const response = await apiService.makeRequest('/stats/users/counts');
+                console.log('User counts response:', response);
+                
+                // Update the UI with the counts
+                document.getElementById('ownerCount').textContent = response.ownerCount || 0;
+                document.getElementById('tenantCount').textContent = response.tenantCount || 0;
+                
+                console.log('Dashboard loaded successfully!');
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+                // Show error message on the dashboard
+                document.getElementById('ownerCount').textContent = 'Error';
+                document.getElementById('tenantCount').textContent = 'Error';
+                
+                if (error.status === 403 || error.status === 401) {
+                    // Unauthorized - redirect to home after showing error
+                    setTimeout(() => {
+                        window.location.href = '/frontend/index.html';
+                    }, 2000);
+                }
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <!--===== Navbar Component =====-->
+    <div id="navbar-container" data-component="components/navbar.html"></div>
+
+    <div class="stats-container">
+        <h2 class="stats-title">System Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-home stat-icon"></i>
+                <h3>Total Property Owners</h3>
+                <div class="stat-count" id="ownerCount">-</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <h3>Total Tenants</h3>
+                <div class="stat-count" id="tenantCount">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!--===== Modals Component =====-->
+    <div id="modals-container" data-component="components/modals.html"></div>
+</body>
+
+</html>

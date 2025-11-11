@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Tenant</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/owner/add-tenant.css" />
+  <script src="../Javascript/api.js"></script>
+  <script src="../Javascript/component-loader.js" defer></script>
+  <script src="../Javascript/notifications.js" defer></script>
+  <script src="../Javascript/main.js" defer></script>
+  <script src="../Javascript/owner/add-tenant.js" defer></script>
+</head>
+<body>
+  <div id="navbar-container" data-component="../components/navbar.html"></div>
+
+  <!-- Hero Header Section -->
+  <section class="add-tenant-hero">
+    <div class="container">
+      <h1 class="hero-title">Add New Tenant</h1>
+      <p class="hero-subtitle">Create and manage tenant accounts linked to your properties</p>
+    </div>
+  </section>
+
+  <section class="section-padding add-tenant-page">
+    <div class="container">
+      <div class="form-card form-section">
+        <h2 class="page-title">Add Tenant</h2>
+        <p class="page-subtitle">Create a tenant account linked to one of your properties.</p>
+
+        <div id="alertMessage" class="alert" style="display:none;"></div>
+
+        <form id="addTenantForm" onsubmit="handleSubmit(event)">
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="existingToggle" onchange="onExistingToggleChange(this.checked)"> Tenant already registered?
+        </label>
+        <small style="color:#666;">If the tenant already has an account, look them up by phone or email to autofill details. We'll not create a temporary password.</small>
+      </div>
+
+  <div id="existingLookup" class="lookup-box" style="display:none;">
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Lookup by Phone</label>
+            <input type="text" id="lookupPhone" placeholder="10-digit phone" maxlength="10" />
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Lookup by Email</label>
+            <input type="email" id="lookupEmail" placeholder="name@example.com" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Lookup by Username (optional)</label>
+            <input type="text" id="lookupUsername" placeholder="username" />
+          </div>
+        </div>
+        <button type="button" class="btn-2" onclick="lookupExistingUser()">Lookup</button>
+        <div id="lookupResult" style="display:none; margin-top:8px; font-size:14px; color:#333;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Tenant Name</label>
+        <input type="text" name="tenantName" required placeholder="Full name" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Phone Number</label>
+          <input type="text" name="phoneNumber" required placeholder="10-digit phone" maxlength="10" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Email Address (optional)</label>
+          <input type="email" name="emailAddress" placeholder="name@example.com" />
+        </div>
+      </div>
+
+        <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Property</label>
+          <select id="propertyId" name="propertyId" required onchange="loadPropertyUnits(this.value)">
+            <option value="">Select property</option>
+          </select>
+        </div>
+        <div class="form-group" id="flatRoomGroup" style="flex:1;">
+          <label>Flat / Room Number</label>
+          <input type="text" name="flatRoomNumber" placeholder="e.g., A-302" />
+        </div>
+      </div>
+
+      <!-- PG Unit assignment section (visible only for PG properties) -->
+      <div id="pgUnitSection" style="display:none; margin-top:12px; border:1px dashed #e5e7eb; padding:12px; border-radius:8px;">
+        <div style="font-weight:600; margin-bottom:8px;">Assign to a Unit (PG only)</div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Floor</label>
+            <select id="floorSelect">
+              <option value="">Select Floor</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Unit</label>
+            <select id="unitSelect" name="unitId">
+              <option value="">Select Unit</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>Bed (optional)</label>
+            <input type="number" id="bedIndex" name="bedIndex" min="1" placeholder="Leave blank to auto-assign" />
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Unit Info</label>
+            <div id="unitStatusInfo" style="padding:8px; background:#fbfbfb; border-radius:6px;">Select a unit to see availability</div>
+          </div>
+        </div>
+        <div style="font-size:12px; color:#6b7280; margin-top:8px;">If you assign a unit above, the <strong>Flat / Room Number</strong> becomes optional.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Rent Amount</label>
+          <input type="number" name="rentAmount" min="0" required placeholder="e.g., 12000" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Security Deposit</label>
+          <input type="number" name="securityDeposit" min="0" required placeholder="e.g., 30000" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Rent Due Date (pick any date, we’ll use the day)</label>
+          <input type="date" name="rentDueDateDate" required />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Tenant Status</label>
+          <select name="status">
+            <option value="ACTIVE" selected>Active</option>
+            <option value="PENDING_INFO">Pending Info</option>
+            <option value="VACATED">Vacated</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>Lease Start Date</label>
+          <input type="date" name="leaseStartDate" required />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Lease End Date (optional)</label>
+          <input type="date" name="leaseEndDate" />
+        </div>
+      </div>
+
+      <div class="form-row" id="tempPasswordRow">
+        <div class="form-group" style="flex:1;">
+          <label>Temporary Password (optional)</label>
+          <div class="inline-row">
+            <input type="text" name="temporaryPassword" placeholder="Leave empty to auto-generate" style="flex:1;" />
+            <button type="button" class="btn-2" onclick="generateTempPassword()">Generate</button>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-1">Create Tenant</button>
+    </form>
+
+    <div id="loadingIndicator" class="loading" style="display:none;">Creating tenant...</div>
+
+    <div id="successMessage" class="success-card" style="display:none;">
+      <h3>Tenant Created</h3>
+      <p><strong>Tenant ID:</strong> <span id="displayTenantId"></span></p>
+      <p><strong>Username:</strong> <span id="displayUsername"></span></p>
+      <p id="passwordRow"><strong>Temporary Password:</strong> <span id="displayPassword"></span></p>
+      <p style="color:#666; font-size: 14px;">Share these credentials with the tenant. The password will only be shown once.</p>
+    </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="modals-container" data-component="../components/modals.html"></div>
+</body>
+</html>
+

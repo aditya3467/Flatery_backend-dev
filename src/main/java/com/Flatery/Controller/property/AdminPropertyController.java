@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +36,14 @@ public class AdminPropertyController {
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final PropertyImageRepository propertyImageRepository;
+
+        // Get total active security deposits for the authenticated owner
+        @GetMapping("/security-deposits")
+        public ResponseEntity<Integer> getTotalSecurityDeposits(Authentication auth) {
+            Long ownerId = getUserId(auth);
+            int totalDeposits = propertyService.getTotalActiveSecurityDeposits(ownerId);
+            return ResponseEntity.ok(totalDeposits);
+        }
 
     // Create new property (owner = current admin)
     @PostMapping
@@ -183,6 +192,39 @@ public class AdminPropertyController {
         // Delete from database
         propertyImageRepository.delete(image);
         
+        return ResponseEntity.noContent().build();
+    }
+
+    // Set a primary image for a property
+    @PutMapping("/{propertyId}/images/{imageId}/primary")
+    @Transactional
+    public ResponseEntity<Void> setPrimaryImage(
+            @PathVariable Long propertyId,
+            @PathVariable Long imageId,
+            Authentication auth
+    ) {
+        Long userId = getUserId(auth);
+        // Verify ownership
+        propertyService.getByIdForOwner(propertyId, userId);
+
+        PropertyImage image = propertyImageRepository.findById(imageId)
+                .orElseThrow(() -> new RuntimeException("Image not found"));
+        if (!image.getPropertyId().equals(propertyId)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Unset all primaries for this property
+        List<PropertyImage> images = propertyImageRepository.findByPropertyIdOrderByPositionAsc(propertyId);
+        for (PropertyImage pi : images) {
+            if (pi.isPrimaryImage()) {
+                pi.setPrimaryImage(false);
+                propertyImageRepository.save(pi);
+            }
+        }
+        // Set the selected image as primary
+        image.setPrimaryImage(true);
+        propertyImageRepository.save(image);
+
         return ResponseEntity.noContent().build();
     }
 

@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tenant Dashboard - Flatery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css?v=2" />
+  <link rel="stylesheet" href="css/property-config.css?v=2" />
+      <link rel="stylesheet" href="css/tenant-dashboard.css?v=10">
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="Javascript/component-loader.js" defer></script>
+  <script src="Javascript/api.js" defer></script>
+  <script src="Javascript/notifications.js" defer></script>
+  <script src="Javascript/tenant-dashboard.js" defer></script>
+  <script src="Javascript/main.js" defer></script>
+</head>
+<body>
+  <div id="navbar-container" data-component="components/navbar.html"></div>
+
+  <!-- Mobile Navigation Toggle -->
+  <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation">
+    <i class="fas fa-bars" id="navToggleIcon"></i>
+  </button>
+
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <div class="config-container">
+    <!-- Sidebar -->
+    <aside class="config-sidebar">
+      <div class="sidebar-header">
+        <div class="property-logo">
+          <i class="fas fa-home"></i>
+        </div>
+        <h3 id="tenantPropertyName">Loading...</h3>
+        <p class="tenant-room-info" id="tenantRoomInfo">Room info...</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h4>MAIN</h4>
+          <a href="#dashboard" class="nav-item active" data-section="dashboard">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#stay-info" class="nav-item" data-section="stay-info">
+            <i class="fas fa-info-circle"></i>
+            <span>Stay Information</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <h4>PAYMENTS</h4>
+          <a href="#rent-payments" class="nav-item" data-section="rent-payments">
+            <i class="fas fa-rupee-sign"></i>
+            <span>Rent & Payments</span>
+          </a>
+          <a href="#documents" class="nav-item" data-section="documents">
+            <i class="fas fa-file-alt"></i>
+            <span>Documents & Receipts</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <h4>SUPPORT</h4>
+          <a href="#complaints" class="nav-item" data-section="complaints">
+            <i class="fas fa-tools"></i>
+            <span>Complaints</span>
+          </a>
+          <a href="#announcements" class="nav-item" data-section="announcements">
+            <i class="fas fa-bell"></i>
+            <span>Announcements</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <h4>HISTORY</h4>
+          <a href="#past-stays" class="nav-item" data-section="past-stays">
+            <i class="fas fa-history"></i>
+            <span>Past Stays</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-back" onclick="window.location.href='tenant.html'">
+          <i class="fas fa-arrow-left"></i> Back to Home
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="config-content">
+      <!-- Header -->
+      <div class="content-header">
+        <div class="breadcrumb">
+          <a href="tenant.html">Home</a>
+          <i class="fas fa-chevron-right"></i>
+          <span>Tenant Dashboard</span>
+        </div>
+        <div class="header-actions">
+          <div class="user-menu">
+            <i class="fas fa-user-circle"></i>
+            <span id="tenantUserName">Tenant</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Section -->
+      <div id="dashboard-section" class="content-section active">
+        <div class="page-title-section">
+          <h1>DASHBOARD</h1>
+        </div>
+
+        <!-- Property Information Card -->
+        <div class="property-info-card">
+          <div class="property-header">
+            <h2><i class="fas fa-building"></i> <span id="propertyHeaderTitle">Loading...</span></h2>
+            <div class="property-info-row" id="propertyInfoDetails">
+              <span><i class="fas fa-door-open"></i> <strong id="roomBedDetail">Loading...</strong></span>
+              <span><i class="fas fa-male"></i> <strong id="propertyType">Loading...</strong></span>
+              <span><i class="fas fa-layer-group"></i> Floor <strong id="floorNumber">-</strong></span>
+            </div>
+          </div>
+          <div class="property-info-row" style="margin-top: 1rem;">
+            <span><i class="fas fa-user"></i> Owner: <strong id="ownerNameDetail">Loading...</strong> (<i class="fas fa-phone"></i> <strong id="ownerContactDetail">Loading...</strong>)</span>
+          </div>
+          <div class="property-info-row" style="margin-top: 0.5rem;">
+            <span><i class="fas fa-calendar-check"></i> Stay: <strong id="stayPeriodDetail">Loading...</strong></span>
+            <span><i class="fas fa-coins"></i> Deposit: <strong id="depositDetail">₹0</strong></span>
+          </div>
+        </div>
+
+        <!-- Summary Cards Row -->
+        <div class="summary-cards-row">
+          <div class="mini-card">
+            <div class="card-icon">
+              <i class="fas fa-rupee-sign"></i>
+            </div>
+            <div class="card-title">💰 Rent</div>
+            <div class="card-value" id="rentAmount">₹0</div>
+            <div class="card-subtext">/month</div>
+          </div>
+
+          <div class="mini-card">
+            <div class="card-icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="card-title">📅 Due Date</div>
+            <div class="card-value" id="dueDate">Loading...</div>
+            <div class="card-subtext" id="dueDateMonth">-</div>
+          </div>
+
+          <div class="mini-card">
+            <div class="card-icon">
+              <i class="fas fa-circle"></i>
+            </div>
+            <div class="card-title">Status</div>
+            <div class="card-value">
+              <span class="rent-status-badge" id="rentStatus">Loading</span>
+            </div>
+          </div>
+
+          <div class="mini-card">
+            <div class="card-icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="card-title">� Stay Progress</div>
+            <div class="card-value" id="stayProgress">0%</div>
+            <div class="card-subtext">Done</div>
+          </div>
+        </div>
+
+        <!-- Rent Timeline Bar -->
+        <div class="rent-timeline-bar">
+          <div class="timeline-title">📊 Rent Timeline</div>
+          <div class="timeline-segments" id="timelineSegments">
+            <!-- Timeline segments will be generated by JS -->
+          </div>
+          <div class="timeline-progress-label" id="timelineLabel">
+            Loading...
+          </div>
+        </div>
+
+        <!-- Countdown Section -->
+        <div class="countdown-section" id="countdownSection">
+          <i class="fas fa-clock"></i>
+          <span id="nextRentCountdown">Loading...</span>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <h3>💬 Quick Actions</h3>
+          <div class="action-buttons-row">
+            <button class="btn-action btn-primary" onclick="handlePayRent()">
+              <i class="fas fa-credit-card"></i> Pay Rent Now
+            </button>
+            <button class="btn-action btn-secondary" onclick="handleUploadProof()">
+              <i class="fas fa-camera"></i> Upload Proof
+            </button>
+            <button class="btn-action btn-receipt" onclick="handleViewReceipts()">
+              <i class="fas fa-receipt"></i> View Receipts
+            </button>
+            <button class="btn-action btn-complaint" onclick="handleRaiseComplaint()">
+              <i class="fas fa-tools"></i> Raise Complaint
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Activity Panel -->
+        <div class="recent-activity-panel">
+          <div class="activity-header">Recent Activity</div>
+          <div class="activity-feed" id="activityFeed">
+            <div class="activity-item payment">
+              <div class="activity-content">
+                <div class="activity-icon">💸</div>
+                <div class="activity-text">
+                  <strong>Rent:</strong> November payment uploaded (Pending)
+                </div>
+              </div>
+            </div>
+            <div class="activity-separator"></div>
+            <div class="activity-item complaint">
+              <div class="activity-content">
+                <div class="activity-icon">🧰</div>
+                <div class="activity-text">
+                  <strong>Complaint:</strong> Ticket #104 – Fan fixed (Resolved)
+                </div>
+              </div>
+            </div>
+            <div class="activity-separator"></div>
+            <div class="activity-item notice">
+              <div class="activity-content">
+                <div class="activity-icon">📢</div>
+                <div class="activity-text">
+                  <strong>Notice:</strong> Water maintenance on 8th Nov
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rent & Payments Section -->
+      <div id="rent-payments-section" class="content-section">
+        <div class="page-title-section">
+          <h1>RENT & PAYMENTS</h1>
+        </div>
+
+        <!-- 1. Current Month Rent Summary Card -->
+        <div class="rent-summary-card">
+          <div class="rent-summary-header">
+            <h2><i class="fas fa-rupee-sign"></i> Rent Summary (<span id="currentMonth">November 2025</span>)</h2>
+          </div>
+          <div class="rent-summary-grid">
+            <div class="rent-detail-item">
+              <label>Rent Amount:</label>
+              <span id="monthlyRentAmount">₹6,000</span>
+            </div>
+            <div class="rent-detail-item">
+              <label>Due Date:</label>
+              <span id="nextDueDate">1st Dec 2025</span>
+            </div>
+            <div class="rent-detail-item">
+              <label>Status:</label>
+              <span id="currentMonthStatus" class="payment-status-badge pending">🟡 Pending</span>
+            </div>
+            <div class="rent-detail-item">
+              <label>Late Fee Policy:</label>
+              <span id="lateFeePolicy">₹100/day after due date</span>
+            </div>
+            <div class="rent-detail-item">
+              <label>Mode:</label>
+              <span id="paymentMode">UPI / Manual</span>
+            </div>
+            <div class="rent-detail-item">
+              <label>Deposit:</label>
+              <span id="depositInfo">₹3,000 (Paid)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Payment Action Bar -->
+        <div class="payment-action-bar">
+          <button class="payment-action-btn primary" onclick="handlePayViaGateway()">
+            <i class="fas fa-credit-card"></i>
+            <span>Pay via Gateway</span>
+          </button>
+          <button class="payment-action-btn secondary" onclick="handleUploadProof()">
+            <i class="fas fa-camera"></i>
+            <span>Upload Payment Proof</span>
+          </button>
+          <button class="payment-action-btn outline" onclick="handleViewQRCode()">
+            <i class="fas fa-qrcode"></i>
+            <span>View Owner QR Code</span>
+          </button>
+        </div>
+
+        <!-- 4. Payment History Table -->
+        <div class="payment-history-section">
+          <div class="payment-history-header">
+            <h2><i class="fas fa-history"></i> Payment History</h2>
+            <div class="payment-filters">
+              <select id="monthFilter" class="payment-filter-select">
+                <option value="">Month ▼</option>
+                <option value="2025-11">Nov 2025</option>
+                <option value="2025-10">Oct 2025</option>
+                <option value="2025-09">Sep 2025</option>
+              </select>
+              <select id="statusFilterPayment" class="payment-filter-select">
+                <option value="">Status ▼</option>
+                <option value="verified">✅ Verified</option>
+                <option value="pending">🟡 Pending</option>
+                <option value="overdue">🔴 Overdue</option>
+                <option value="upcoming">🔲 Upcoming</option>
+              </select>
+              <div class="payment-search">
+                <input type="text" id="paymentSearch" placeholder="Search 🔍" class="payment-search-input">
+              </div>
+            </div>
+          </div>
+
+          <div class="payment-table-wrapper">
+            <table class="payment-history-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Amount</th>
+                  <th>Mode</th>
+                  <th>Ref ID</th>
+                  <th>Status</th>
+                  <th>Receipt</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="paymentHistoryTableBody">
+                <tr>
+                  <td>Oct 2025</td>
+                  <td>₹6,000</td>
+                  <td>UPI</td>
+                  <td>32498ABC</td>
+                  <td><span class="payment-status-badge verified">✅ Verified</span></td>
+                  <td><button class="table-action-btn download">Download</button></td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td>Nov 2025</td>
+                  <td>₹6,000</td>
+                  <td>UPI</td>
+                  <td>-</td>
+                  <td><span class="payment-status-badge pending">🟡 Pending</span></td>
+                  <td>-</td>
+                  <td><button class="table-action-btn upload">Upload Proof</button></td>
+                </tr>
+                <tr>
+                  <td>Dec 2025</td>
+                  <td>₹6,000</td>
+                  <td>–</td>
+                  <td>–</td>
+                  <td><span class="payment-status-badge upcoming">🔲 Upcoming</span></td>
+                  <td>-</td>
+                  <td>-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 5. Rent Analytics Panel -->
+        <div class="rent-analytics-panel">
+          <div class="analytics-header">
+            <h2><i class="fas fa-chart-bar"></i> Payment Analytics</h2>
+          </div>
+          <div class="analytics-stats-row">
+            <div class="analytics-stat-item">
+              <div class="stat-label">Total Rent Paid</div>
+              <div class="stat-value" id="totalRentPaid">₹36,000</div>
+            </div>
+            <div class="analytics-stat-item">
+              <div class="stat-label">On-time Payments</div>
+              <div class="stat-value" id="onTimePayments">5 / 6</div>
+            </div>
+            <div class="analytics-stat-item">
+              <div class="stat-label">Late Fees Paid</div>
+              <div class="stat-value" id="lateFeesPaid">₹200</div>
+            </div>
+            <div class="analytics-stat-item">
+              <div class="stat-label">Payment Streak</div>
+              <div class="stat-value" id="paymentStreak">🔥 4 Months</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Proof Modal -->
+      <div id="paymentProofModal" class="payment-modal" style="display: none;">
+        <div class="payment-modal-content">
+          <div class="payment-modal-header">
+            <h2><i class="fas fa-upload"></i> Upload Payment Proof</h2>
+            <button class="payment-modal-close" onclick="closePaymentModal()">&times;</button>
+          </div>
+          <form id="paymentProofForm" class="payment-proof-form">
+            <div class="form-group">
+              <label for="paidAmount">Amount Paid</label>
+              <input type="number" id="paidAmount" name="paidAmount" placeholder="₹6,000" required>
+            </div>
+            <div class="form-group">
+              <label for="paymentModeSelect">Payment Mode</label>
+              <select id="paymentModeSelect" name="paymentMode" required>
+                <option value="">Select Mode</option>
+                <option value="UPI">UPI</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="CASH">Cash</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="upiRefId">UPI Reference ID</label>
+              <input type="text" id="upiRefId" name="upiRefId" placeholder="23489XK89">
+            </div>
+            <div class="form-group">
+              <label for="paymentDate">Payment Date</label>
+              <input type="date" id="paymentDate" name="paymentDate" required>
+            </div>
+            <div class="form-group">
+              <label for="paymentScreenshot">Upload Screenshot</label>
+              <input type="file" id="paymentProofFile" name="paymentProofFile" accept="image/*" required>
+              <div class="file-upload-hint">JPG, PNG files only</div>
+            </div>
+            <div class="form-group">
+              <label for="paymentNotes">Notes</label>
+              <textarea id="paymentNotes" name="paymentNotes" placeholder="Paid via PhonePe" rows="3"></textarea>
+            </div>
+            <div class="payment-modal-buttons">
+              <button type="submit" class="payment-modal-btn submit">✅ Submit</button>
+              <button type="button" class="payment-modal-btn cancel" onclick="closePaymentModal()">❌ Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- QR Code Modal -->
+      <div id="qrCodeModal" class="payment-modal" style="display: none;">
+        <div class="payment-modal-content qr-modal-content">
+          <div class="payment-modal-header">
+            <h2><i class="fas fa-qrcode"></i> Owner's QR Code</h2>
+            <button class="payment-modal-close" onclick="closeQRModal()">&times;</button>
+          </div>
+          <div class="qr-code-content">
+            <div class="qr-code-image">
+              <img id="ownerQRCode" src="" alt="Owner's QR Code" style="width: 200px; height: 200px; border: 2px solid #7A7AFF;">
+            </div>
+            <div class="qr-code-details">
+              <div class="qr-detail-item">
+                <label>UPI ID:</label>
+                <span id="ownerUpiId">owner@paytm</span>
+                <button class="copy-btn" onclick="copyToClipboard('ownerUpiId')">📋</button>
+              </div>
+              <div class="qr-detail-item">
+                <label>Name:</label>
+                <span id="ownerPaymentName">Property Owner</span>
+              </div>
+              <div class="qr-detail-item">
+                <label>Amount:</label>
+                <span id="qrRentAmount">₹6,000</span>
+              </div>
+            </div>
+            <div class="qr-instructions">
+              <h4>How to Pay:</h4>
+              <ol>
+                <li>Open your UPI app (PhonePe, GPay, Paytm)</li>
+                <li>Scan this QR code or enter the UPI ID</li>
+                <li>Enter the rent amount: ₹<span id="qrAmountHint">6,000</span></li>
+                <li>Add note: "Rent for [Month Year]"</li>
+                <li>Complete payment and upload proof using the form</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documents & Receipts Section -->
+      <div id="documents-section" class="content-section">
+        <div class="page-title-section">
+          <h1>DOCUMENTS & RECEIPTS</h1>
+        </div>
+
+        <!-- Rent Receipts -->
+        <div class="documents-section-block">
+          <h2><i class="fas fa-receipt"></i> Rent Receipts</h2>
+          <div class="documents-grid" id="receiptsGrid">
+            <div class="document-card">
+              <i class="fas fa-file-pdf"></i>
+              <h3>Loading...</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Uploaded Documents -->
+        <div class="documents-section-block">
+          <h2><i class="fas fa-folder-open"></i> Uploaded Documents</h2>
+          <button class="btn-action btn-primary" onclick="handleUploadDocument()">
+            <i class="fas fa-upload"></i> Upload New Document
+          </button>
+          <div class="documents-grid" id="documentsGrid">
+            <div class="document-card">
+              <i class="fas fa-id-card"></i>
+              <h3>ID Proof</h3>
+              <p>Aadhaar.pdf</p>
+              <button class="btn-download"><i class="fas fa-download"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complaints Section -->
+      <div id="complaints-section" class="content-section">
+        <div class="page-title-section">
+          <div class="section-header">
+            <div class="section-title-with-icon">
+              <i class="fas fa-screwdriver-wrench"></i>
+              <h1>Complaints & Maintenance</h1>
+            </div>
+            <p class="section-subtitle">Report and track property maintenance issues</p>
+          </div>
+          <button class="btn-action btn-primary raise-complaint-btn" onclick="openRaiseComplaintModal()">
+            <i class="fas fa-plus"></i> Raise Complaint
+          </button>
+        </div>
+
+        <!-- Analytics/Summary Cards -->
+        <div class="complaints-analytics">
+          <div class="analytics-card">
+            <i class="fas fa-wrench"></i>
+            <div class="analytics-content">
+              <span class="analytics-number" id="totalComplaints">0</span>
+              <span class="analytics-label">Total Raised</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <i class="fas fa-exclamation-circle"></i>
+            <div class="analytics-content">
+              <span class="analytics-number" id="openComplaints">0</span>
+              <span class="analytics-label">Open</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <i class="fas fa-check-circle"></i>
+            <div class="analytics-content">
+              <span class="analytics-number" id="resolvedComplaints">0</span>
+              <span class="analytics-label">Resolved</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <i class="fas fa-clock"></i>
+            <div class="analytics-content">
+              <span class="analytics-number" id="avgResolutionTime">0</span>
+              <span class="analytics-label">Avg Days</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Complaints Filter -->
+        <div class="complaints-filter">
+          <button class="filter-btn active" data-status="all">All</button>
+          <button class="filter-btn" data-status="Open">Open</button>
+          <button class="filter-btn" data-status="In Progress">In Progress</button>
+          <button class="filter-btn" data-status="Resolved">Resolved</button>
+        </div>
+
+        <!-- Active Complaints Table -->
+        <div class="table-wrapper">
+          <table class="complaints-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Category</th>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="complaintsTableBody">
+              <tr>
+                <td colspan="6" class="text-center">Loading complaints...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Past/Resolved Complaints Section -->
+        <div class="resolved-complaints-section">
+          <h3><i class="fas fa-folder"></i> Resolved Complaints</h3>
+          <div class="resolved-complaints-list" id="resolvedComplaintsList">
+            <div class="text-center">Loading resolved complaints...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raise Complaint Modal -->
+      <div id="raiseComplaintModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Raise a Complaint</h2>
+            <button class="modal-close" onclick="closeRaiseComplaintModal()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form id="raiseComplaintForm" class="modal-body">
+            <div class="form-group">
+              <label for="complaintCategory">Category <span class="required">*</span></label>
+              <select id="complaintCategory" name="category" required>
+                <option value="">Select category...</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Water">Water</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="complaintTitle">Title <span class="required">*</span></label>
+              <input type="text" id="complaintTitle" name="title" placeholder="Brief description of the issue" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="complaintDescription">Description <span class="required">*</span></label>
+              <textarea id="complaintDescription" name="description" placeholder="Provide detailed information about the issue..." rows="4" required></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label for="complaintAttachment">Attach Photo/Video</label>
+              <input type="file" id="complaintAttachment" name="attachment" accept="image/*,video/*">
+              <small class="form-help">Optional: Upload photo or video evidence</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="preferredResolutionTime">Preferred Resolution Date</label>
+              <input type="date" id="preferredResolutionTime" name="preferredResolutionTime">
+              <small class="form-help">Optional: When would you like this resolved?</small>
+            </div>
+          </form>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeRaiseComplaintModal()">Cancel</button>
+            <button type="submit" form="raiseComplaintForm" class="btn-primary">Submit Complaint</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complaint Details Modal -->
+      <div id="complaintDetailsModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="complaintDetailsTitle">Complaint Details</h2>
+            <button class="modal-close" onclick="closeComplaintDetailsModal()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body complaint-details">
+            <div class="detail-row">
+              <label>Category:</label>
+              <span id="detailCategory">-</span>
+            </div>
+            <div class="detail-row">
+              <label>Status:</label>
+              <span id="detailStatus" class="status-badge">-</span>
+            </div>
+            <div class="detail-row">
+              <label>Description:</label>
+              <div id="detailDescription" class="description-text">-</div>
+            </div>
+            <div class="detail-row" id="attachmentRow" style="display: none;">
+              <label>Attachment:</label>
+              <a href="#" id="detailAttachment" class="attachment-link" target="_blank">View Attachment</a>
+            </div>
+            <div class="detail-row">
+              <label>Raised On:</label>
+              <span id="detailRaisedDate">-</span>
+            </div>
+            <div class="detail-row">
+              <label>Last Updated:</label>
+              <span id="detailUpdatedDate">-</span>
+            </div>
+            <div class="detail-row" id="ownerResponseRow" style="display: none;">
+              <label>Owner Response:</label>
+              <div id="detailOwnerResponse" class="owner-response">
+                <i class="fas fa-comment"></i>
+                <span id="ownerResponseText">-</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeComplaintDetailsModal()">Close</button>
+            <button type="button" id="markResolvedBtn" class="btn-primary" style="display: none;" onclick="markComplaintResolved()">Mark as Resolved</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Announcements Section -->
+      <div id="announcements-section" class="content-section">
+        <div class="page-title-section">
+          <h1>ANNOUNCEMENTS & NOTICES</h1>
+        </div>
+
+        <div class="announcements-container" id="announcementsContainer">
+          <div class="announcement-card">
+            <div class="announcement-header">
+              <h3><i class="fas fa-bullhorn"></i> Loading announcements...</h3>
+              <span class="announcement-date">--</span>
+            </div>
+            <div class="announcement-content">
+              <p>Please wait while we load the announcements.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stay Information Section -->
+      <div id="stay-info-section" class="content-section">
+        <div class="page-title-section">
+          <h1>STAY INFORMATION</h1>
+        </div>
+
+        <!-- 1. Property Information Card -->
+        <div class="stay-info-card">
+          <div class="stay-card-header">
+            <i class="fas fa-building"></i>
+            <h3>Property Information</h3>
+          </div>
+          <div class="property-info-grid">
+            <div class="property-detail-row">
+              <i class="fas fa-home"></i>
+              <div>
+                <span class="detail-text" id="propertyName">Loading...</span>
+              </div>
+            </div>
+            <div class="property-detail-row">
+              <i class="fas fa-map-marker-alt"></i>
+              <div>
+                <span class="detail-text" id="propertyAddress">Loading...</span>
+              </div>
+            </div>
+            <div class="property-detail-row">
+              <i class="fas fa-tag"></i>
+              <div>
+                <span class="detail-text">Type: <span id="propertyType">Loading...</span></span>
+                <span class="detail-subtext"> • Total Floors: <span id="totalFloors">-</span></span>
+              </div>
+            </div>
+            <div class="property-detail-row">
+              <i class="fas fa-puzzle-piece"></i>
+              <div class="detail-text">Amenities:</div>
+            </div>
+            <div class="amenities-grid" id="amenitiesGrid">
+              <!-- Amenities will be populated by JS -->
+              <div class="amenity-chip">
+                <i class="fas fa-wifi"></i>
+                <span>WiFi</span>
+              </div>
+              <div class="amenity-chip">
+                <i class="fas fa-tshirt"></i>
+                <span>Laundry</span>
+              </div>
+              <div class="amenity-chip">
+                <i class="fas fa-utensils"></i>
+                <span>Kitchen</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Room & Unit Details Card -->
+        <div class="stay-info-card">
+          <div class="stay-card-header">
+            <i class="fas fa-bed"></i>
+            <h3>Room Details</h3>
+          </div>
+          <div class="room-details-grid">
+            <div class="room-info-section">
+              <h4>Room Information</h4>
+              <div class="room-detail-item">
+                <span class="room-detail-label">Room Number:</span>
+                <span class="room-detail-value" id="roomNumber">Loading...</span>
+              </div>
+              <div class="room-detail-item">
+                <span class="room-detail-label">Bed Number:</span>
+                <span class="room-detail-value" id="bedNumber">Loading...</span>
+              </div>
+              <div class="room-detail-item">
+                <span class="room-detail-label">Floor:</span>
+                <span class="room-detail-value" id="floorName">Loading...</span>
+              </div>
+              <div class="room-detail-item">
+                <span class="room-detail-label">Sharing Type:</span>
+                <span class="room-detail-value" id="sharingType">Loading...</span>
+              </div>
+            </div>
+            <div class="room-info-section">
+              <h4>Rent Information</h4>
+              <div class="room-detail-item">
+                <span class="room-detail-label">Monthly Rent:</span>
+                <span class="room-detail-value rent-highlight" id="monthlyRent">₹0</span>
+              </div>
+              <div class="room-detail-item">
+                <span class="room-detail-label">Due Date:</span>
+                <span class="room-detail-value" id="rentDueDate">Loading...</span>
+              </div>
+              <div class="room-detail-item">
+                <span class="room-detail-label">Payment Cycle:</span>
+                <span class="room-detail-value" id="paymentCycle">Monthly</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Owner / Manager Information -->
+        <div class="stay-info-card">
+          <div class="stay-card-header">
+            <i class="fas fa-user-circle"></i>
+            <h3>Owner Information</h3>
+          </div>
+          <div class="owner-info-grid">
+            <div class="owner-avatar" id="ownerAvatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="owner-details">
+              <h4 id="ownerName">Loading...</h4>
+              <div class="owner-contact-item" onclick="makeCall()">
+                <i class="fas fa-phone"></i>
+                <span class="owner-contact-text" id="ownerPhone">Loading...</span>
+              </div>
+              <div class="owner-contact-item" onclick="sendEmail()">
+                <i class="fas fa-envelope"></i>
+                <span class="owner-contact-text" id="ownerEmail">Loading...</span>
+              </div>
+              <div class="owner-contact-item">
+                <i class="fas fa-user-tag"></i>
+                <span class="owner-contact-text">Property Owner</span>
+              </div>
+              <div class="response-time">
+                <i class="fas fa-clock"></i>
+                Usually replies within 2 hrs
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Stay Duration & Deposit Details -->
+        <div class="stay-info-card">
+          <div class="stay-card-header">
+            <i class="fas fa-calendar-alt"></i>
+            <h3>Stay Duration</h3>
+          </div>
+          <div class="duration-grid">
+            <div class="duration-info">
+              <div class="duration-item">
+                <span class="duration-label">Check-in:</span>
+                <span class="duration-value" id="checkinDate">Loading...</span>
+              </div>
+              <div class="duration-item">
+                <span class="duration-label">Expected Checkout:</span>
+                <span class="duration-value" id="checkoutDate">Loading...</span>
+              </div>
+              <div class="duration-item">
+                <span class="duration-label">Rent Cycle:</span>
+                <span class="duration-value" id="rentCycle">Loading...</span>
+              </div>
+              <div class="progress-container">
+                <div class="progress-label">Stay Progress</div>
+                <div class="progress-bar">
+                  <div class="progress-fill" id="stayProgressFill" style="width: 0%"></div>
+                </div>
+                <div class="progress-text" id="stayProgressText">0%</div>
+              </div>
+            </div>
+            <div class="deposit-info">
+              <div class="deposit-amount" id="depositAmount">₹0</div>
+              <div class="deposit-status paid" id="depositStatus">Paid</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Property Rules & Policies -->
+        <div class="stay-info-card">
+          <div class="stay-card-header">
+            <i class="fas fa-scroll"></i>
+            <h3>Property Rules</h3>
+          </div>
+          <ul class="rules-list" id="propertyRulesList">
+            <li>Visitors not allowed after 8 PM</li>
+            <li>Quiet hours: 10 PM – 6 AM</li>
+            <li>No smoking or alcohol in rooms</li>
+            <li>Maintain cleanliness</li>
+            <li>Respect other residents</li>
+          </ul>
+          <div class="rules-actions">
+            <button class="btn-rules btn-download" onclick="downloadRules()">
+              <i class="fas fa-download"></i>
+              Download Rules PDF
+            </button>
+            <button class="btn-rules btn-acknowledge" onclick="acknowledgeRules()">
+              <i class="fas fa-check"></i>
+              Acknowledge
+            </button>
+          </div>
+        </div>
+
+        <!-- 6. Amenities Overview -->
+        <div class="stay-info-card">
+          <div class="stay-card-header">
+            <i class="fas fa-cogs"></i>
+            <h3>Available Amenities</h3>
+          </div>
+          <div class="amenities-grid" id="fullAmenitiesGrid">
+            <!-- Will be populated by JavaScript -->
+            <div class="amenity-chip">
+              <i class="fas fa-wifi"></i>
+              <span>WiFi</span>
+            </div>
+            <div class="amenity-chip">
+              <i class="fas fa-tshirt"></i>
+              <span>Laundry</span>
+            </div>
+            <div class="amenity-chip">
+              <i class="fas fa-utensils"></i>
+              <span>Kitchen</span>
+            </div>
+            <div class="amenity-chip">
+              <i class="fas fa-shower"></i>
+              <span>Hot Water</span>
+            </div>
+            <div class="amenity-chip">
+              <i class="fas fa-broom"></i>
+              <span>Daily Cleaning</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Downloadable Documents Section -->
+        <div class="stay-info-card">
+          <div class="stay-card-header">
+            <i class="fas fa-file-download"></i>
+            <h3>Download Documents</h3>
+          </div>
+          <div class="documents-list" id="documentsList">
+            <div class="document-item" onclick="downloadDocument('rental-agreement')">
+              <div class="document-info">
+                <i class="fas fa-file-pdf document-icon"></i>
+                <span class="document-name">Rental Agreement</span>
+              </div>
+              <i class="fas fa-download download-icon"></i>
+            </div>
+            <div class="document-item" onclick="downloadDocument('tenant-id')">
+              <div class="document-info">
+                <i class="fas fa-id-card document-icon"></i>
+                <span class="document-name">Tenant ID Proof</span>
+              </div>
+              <i class="fas fa-download download-icon"></i>
+            </div>
+            <div class="document-item" onclick="downloadDocument('police-verification')">
+              <div class="document-info">
+                <i class="fas fa-shield-alt document-icon"></i>
+                <span class="document-name">Police Verification</span>
+              </div>
+              <i class="fas fa-download download-icon"></i>
+            </div>
+            <div class="document-item" onclick="downloadDocument('pg-rules')">
+              <div class="document-info">
+                <i class="fas fa-scroll document-icon"></i>
+                <span class="document-name">PG Rules Document</span>
+              </div>
+              <i class="fas fa-download download-icon"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Past Stays Section -->
+      <div id="past-stays-section" class="content-section">
+        <div class="page-title-section">
+          <h1>PAST STAYS</h1>
+        </div>
+
+        <div class="past-stays-grid" id="pastStaysGrid">
+          <div class="past-stay-card">
+            <div class="stay-image">
+              <i class="fas fa-building"></i>
+            </div>
+            <div class="stay-content">
+              <h3>Loading...</h3>
+              <p>Please wait...</p>
+              <span class="status-badge completed">Completed</span>
+            </div>
+            <button class="btn-view-details">View Details</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modals Container -->
+  <div id="modals-container" data-component="components/modals.html"></div>
+
+</body>
+</html>
