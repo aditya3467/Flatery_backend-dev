@@ -54,7 +54,9 @@ public class Transaction {
     private String paymentMonth;  // e.g., "Nov 2025"
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    // Define explicit MySQL ENUM to let Hibernate auto-update schema to include CANCELED
+    @Column(name = "status", nullable = false,
+            columnDefinition = "ENUM('PENDING','VERIFIED','REJECTED','CANCELED')")
     private PaymentStatus status;
 
     @CreationTimestamp

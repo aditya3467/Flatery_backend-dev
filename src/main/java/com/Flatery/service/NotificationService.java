@@ -20,8 +20,20 @@ public class NotificationService {
      */
     public Notification createNotification(Long userId, Long senderId, String type, 
                                           String title, String message, String redirectUrl) {
-        Notification notification = new Notification(userId, senderId, type, title, message, redirectUrl);
-        return notificationRepository.save(notification);
+        try {
+            System.out.println("Creating notification - UserId: " + userId + ", SenderId: " + senderId + 
+                              ", Type: " + type + ", Title: " + title);
+            
+            Notification notification = new Notification(userId, senderId, type, title, message, redirectUrl);
+            Notification saved = notificationRepository.save(notification);
+            
+            System.out.println("Notification saved successfully with ID: " + saved.getId());
+            return saved;
+        } catch (Exception e) {
+            System.err.println("Error creating notification: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-throw to allow caller to handle
+        }
     }
 
     /**

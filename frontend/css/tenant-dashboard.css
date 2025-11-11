@@ -1560,6 +1560,18 @@ select {
     border: 1px solid rgba(44, 51, 72, 0.5);
 }
 
+.payment-status-badge.rejected {
+    background: rgba(244, 67, 54, 0.1);
+    color: #F44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.payment-status-badge.canceled {
+    background: rgba(158, 158, 158, 0.1);
+    color: #9E9E9E;
+    border: 1px solid rgba(158, 158, 158, 0.3);
+}
+
 /* 2. Payment Action Bar */
 .payment-action-bar {
     display: flex;
@@ -1724,6 +1736,14 @@ select {
     background: rgba(122, 122, 255, 0.05);
 }
 
+/* Action column with multiple buttons */
+.payment-history-table tbody td:last-child {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
 .table-action-btn {
     padding: 0.4rem 0.8rem;
     border-radius: 0.4rem;
@@ -1732,6 +1752,7 @@ select {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .table-action-btn.download {
@@ -1752,6 +1773,42 @@ select {
 
 .table-action-btn.upload:hover {
     background: rgba(122, 122, 255, 0.2);
+}
+
+.table-action-btn.remind {
+    background: rgba(255, 193, 7, 0.1);
+    color: #FFC107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.table-action-btn.remind:hover {
+    background: rgba(255, 193, 7, 0.2);
+}
+
+.table-action-btn.remind:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.table-action-btn.remind.reminded {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.table-action-btn.withdraw {
+    background: rgba(244, 67, 54, 0.1);
+    color: #F44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.table-action-btn.withdraw:hover {
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.table-action-btn.withdraw:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* 4. Rent Analytics Panel */

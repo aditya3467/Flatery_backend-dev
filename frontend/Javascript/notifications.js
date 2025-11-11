@@ -23,17 +23,21 @@ class NotificationManager {
     async init() {
         // Prevent double initialization
         if (this.isInitialized) {
-            console.log('Notification manager already initialized');
+            console.log('[Notifications] Already initialized');
             return;
         }
 
         // Check if user is authenticated
-        this.isAuthenticated = apiService.isAuthenticated();
-        
+        this.isAuthenticated = typeof apiService !== 'undefined' && apiService.isAuthenticated();
         if (!this.isAuthenticated) {
-            return; // Don't initialize if user is not logged in
+            console.log('[Notifications] Skipping init: not authenticated');
+            const section = document.getElementById('notificationSection');
+            if (section) section.style.display = 'none';
+            return;
         }
 
+        console.log('[Notifications] Initializing notification manager...');
+        
         // Get DOM elements
         this.notificationSection = document.getElementById('notificationSection');
         this.notificationBell = document.getElementById('notificationBell');
@@ -41,19 +45,52 @@ class NotificationManager {
         this.notificationDropdown = document.getElementById('notificationDropdown');
         this.notificationList = document.getElementById('notificationList');
 
-        if (!this.notificationSection || !this.notificationBell) {
-            console.warn('Notification elements not found');
+        console.log('[Notifications] Initial element check:');
+        console.log('  - notificationSection:', !!this.notificationSection);
+        console.log('  - notificationBell:', !!this.notificationBell);
+        console.log('  - notificationDropdown:', !!this.notificationDropdown);
+        console.log('  - notificationList:', !!this.notificationList);
+
+        if (!this.notificationSection || !this.notificationBell || !this.notificationDropdown || !this.notificationList) {
+            console.warn('[Notifications] Required DOM elements missing; delaying init and retrying in 300ms...');
+            // Retry after longer delay (component-loader may still be loading)
+            setTimeout(() => {
+                this.notificationSection = document.getElementById('notificationSection');
+                this.notificationBell = document.getElementById('notificationBell');
+                this.notificationBadge = document.getElementById('notificationBadge');
+                this.notificationDropdown = document.getElementById('notificationDropdown');
+                this.notificationList = document.getElementById('notificationList');
+                
+                console.log('[Notifications] Retry element check:');
+                console.log('  - notificationSection:', !!this.notificationSection);
+                console.log('  - notificationBell:', !!this.notificationBell);
+                console.log('  - notificationDropdown:', !!this.notificationDropdown);
+                console.log('  - notificationList:', !!this.notificationList);
+                
+                if (this.notificationSection && this.notificationBell && this.notificationDropdown && this.notificationList) {
+                    console.log('[Notifications] Elements found on retry; continuing init');
+                    this.finalizeInit();
+                } else {
+                    console.error('[Notifications] Initialization aborted: elements still missing after retry');
+                }
+            }, 300);
             return;
         }
 
+        this.finalizeInit();
+    }
+
+    finalizeInit() {
         // Show notification section
-        this.notificationSection.style.display = 'flex';
+        if (this.notificationSection) {
+            this.notificationSection.style.display = 'flex';
+        }
 
         // Setup event listeners
         this.setupEventListeners();
 
         // Load initial notifications
-        await this.loadNotifications();
+        this.loadNotifications();
 
         // Start auto-refresh (every 30 seconds)
         this.startAutoRefresh();
@@ -68,29 +105,53 @@ class NotificationManager {
      */
     setupEventListeners() {
         // Toggle dropdown
-        this.notificationBell.addEventListener('click', (e) => {
-            e.stopPropagation();
-            console.log('Notification bell clicked');
-            this.toggleDropdown();
-        });
+        if (this.notificationBell) {
+            const bellClickHandler = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.toggleDropdown();
+            };
+            
+            this.notificationBell.addEventListener('click', bellClickHandler, true);
+        }
+
+        // Prevent dropdown clicks from closing it
+        if (this.notificationDropdown) {
+            this.notificationDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
 
         // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!this.notificationSection.contains(e.target)) {
-                this.closeDropdown();
+        const outsideClickHandler = (e) => {
+            if (this.notificationSection && this.notificationSection.contains(e.target)) {
+                return;
             }
-        });
+            this.closeDropdown();
+        };
+        
+        // Add listener with slight delay to prevent immediate triggering
+        setTimeout(() => {
+            document.addEventListener('click', outsideClickHandler);
+        }, 100);
 
         // Mark all as read button
         const markAllReadBtn = document.getElementById('markAllReadBtn');
         if (markAllReadBtn) {
-            markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
+            markAllReadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.markAllAsRead();
+            });
         }
 
         // Clear notifications button
         const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
         if (clearNotificationsBtn) {
-            clearNotificationsBtn.addEventListener('click', () => this.clearReadNotifications());
+            clearNotificationsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.clearReadNotifications();
+            });
         }
     }
 
@@ -98,20 +159,18 @@ class NotificationManager {
      * Load notifications from API
      */
     async loadNotifications() {
+        if (!this.isAuthenticated) return;
         try {
-            // Fetch unread count
-            const countResponse = await apiService.getUnreadNotificationCount();
-            this.unreadCount = countResponse.count || 0;
+            const [countResponse, notifications] = await Promise.all([
+                apiService.getUnreadNotificationCount().catch(e => { console.warn('[Notifications] Count failed', e); return { count: 0 }; }),
+                apiService.getAllNotifications().catch(e => { console.warn('[Notifications] List failed', e); return []; })
+            ]);
+            this.unreadCount = (countResponse && countResponse.count) ? countResponse.count : 0;
+            this.notifications = Array.isArray(notifications) ? notifications : [];
             this.updateBadge();
-
-            // Fetch all notifications
-            const notifications = await apiService.getAllNotifications();
-            this.notifications = notifications || [];
-            
-            // Render notifications
             this.renderNotifications();
         } catch (error) {
-            console.error('Failed to load notifications:', error);
+            console.error('[Notifications] Unexpected load error:', error);
             this.showError();
         }
     }
@@ -291,12 +350,10 @@ class NotificationManager {
      */
     toggleDropdown() {
         if (!this.notificationDropdown) {
-            console.warn('Notification dropdown element not found');
             return;
         }
 
         const isActive = this.notificationDropdown.classList.contains('active');
-        console.log('Dropdown toggle - currently active:', isActive);
         
         if (isActive) {
             this.closeDropdown();
@@ -309,8 +366,9 @@ class NotificationManager {
      * Open dropdown
      */
     openDropdown() {
-        if (!this.notificationDropdown) return;
-        console.log('Opening notification dropdown');
+        if (!this.notificationDropdown) {
+            return;
+        }
         this.notificationDropdown.classList.add('active');
     }
 
@@ -319,7 +377,6 @@ class NotificationManager {
      */
     closeDropdown() {
         if (!this.notificationDropdown) return;
-        console.log('Closing notification dropdown');
         this.notificationDropdown.classList.remove('active');
     }
 

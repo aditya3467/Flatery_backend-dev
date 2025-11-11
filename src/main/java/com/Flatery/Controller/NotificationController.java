@@ -1,7 +1,9 @@
 package com.Flatery.Controller;
 
 import com.Flatery.model.Notification;
+import com.Flatery.model.User;
 import com.Flatery.service.NotificationService;
+import com.Flatery.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,17 +23,24 @@ public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     /**
      * Get current user ID from security context
      */
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.User) {
-            org.springframework.security.core.userdetails.User userDetails = 
-                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
-            // Assuming username is the user ID or you have a custom UserDetails implementation
-            // You may need to adjust this based on your actual User implementation
-            return Long.parseLong(userDetails.getUsername());
+            org.springframework.security.core.userdetails.User userDetails =
+                    (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+            String username = userDetails.getUsername();
+            // Resolve actual User entity by username/email/phone, then return its numeric ID
+            return userRepository.findByUsernameOrEmail(username)
+                    .map(User::getId)
+                    .orElseGet(() -> userRepository.findByUsername(username)
+                            .map(User::getId)
+                            .orElse(null));
         }
         return null;
     }
@@ -225,6 +234,41 @@ public class NotificationController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Failed to clear notifications: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/notifications/test
+     * Test notification creation for debugging
+     */
+    @PostMapping("/test")
+    public ResponseEntity<?> testNotification(@RequestParam Long recipientId, 
+                                            @RequestParam(required = false) Long senderId) {
+        try {
+            System.out.println("=== TEST NOTIFICATION ENDPOINT ===");
+            System.out.println("Recipient ID: " + recipientId);
+            System.out.println("Sender ID: " + senderId);
+            
+            Notification notification = notificationService.createNotification(
+                recipientId,
+                senderId != null ? senderId : 1L,
+                "TestPaymentApproved", 
+                "Test Payment Approved ✅",
+                "This is a test notification for payment verification debugging.",
+                "/tenant-dashboard.html"
+            );
+            
+            System.out.println("Test notification created with ID: " + notification.getId());
+            return ResponseEntity.ok(Map.of(
+                "message", "Test notification created successfully",
+                "notificationId", notification.getId(),
+                "recipientId", recipientId
+            ));
+        } catch (Exception e) {
+            System.err.println("Test notification failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to create test notification: " + e.getMessage()));
         }
     }
 }

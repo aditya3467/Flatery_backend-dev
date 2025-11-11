@@ -593,6 +593,13 @@ class ApiService {
             body: JSON.stringify({ reason: rejectionReason })
         });
     }
+
+    // Withdraw/cancel payment submission (tenant)
+    async withdrawPaymentSubmission(transactionId) {
+        return this.makeRequest(`/transactions/${transactionId}/withdraw`, {
+            method: 'POST'
+        });
+    }
 }
 
 // Create global API service instance

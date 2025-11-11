@@ -162,6 +162,43 @@ public class TransactionController {
     }
 
     /**
+     * Tenant withdraws/cancels their own pending payment submission
+     */
+    @PostMapping("/{id}/withdraw")
+    public ResponseEntity<?> withdrawTransaction(@PathVariable Long id, Authentication authentication) {
+        try {
+            System.out.println("=== Withdraw Transaction Request ===");
+            System.out.println("Transaction ID: " + id);
+            
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String username = userDetails.getUsername();
+            System.out.println("Username: " + username);
+
+            Tenant tenant = tenantRepository.findByPhoneNumber(username)
+                    .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+            
+            System.out.println("Tenant found: id=" + tenant.getId());
+
+            TransactionResponseDto updated = transactionService.withdrawTransaction(id, tenant.getId());
+            
+            System.out.println("Transaction withdrawn successfully: " + updated.getId());
+            System.out.println("====================================");
+            
+            return ResponseEntity.ok(updated);
+        } catch (SecurityException ex) {
+            System.err.println("SecurityException during withdrawal: " + ex.getMessage());
+            return ResponseEntity.status(403).body(new ErrorResponse(ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            System.err.println("IllegalArgumentException during withdrawal: " + ex.getMessage());
+            return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
+        } catch (Exception ex) {
+            System.err.println("Unexpected error during withdrawal: " + ex.getMessage());
+            ex.printStackTrace();
+            return ResponseEntity.status(500).body(new ErrorResponse("Failed to withdraw transaction: " + ex.getMessage()));
+        }
+    }
+
+    /**
      * Helper method to get authenticated user's ID
      */
     private Long getAuthenticatedUserId(Authentication authentication) {
