@@ -22,22 +22,24 @@ public class DataInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private boolean initialized = false;  // flag to run only once per application run
 
     @Override
     public void run(ApplicationArguments args) {
-        initializeSuperAdmin();
+        if (!initialized) {
+            initializeSuperAdmin();
+            initialized = true;
+        }
     }
 
     private void initializeSuperAdmin() {
         String superAdminUsername = "Superadmin";
-        
-        // Check if super admin already exists
+
         if (userRepository.findByUsername(superAdminUsername).isPresent()) {
-            log.info("Super admin user already exists");
+            log.debug("Super admin user already exists");
             return;
         }
 
-        // Create super admin user
         User superAdmin = new User();
         superAdmin.setUsername(superAdminUsername);
         superAdmin.setPassword(passwordEncoder.encode("Admin123"));
@@ -51,3 +53,4 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Super admin user created successfully with username: {}", superAdminUsername);
     }
 }
+

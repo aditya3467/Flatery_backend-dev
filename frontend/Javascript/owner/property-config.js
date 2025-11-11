@@ -9,34 +9,21 @@ let floors = [];
 let units = [];
 let tenants = [];
 let currentView = 'dashboard'; // 'dashboard', 'floors' or 'tenants'
-// Charts/state used across sections
-// Global chart instance (defined once)
-let rentCollectionChart = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
-  console.log('[Property Config] Initializing...');
-  console.log('[Property Config] Current URL:', window.location.href);
-  
   // Get property ID from URL
   const urlParams = new URLSearchParams(window.location.search);
   currentPropertyId = urlParams.get('id');
   
-  console.log('[Property Config] Property ID:', currentPropertyId);
-  
   if (!currentPropertyId) {
-    console.error('[Property Config] No property ID in URL');
     showAlert('error', 'No property selected');
     setTimeout(() => window.location.href = 'Owner.html', 2000);
     return;
   }
 
   // Ensure authenticated and owner role
-  console.log('[Property Config] Checking authentication...');
   const ok = await ensureOwnerSession();
-  console.log('[Property Config] Auth check result:', ok);
-  
   if (ok) {
-    console.log('[Property Config] Loading property configuration...');
     await loadPropertyConfig();
     setupNavigationHandlers();
   }
@@ -65,6 +52,8 @@ function setupNavigationHandlers() {
         showTenantsSection();
       } else if (href === '#payments') {
         showPaymentsSection();
+      } else if (href === '#manage-payments') {
+        showManagePaymentsSection();
       }
     });
   });
@@ -77,6 +66,7 @@ function showDashboardSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   toggleTopMeta(false);
   loadDashboardData();
 }
@@ -88,6 +78,7 @@ function showFinancialSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   toggleTopMeta(false);
   loadFinancialData();
 }
@@ -109,6 +100,7 @@ function showFloorsSection() {
   document.querySelector('.floors-section').style.display = 'block';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   // Show top meta (title/filters/stats) in floors view
   toggleTopMeta(true);
 }
@@ -120,6 +112,7 @@ function showTenantsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'block';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   // Hide top meta (title/filters/stats) in tenants view
   toggleTopMeta(false);
   loadTenants();
@@ -132,9 +125,23 @@ function showPaymentsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'block';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   // Hide top meta (title/filters/stats) in payments view
   toggleTopMeta(false);
   loadPayments();
+}
+
+function showManagePaymentsSection() {
+  currentView = 'manage-payments';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'block';
+  // Hide top meta (title/filters/stats) in manage payments view
+  toggleTopMeta(false);
+  loadPaymentSubmissions();
 }
 
 // ========================================
@@ -381,6 +388,101 @@ function renderOccupancyTrendChart() {
   });
 }
 
+function renderRentCollectionChart() {
+  const ctx = document.getElementById('rentCollectionChart');
+  if (!ctx) return;
+  
+  // Destroy existing chart if it exists
+  if (window.rentCollectionChart && typeof window.rentCollectionChart.destroy === 'function') {
+    window.rentCollectionChart.destroy();
+  }
+  
+  // Generate data for last 6 months
+  const months = [];
+  const collectedData = [];
+  const pendingData = [];
+  const today = new Date();
+  const baseRevenue = units.reduce((sum, u) => sum + (u.rent * u.occupied), 0);
+  
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    months.push(date.toLocaleDateString('en-IN', { month: 'short' }));
+    
+    const variance = Math.random() * 0.3 - 0.15;
+    const totalRent = baseRevenue * (1 + variance);
+    const collected = totalRent * (0.7 + Math.random() * 0.25); // 70-95% collected
+    const pending = totalRent - collected;
+    
+    collectedData.push(Math.floor(collected));
+    pendingData.push(Math.floor(pending));
+  }
+  
+  window.rentCollectionChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: 'Collected',
+          data: collectedData,
+          backgroundColor: '#10b981',
+          borderRadius: 6,
+          borderSkipped: false
+        },
+        {
+          label: 'Pending',
+          data: pendingData,
+          backgroundColor: '#f59e0b',
+          borderRadius: 6,
+          borderSkipped: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 15
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ₹${formatNumber(context.parsed.y)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '₹' + formatNumber(value);
+            }
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)'
+          }
+        }
+      }
+    }
+  });
+}
 
 function renderOccupancyHeatmap() {
   const container = document.getElementById('occupancyHeatmap');
@@ -455,7 +557,7 @@ async function ensureOwnerSession() {
   try {
     if (!apiService.isAuthenticated()) {
       showAlert('error', 'Please log in as an owner.');
-      setTimeout(() => window.location.href = '../index.html', 2000);
+      setTimeout(() => window.location.href = 'index.html', 2000);
       return false;
     }
     
@@ -474,7 +576,7 @@ async function ensureOwnerSession() {
     const isOwner = roles.includes('ADMIN') || roles.includes('SUPERADMIN');
     if (!isOwner) {
       showAlert('error', 'Only property owners can access this page.');
-      setTimeout(() => window.location.href = '../index.html', 2000);
+      setTimeout(() => window.location.href = 'index.html', 2000);
       return false;
     }
     
@@ -805,6 +907,14 @@ function deleteFloor(floorNumber) {
 // Utility Functions
 function showAlert(type, message) {
   const alert = document.getElementById('alertMessage');
+  
+  if (!alert) {
+    console.error('Alert element not found, creating fallback');
+    // Fallback: just log to console
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    return;
+  }
+  
   alert.className = `alert ${type}`;
   alert.textContent = message;
   alert.style.display = 'block';
@@ -843,7 +953,7 @@ function renderTenants() {
         <i class="fas fa-users"></i>
         <h3>No Tenants Yet</h3>
         <p>Start by adding tenants to your property</p>
-        <button class="btn-primary" onclick="window.location.href='add-tenant.html?propertyId=${currentPropertyId}'">
+        <button class="btn-primary" onclick="window.location.href='/frontend/owner/add-tenant.html?propertyId=${currentPropertyId}'">
           <i class="fas fa-plus"></i> Add Tenant
         </button>
       </div>
@@ -890,6 +1000,9 @@ function renderTenants() {
             </button>
             <button class="delete" onclick="removeTenant(${tenant.id})">
               <i class="fas fa-trash"></i> Remove
+            </button>
+            <button class="deactivate" onclick="deactivateTenantFromList('${tenant.tenantId}')" ${String(tenant.status).toUpperCase()==='VACATED'?'disabled':''}>
+              <i class="fas fa-user-slash"></i> ${String(tenant.status).toUpperCase()==='VACATED'?'Deactivated':'Deactivate'}
             </button>
           </div>
         </div>
@@ -1602,6 +1715,10 @@ function renderTenantsTable(tenants) {
             <button class="action-btn remove" onclick="confirmRemoveTenant(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}')">
               <i class="fas fa-user-minus"></i> Remove
             </button>
+            
+            <button class="action-btn deactivate" data-tenant-id="${tenant.tenantId || tenant.id}" onclick="deactivateTenantAction(this)" ${String(tenant.status).toUpperCase() === 'VACATED' ? 'disabled' : ''}>
+              <i class="fas fa-user-slash"></i> ${String(tenant.status).toUpperCase() === 'VACATED' ? 'Deactivated' : 'Deactivate'}
+            </button>
           </div>
         </td>
       </tr>
@@ -1884,8 +2001,63 @@ async function removeTenantFromProperty(tenantId) {
   }
 }
 
+// Deactivate tenant from the compact list dropdown
+window.deactivateTenantFromList = async function(externalTenantId){
+  if(!externalTenantId) return;
+  if(!confirm('Are you sure you want to deactivate this tenant? This will free their bed/room.')) return;
+  try {
+    await apiService.deactivateTenant(externalTenantId);
+    showAlert && showAlert('success','Tenant deactivated');
+    await loadTenants();
+    // Refresh floors/units & stats so the freed bed is immediately visible
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+    if (currentView === 'dashboard') {
+      loadDashboardData();
+    } else if (currentView === 'financial') {
+      loadFinancialData();
+    }
+  } catch(e){
+    console.error('Deactivate failed', e);
+    showAlert && showAlert('error', e.message || 'Failed to deactivate tenant');
+  }
+};
+
 // Deactivate tenant (mark VACATED and free bed) with button loading state
-// ...existing code...
+window.deactivateTenantAction = async function(btn) {
+  const tenantId = btn.getAttribute('data-tenant-id');
+  if (!tenantId) return;
+  if (btn.disabled) return;
+  if (!confirm('Are you sure you want to deactivate this tenant?\n\nThis will free their bed/room and mark them as VACATED.')) return;
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deactivating...';
+  try {
+    await apiService.deactivateTenant(tenantId);
+    btn.innerHTML = '<i class="fas fa-check"></i> Deactivated';
+    btn.classList.remove('loading');
+    btn.classList.add('success');
+    // Reload tenants to reflect status badge
+    await loadTenants();
+    // Refresh floors/units & stats so the bed shows as free
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+    if (currentView === 'dashboard') {
+      loadDashboardData();
+    } else if (currentView === 'financial') {
+      loadFinancialData();
+    }
+  } catch (e) {
+    console.error('Failed to deactivate:', e);
+    alert(e.message || 'Failed to deactivate tenant');
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = originalText;
+  }
+};
 
 // Export tenants to Excel
 function exportTenantsToExcel() {
@@ -1979,7 +2151,6 @@ window.switchProfileTab = switchProfileTab;
 window.exportTenantsToExcel = exportTenantsToExcel;
 window.confirmRemoveTenant = confirmRemoveTenant;
 window.removeTenantFromProperty = removeTenantFromProperty;
-window.deactivateTenant = deactivateTenant;
 window.sendWhatsAppReminder = sendWhatsAppReminder;
 window.generateAgreement = generateAgreement;
 window.downloadRentReceipts = downloadRentReceipts;
@@ -1995,6 +2166,7 @@ window.downloadDocument = downloadDocument;
 
 let allPayments = [];
 let currentPaymentId = null;
+let rentCollectionChart = null;
 
 // Load and display payments
 async function loadPayments() {
@@ -2406,6 +2578,518 @@ function downloadReceiptPDF() {
 function downloadPaymentReport() {
   alert('Payment report download functionality will be implemented with backend integration');
 }
+
+// ===============================================
+// MANAGE PAYMENT SUBMISSIONS (TENANT SUBMISSIONS)
+// ===============================================
+
+// Mock data for payment submissions (will be replaced with API calls when backend is ready)
+let paymentSubmissions = [
+  {
+    id: 1,
+    tenantName: 'Amit Kumar',
+    unit: '101',
+    rentMonth: 'November 2024',
+    amount: 8500,
+    paymentMode: 'UPI',
+    dateSubmitted: '2024-11-10',
+    status: 'PENDING',
+    proofUrl: 'proof1.jpg',
+    tenantRemark: 'Paid via PhonePe'
+  },
+  {
+    id: 2,
+    tenantName: 'Rajesh Sharma',
+    unit: '102',
+    rentMonth: 'November 2024',
+    amount: 9000,
+    paymentMode: 'BANK_TRANSFER',
+    dateSubmitted: '2024-11-08',
+    status: 'VERIFIED',
+    proofUrl: 'proof2.jpg',
+    tenantRemark: 'NEFT Transfer',
+    approvedDate: '2024-11-08'
+  },
+  {
+    id: 3,
+    tenantName: 'Priya Singh',
+    unit: '103',
+    rentMonth: 'November 2024',
+    amount: 7500,
+    paymentMode: 'CASH',
+    dateSubmitted: '2024-11-05',
+    status: 'REJECTED',
+    proofUrl: 'proof3.jpg',
+    tenantRemark: 'Paid to security guard',
+    rejectionRemark: 'Payment not received in account'
+  }
+];
+
+// Load payment submissions
+async function loadPaymentSubmissions() {
+  console.log('Loading payment submissions from API...');
+
+  try {
+    // Fetch all submissions from backend (owner view)
+    const submissions = await apiService.getOwnerAllPayments();
+    console.log('Raw API response:', submissions);
+
+    // Normalize response if needed - backend expected to return array of transactions
+    const rawSubmissions = Array.isArray(submissions) ? submissions : (submissions.items || []);
+
+    // Map backend TransactionResponseDto to frontend format
+    paymentSubmissions = rawSubmissions.map(tx => ({
+      id: tx.id,
+      tenantId: tx.tenantId,
+      // Use real tenant name and unit from backend
+      tenantName: tx.tenantName || `Tenant ${tx.tenantId}`,
+      unit: tx.unitNumber || 'N/A',
+      rentMonth: tx.paymentMonth,
+      amount: tx.amount || 0,
+      paymentMode: tx.paymentMode || 'UPI',
+      dateSubmitted: tx.paymentDate || new Date().toISOString().split('T')[0],
+      status: tx.status || 'PENDING',
+      proofUrl: tx.screenshotUrl || '',
+      tenantRemark: tx.upiRef ? `Ref: ${tx.upiRef}` : '',
+      rejectionRemark: '',
+      approvedDate: tx.status === 'VERIFIED' ? tx.paymentDate : null
+    }));
+
+    console.log('Mapped submissions:', paymentSubmissions);
+
+    // Update stats and render
+    updatePaymentSubmissionStats();
+    renderPaymentSubmissions(paymentSubmissions);
+  } catch (err) {
+    console.error('Failed to load payment submissions from API:', err);
+    showAlert('error', 'Failed to load payment submissions');
+
+    // Fallback to existing mock data rendering so UI isn't empty
+    updatePaymentSubmissionStats();
+    renderPaymentSubmissions(paymentSubmissions);
+  }
+}
+
+// Update stats cards
+function updatePaymentSubmissionStats() {
+  const pending = paymentSubmissions.filter(s => s.status === 'PENDING').length;
+  const approved = paymentSubmissions.filter(s => s.status === 'VERIFIED' || s.status === 'APPROVED').length;
+  const rejected = paymentSubmissions.filter(s => s.status === 'REJECTED').length;
+  const totalAmount = paymentSubmissions
+    .filter(s => s.status === 'PENDING')
+    .reduce((sum, s) => sum + (s.amount || 0), 0);
+  
+  document.getElementById('pendingSubmissionsCount').textContent = pending;
+  document.getElementById('approvedSubmissionsCount').textContent = approved;
+  document.getElementById('rejectedSubmissionsCount').textContent = rejected;
+  document.getElementById('totalSubmittedAmount').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
+}
+
+// Render payment submissions table
+function renderPaymentSubmissions(submissions) {
+  const tbody = document.getElementById('paymentSubmissionsTableBody');
+  
+  if (submissions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="no-data-row">No payment submissions found</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = submissions.map(sub => {
+    const daysAgo = getDaysAgo(sub.dateSubmitted);
+    const statusBadge = getStatusBadge(sub.status);
+    const modeBadge = getPaymentModeBadge(sub.paymentMode);
+    const actions = getActionButtons(sub);
+    
+    return `
+      <tr>
+        <td>
+          <div class="tenant-info-simple">
+            <div>
+              <strong>${sub.tenantName}</strong>
+              <small>${sub.unit || ''}</small>
+            </div>
+          </div>
+        </td>
+        <td>${sub.rentMonth}</td>
+        <td><strong>₹${sub.amount.toLocaleString('en-IN')}</strong></td>
+        <td>${modeBadge}</td>
+        <td>
+          <div class="date-info">
+            <div>${formatDate(sub.dateSubmitted)}</div>
+            <small>${daysAgo}</small>
+          </div>
+        </td>
+        <td>${statusBadge}</td>
+        <td>
+          <button class="btn-icon" onclick="viewPaymentProof('${sub.proofUrl}')" title="View Proof">
+            <i class="fas fa-image"></i>
+          </button>
+        </td>
+        <td>
+          <div class="tenant-remark">
+            <small>${sub.tenantRemark || '-'}</small>
+          </div>
+        </td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Get status badge HTML
+function getStatusBadge(status) {
+  const badges = {
+    'PENDING': '<span class="status-badge pending">Pending</span>',
+    'VERIFIED': '<span class="status-badge approved">Approved</span>',
+    'APPROVED': '<span class="status-badge approved">Approved</span>',
+    'REJECTED': '<span class="status-badge rejected">Rejected</span>'
+  };
+  return badges[status] || `<span class="status-badge">${status}</span>`;
+}
+
+// Get payment mode badge HTML
+function getPaymentModeBadge(mode) {
+  const modeMap = {
+    'UPI': 'upi',
+    'BANK_TRANSFER': 'bank',
+    'CASH': 'cash',
+    'CARD': 'card'
+  };
+  const modeText = {
+    'UPI': 'UPI',
+    'BANK_TRANSFER': 'Bank Transfer',
+    'CASH': 'Cash',
+    'CARD': 'Card'
+  };
+  const cssClass = modeMap[mode] || 'upi';
+  return `<span class="payment-mode-badge ${cssClass}">${modeText[mode] || mode}</span>`;
+}
+
+// Get action buttons HTML
+function getActionButtons(submission) {
+  if (submission.status === 'PENDING') {
+    return `
+      <div class="action-buttons">
+        <button class="btn btn-success btn-sm" onclick="approvePaymentSubmission(${submission.id})" title="Approve Payment">
+          <i class="fas fa-check"></i> Approve
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="openRejectModal(${submission.id})" title="Reject Payment">
+          <i class="fas fa-times"></i> Reject
+        </button>
+      </div>
+    `;
+  } else if (submission.status === 'VERIFIED' || submission.status === 'APPROVED') {
+    return `<div class="action-buttons"><span class="action-completed">✓ Approved</span></div>`;
+  } else if (submission.status === 'REJECTED') {
+    return `<div class="action-buttons"><span class="action-rejected">✗ Rejected</span></div>`;
+  }
+  return '';
+}
+
+// Approve payment submission
+let currentApprovalSubmissionId = null;
+
+async function approvePaymentSubmission(submissionId) {
+  console.log('=== approvePaymentSubmission called ===');
+  console.log('Submission ID:', submissionId);
+  
+  // Store the submission ID and find the submission details
+  currentApprovalSubmissionId = submissionId;
+  const submission = paymentSubmissions.find(s => s.id === submissionId);
+  
+  console.log('Found submission:', submission);
+  
+  if (!submission) {
+    showAlert('error', 'Payment submission not found');
+    return;
+  }
+
+  // Populate modal with payment details
+  const detailsHtml = `
+    <div class="detail-row">
+      <span class="detail-label">Tenant:</span>
+      <span class="detail-value"><strong>${submission.tenantName}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Unit:</span>
+      <span class="detail-value">${submission.unit}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Amount:</span>
+      <span class="detail-value"><strong>₹${submission.amount.toLocaleString('en-IN')}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Payment Month:</span>
+      <span class="detail-value">${submission.rentMonth}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Payment Mode:</span>
+      <span class="detail-value">${submission.paymentMode}</span>
+    </div>
+    ${submission.tenantRemark ? `
+    <div class="detail-row">
+      <span class="detail-label">Remark:</span>
+      <span class="detail-value">${submission.tenantRemark}</span>
+    </div>
+    ` : ''}
+  `;
+  
+  document.getElementById('approvePaymentDetails').innerHTML = detailsHtml;
+  document.getElementById('approvePaymentModal').style.display = 'block';
+  console.log('Modal opened');
+}
+
+// Close approve modal
+function closeApproveModal() {
+  document.getElementById('approvePaymentModal').style.display = 'none';
+  currentApprovalSubmissionId = null;
+}
+
+// Confirm approval and call API
+async function confirmApprovePayment() {
+  console.log('=== confirmApprovePayment called ===');
+  console.log('currentApprovalSubmissionId:', currentApprovalSubmissionId);
+  
+  if (!currentApprovalSubmissionId) {
+    showAlert('error', 'No payment selected');
+    return;
+  }
+
+  const submissionId = currentApprovalSubmissionId;
+  console.log('Approving submission ID:', submissionId);
+
+  try {
+    closeApproveModal();
+    showAlert('info', 'Approving payment...');
+
+    // Call backend to verify/approve
+    console.log('Calling API: verifyPaymentSubmission with ID:', submissionId);
+    const response = await apiService.verifyPaymentSubmission(submissionId);
+    console.log('API response:', response);
+
+    // Update local state optimistically (backend uses VERIFIED for approved)
+    const submission = paymentSubmissions.find(s => s.id === submissionId);
+    console.log('Found submission in local state:', submission);
+    
+    if (submission) {
+      submission.status = 'VERIFIED';
+      submission.approvedDate = new Date().toISOString().split('T')[0];
+      console.log('Updated submission status to VERIFIED');
+    }
+
+    // Create notification for tenant if tenantId available
+    try {
+      const tenantId = submission?.tenantId;
+      if (tenantId) {
+        await apiService.createNotification({
+          userId: tenantId,
+          type: 'PaymentApproved',
+          title: 'Payment Approved',
+          message: `Your payment has been approved by the owner.`,
+          redirectUrl: '/frontend/tenant-dashboard.html#payments'
+        });
+      }
+    } catch (nerr) {
+      console.warn('Failed to create notification after approval:', nerr);
+    }
+
+    showAlert('success', 'Payment approved successfully');
+    // Refresh list from server to get canonical state
+    await loadPaymentSubmissions();
+  } catch (err) {
+    console.error('Error approving payment:', err);
+    showAlert('error', err.message || 'Failed to approve payment');
+  }
+}
+
+// Open reject modal
+function openRejectModal(submissionId) {
+  document.getElementById('rejectSubmissionId').value = submissionId;
+  document.getElementById('rejectionRemark').value = '';
+  document.getElementById('rejectPaymentModal').style.display = 'block';
+}
+
+// Close reject modal
+function closeRejectModal() {
+  document.getElementById('rejectPaymentModal').style.display = 'none';
+}
+
+// Handle reject payment form submission
+async function handleRejectPayment(event) {
+  event.preventDefault();
+  
+  const submissionId = parseInt(document.getElementById('rejectSubmissionId').value);
+  const remark = document.getElementById('rejectionRemark').value.trim();
+  
+  if (remark.length < 10) {
+    showAlert('error', 'Rejection reason must be at least 10 characters');
+    return;
+  }
+  
+  console.log('Rejecting submission:', submissionId, 'Reason:', remark);
+  try {
+    showAlert('info', 'Rejecting payment...');
+
+    // Call backend reject API
+    await apiService.rejectPaymentSubmission(submissionId, remark);
+
+    // Update local state optimistically
+    const submission = paymentSubmissions.find(s => s.id === submissionId || s.transactionId === submissionId);
+    if (submission) {
+      submission.status = 'REJECTED';
+      submission.rejectionRemark = remark;
+    }
+
+    // Notify tenant
+    try {
+      const tenantId = submission?.tenantId || submission?.userId;
+      if (tenantId) {
+        await apiService.createNotification({
+          userId: tenantId,
+          type: 'PaymentRejected',
+          title: 'Payment Rejected',
+          message: `Your payment was rejected. Reason: ${remark}`,
+          redirectUrl: '/frontend/tenant-dashboard.html#payments'
+        });
+      }
+    } catch (nerr) {
+      console.warn('Failed to create notification after rejection:', nerr);
+    }
+
+    showAlert('success', 'Payment rejected and tenant notified');
+    closeRejectModal();
+    await loadPaymentSubmissions();
+  } catch (err) {
+    console.error('Failed to reject payment:', err);
+    showAlert('error', err.message || 'Failed to reject payment');
+  }
+}
+
+// View payment proof
+function viewPaymentProof(proofUrl) {
+  console.log('Viewing proof:', proofUrl);
+  
+  const img = document.getElementById('proofImage');
+  
+  // If proofUrl is absolute (http/https) use as-is, otherwise prepend API base
+  if (proofUrl.startsWith('http://') || proofUrl.startsWith('https://')) {
+    img.src = proofUrl;
+  } else if (proofUrl.startsWith('/uploads/')) {
+    // Backend returns relative path like /uploads/payment-proofs/payment-xxx.jpg
+    img.src = API_BASE_URL.replace('/api', '') + proofUrl;
+  } else {
+    img.src = proofUrl;
+  }
+  
+  img.alt = 'Payment Proof';
+  img.onerror = function() {
+    console.error('Failed to load image:', proofUrl);
+    img.src = 'https://via.placeholder.com/600x800?text=Image+Not+Found';
+  };
+  
+  document.getElementById('viewProofModal').style.display = 'block';
+}
+
+// Close proof modal
+function closeProofModal() {
+  document.getElementById('viewProofModal').style.display = 'none';
+}
+
+// Download proof
+function downloadProof() {
+  const img = document.getElementById('proofImage');
+  const link = document.createElement('a');
+  link.href = img.src;
+  link.download = 'payment-proof.jpg';
+  link.click();
+  
+  showAlert('success', 'Proof downloaded successfully');
+}
+
+// Open proof in new tab
+function openProofInNewTab() {
+  const img = document.getElementById('proofImage');
+  window.open(img.src, '_blank');
+}
+
+// Filter payment submissions
+function filterPaymentSubmissions() {
+  const statusFilter = document.getElementById('submissionStatusFilter').value;
+  const monthFilter = document.getElementById('submissionMonthFilter').value;
+  const searchTerm = document.getElementById('submissionTenantSearch').value.toLowerCase();
+  
+  let filtered = paymentSubmissions;
+  
+  // Filter by status
+  if (statusFilter) {
+    filtered = filtered.filter(s => s.status === statusFilter);
+  }
+  
+  // Filter by month
+  if (monthFilter) {
+    filtered = filtered.filter(s => {
+      // monthFilter format: "11-2024"
+      const [month, year] = monthFilter.split('-');
+      return s.rentMonth.includes(getMonthName(parseInt(month))) && s.rentMonth.includes(year);
+    });
+  }
+  
+  // Filter by search term
+  if (searchTerm) {
+    filtered = filtered.filter(s => 
+      s.tenantName.toLowerCase().includes(searchTerm) ||
+      s.room.toLowerCase().includes(searchTerm) ||
+      s.bed.toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  renderPaymentSubmissions(filtered);
+}
+
+// Refresh payment submissions
+function refreshPaymentSubmissions() {
+  showAlert('info', 'Refreshing payment submissions...');
+  loadPaymentSubmissions();
+  // TODO: When backend is ready, fetch from API
+  // const submissions = await apiService.getPaymentSubmissions(currentPropertyId);
+  // paymentSubmissions = submissions;
+  // renderPaymentSubmissions(paymentSubmissions);
+}
+
+// Export payment submissions
+function exportPaymentSubmissions() {
+  showAlert('info', 'Export functionality will be implemented with backend integration');
+  // TODO: Implement CSV/Excel export
+}
+
+// Utility: Get days ago text
+function getDaysAgo(dateString) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const diffTime = Math.abs(today - date);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return `${diffDays} days ago`;
+}
+
+// Utility: Format date
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+// Utility: Get month name
+function getMonthName(monthNum) {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December'];
+  return months[monthNum - 1];
+}
+
 
 // Export functions
 window.loadPayments = loadPayments;

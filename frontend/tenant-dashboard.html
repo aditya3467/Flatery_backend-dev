@@ -6,10 +6,13 @@
   <title>Tenant Dashboard - Flatery</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="css/style.css?v=2" />
-  <link rel="stylesheet" href="css/owner/property-config.css?v=2" />
+  <link rel="stylesheet" href="css/property-config.css?v=2" />
   <link rel="stylesheet" href="css/tenant-dashboard.css?v=10">
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="Javascript/component-loader.js" defer></script>
   <script src="Javascript/api.js" defer></script>
+  <script src="Javascript/notifications.js" defer></script>
   <script src="Javascript/tenant-dashboard.js" defer></script>
   <script src="Javascript/main.js" defer></script>
 </head>
@@ -408,8 +411,8 @@
               <select id="paymentModeSelect" name="paymentMode" required>
                 <option value="">Select Mode</option>
                 <option value="UPI">UPI</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="CASH">Cash</option>
               </select>
             </div>
             <div class="form-group">
@@ -421,9 +424,9 @@
               <input type="date" id="paymentDate" name="paymentDate" required>
             </div>
             <div class="form-group">
-              <label for="paymentScreenshot">Upload Screenshot (Optional)</label>
-              <input type="file" id="paymentScreenshot" name="paymentScreenshot" accept="image/*">
-              <div class="file-upload-hint">JPG, PNG or PDF files only</div>
+              <label for="paymentScreenshot">Upload Screenshot</label>
+              <input type="file" id="paymentProofFile" name="paymentProofFile" accept="image/*" required>
+              <div class="file-upload-hint">JPG, PNG files only</div>
             </div>
             <div class="form-group">
               <label for="paymentNotes">Notes</label>
