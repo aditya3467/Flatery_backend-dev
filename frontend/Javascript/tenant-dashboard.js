@@ -1168,38 +1168,83 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const formData = new FormData(form);
-            const month = form.dataset.month || getCurrentMonthYear();
-            
-            try {
-                // Show loading state
-                const submitBtn = form.querySelector('.payment-modal-btn.submit');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = '⏳ Uploading...';
-                submitBtn.disabled = true;
 
-                // Mock API call - replace with actual implementation
-                await new Promise(resolve => setTimeout(resolve, 2000));
+            const month = form.dataset.month || getCurrentMonthYear();
+            const submitBtn = form.querySelector('.payment-modal-btn.submit');
+            const originalText = submitBtn ? submitBtn.textContent : 'Submit';
+
+            try {
+                if (submitBtn) {
+                    submitBtn.textContent = '⏳ Uploading...';
+                    submitBtn.disabled = true;
+                }
+
+                // Build FormData for file upload
+                const fd = new FormData();
+
+                // Ensure file is present (input id may vary)
+                const fileInput = document.getElementById('paymentProofFile') || form.querySelector('input[type="file"]');
+                const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+                if (!file) {
+                    throw new Error('Please select a proof file to upload');
+                }
+
+                // Attach file for multipart upload
+                fd.append('file', file);
+
+                // Add contextual fields
+                const paidAmountInput = form.querySelector('#paidAmount');
+                const amount = paidAmountInput ? (parseFloat(paidAmountInput.value) || 0) : 0;
+
+                console.log('📤 Uploading payment proof file:', {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    fileType: file.type
+                });
+
+                // Upload file first to get file URL
+                const uploadResp = await apiService.uploadPaymentProof(fd);
+                const fileUrl = uploadResp?.fileUrl || uploadResp?.url || uploadResp?.data?.fileUrl;
+
+                if (!fileUrl) {
+                    throw new Error('File upload succeeded but no URL returned');
+                }
+
+                console.log('✅ File uploaded successfully:', fileUrl);
+
+                // Build payment payload matching PaymentRequestDto on backend
+                // paymentMode must be one of: UPI, BANK_TRANSFER, GATEWAY, CASH (enum on backend)
+                const paymentPayload = {
+                    amount: amount,
+                    paymentMonth: month,
+                    paymentMode: form.querySelector('#paymentModeSelect')?.value || 'UPI',
+                    upiRef: form.querySelector('#upiRefId')?.value || null,
+                    screenshotUrl: fileUrl
+                };
+
+                console.log('📤 Submitting payment payload:', {
+                    amount: paymentPayload.amount,
+                    paymentMonth: paymentPayload.paymentMonth,
+                    paymentMode: paymentPayload.paymentMode,
+                    upiRef: paymentPayload.upiRef,
+                    screenshotUrl: paymentPayload.screenshotUrl
+                });
+
+                await apiService.submitPayment(paymentPayload);
 
                 // Success
-                showSuccess('Payment proof uploaded successfully! Your payment is now pending verification.');
+                showSuccess('Payment submitted successfully! Your payment is now pending verification.');
                 closePaymentModal();
-                
-                // Refresh payment history
                 await loadPaymentHistory();
-
-                // Reset button
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
 
             } catch (error) {
                 console.error('Error uploading payment proof:', error);
-                showError('Failed to upload payment proof. Please try again.');
-                
-                // Reset button
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
+                showError(error.message || 'Failed to upload payment proof. Please try again.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
             }
         });
     }

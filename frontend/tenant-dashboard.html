@@ -409,8 +409,8 @@
               <select id="paymentModeSelect" name="paymentMode" required>
                 <option value="">Select Mode</option>
                 <option value="UPI">UPI</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="CASH">Cash</option>
               </select>
             </div>
             <div class="form-group">
@@ -422,9 +422,9 @@
               <input type="date" id="paymentDate" name="paymentDate" required>
             </div>
             <div class="form-group">
-              <label for="paymentScreenshot">Upload Screenshot (Optional)</label>
-              <input type="file" id="paymentScreenshot" name="paymentScreenshot" accept="image/*">
-              <div class="file-upload-hint">JPG, PNG or PDF files only</div>
+              <label for="paymentScreenshot">Upload Screenshot</label>
+              <input type="file" id="paymentProofFile" name="paymentProofFile" accept="image/*" required>
+              <div class="file-upload-hint">JPG, PNG files only</div>
             </div>
             <div class="form-group">
               <label for="paymentNotes">Notes</label>

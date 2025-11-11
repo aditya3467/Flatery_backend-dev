@@ -5,7 +5,9 @@ import com.Flatery.dto.payment.TransactionResponseDto;
 import com.Flatery.model.payment.PaymentMode;
 import com.Flatery.model.payment.PaymentStatus;
 import com.Flatery.model.payment.Transaction;
+import com.Flatery.model.tenant.Tenant;
 import com.Flatery.repository.payment.TransactionRepository;
+import com.Flatery.repository.tenant.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +20,11 @@ import java.util.stream.Collectors;
 public class TransactionService {
 
     private final TransactionRepository repository;
+    private final TenantRepository tenantRepository;
 
-    public TransactionService(TransactionRepository repository) {
+    public TransactionService(TransactionRepository repository, TenantRepository tenantRepository) {
         this.repository = repository;
+        this.tenantRepository = tenantRepository;
     }
 
     public Transaction save(Transaction transaction) {
@@ -44,14 +48,14 @@ public class TransactionService {
     }
 
     /**
-     * Create transaction for manual payment modes (UPI, CASH) only.
+     * Create transaction for manual payment modes (UPI, CASH, BANK_TRANSFER) only.
      * Validates the payment mode and maps DTO to entity.
      */
     @Transactional
     public TransactionResponseDto createManualPayment(PaymentRequestDto dto, Long tenantId, Long ownerId, Long propertyId) {
         String modeStr = dto.getPaymentMode().toUpperCase();
-        if (!(modeStr.equals("UPI") || modeStr.equals("CASH"))) {
-            throw new IllegalArgumentException("Only manual payment modes: UPI or CASH are supported currently.");
+        if (!(modeStr.equals("UPI") || modeStr.equals("CASH") || modeStr.equals("BANK_TRANSFER"))) {
+            throw new IllegalArgumentException("Only manual payment modes: UPI, CASH, or BANK_TRANSFER are supported.");
         }
         PaymentMode paymentMode = PaymentMode.valueOf(modeStr);
 
@@ -65,6 +69,8 @@ public class TransactionService {
                 .upiRef(dto.getUpiRef())
                 .screenshotUrl(dto.getScreenshotUrl())
                 .status(PaymentStatus.PENDING)
+                .createdBy("tenant-" + tenantId)
+                .updatedBy("tenant-" + tenantId)
                 .build();
 
         Transaction saved = repository.save(transaction);
@@ -134,9 +140,26 @@ public class TransactionService {
      * Maps Transaction entity to response DTO.
      */
     private TransactionResponseDto mapToDto(Transaction tx) {
+        // Fetch tenant info to get name and unit
+        String tenantName = "Unknown";
+        String unitNumber = "N/A";
+        
+        try {
+            Optional<Tenant> tenantOpt = tenantRepository.findById(tx.getTenantId());
+            if (tenantOpt.isPresent()) {
+                Tenant tenant = tenantOpt.get();
+                tenantName = tenant.getTenantName();
+                unitNumber = tenant.getFlatRoomNumber() != null ? tenant.getFlatRoomNumber() : "N/A";
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Could not fetch tenant info for tenantId " + tx.getTenantId() + ": " + e.getMessage());
+        }
+        
         return TransactionResponseDto.builder()
                 .id(tx.getId())
                 .tenantId(tx.getTenantId())
+                .tenantName(tenantName)
+                .unitNumber(unitNumber)
                 .ownerId(tx.getOwnerId())
                 .propertyId(tx.getPropertyId())
                 .amount(tx.getAmount())

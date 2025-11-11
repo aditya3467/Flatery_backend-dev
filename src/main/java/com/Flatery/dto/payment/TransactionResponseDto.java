@@ -10,6 +10,8 @@ public class TransactionResponseDto {
 
     private Long id;
     private Long tenantId;
+    private String tenantName;       // Tenant's display name
+    private String unitNumber;       // Unit/room number
     private Long ownerId;
     private Long propertyId;
     private Double amount;

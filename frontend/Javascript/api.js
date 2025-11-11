@@ -545,6 +545,54 @@ class ApiService {
             body: JSON.stringify(notificationData)
         });
     }
+
+    // ========================================
+    // PAYMENT/TRANSACTION API METHODS
+    // ========================================
+
+    // Get pending payment submissions for owner
+    async getOwnerPendingPayments() {
+        return this.makeRequest('/transactions/owner/pending', {
+            method: 'GET'
+        });
+    }
+
+    // Get all payment submissions for owner (any status)
+    async getOwnerAllPayments() {
+        return this.makeRequest('/transactions/owner/all', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's payment history
+    async getTenantPayments() {
+        return this.makeRequest('/transactions/tenant/my-payments', {
+            method: 'GET'
+        });
+    }
+
+    // Submit payment (tenant)
+    async submitPayment(paymentData) {
+        return this.makeRequest('/transactions', {
+            method: 'POST',
+            body: JSON.stringify(paymentData)
+        });
+    }
+
+    // Verify/Approve payment submission (owner)
+    async verifyPaymentSubmission(transactionId) {
+        return this.makeRequest(`/transactions/${transactionId}/verify`, {
+            method: 'POST'
+        });
+    }
+
+    // Reject payment submission (owner)
+    async rejectPaymentSubmission(transactionId, rejectionReason) {
+        return this.makeRequest(`/transactions/${transactionId}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason: rejectionReason })
+        });
+    }
 }
 
 // Create global API service instance

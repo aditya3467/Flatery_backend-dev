@@ -37,25 +37,55 @@ public class TransactionController {
             // Get authenticated username (phone number)
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String username = userDetails.getUsername();
+            
+            System.out.println("=== Transaction Creation Debug ===");
+            System.out.println("Username: " + username);
+            System.out.println("Payment Request: amount=" + requestDto.getAmount() + 
+                             ", mode=" + requestDto.getPaymentMode() + 
+                             ", month=" + requestDto.getPaymentMonth());
 
             // Fetch tenant record by phone number
             Tenant tenant = tenantRepository.findByPhoneNumber(username)
                     .orElseThrow(() -> new IllegalArgumentException("Tenant not found for user: " + username));
+
+            System.out.println("Tenant found: id=" + tenant.getId() + 
+                             ", ownerId=" + tenant.getOwnerId() + 
+                             ", propertyId=" + tenant.getPropertyId());
 
             // Extract required IDs from tenant entity
             Long tenantEntityId = tenant.getId();
             Long ownerId = tenant.getOwnerId();
             Long propertyId = tenant.getPropertyId();
 
+            // Validate required fields
+            if (ownerId == null) {
+                System.out.println("ERROR: Owner ID is null for tenant: " + tenantEntityId);
+                return ResponseEntity.badRequest().body(new ErrorResponse("Tenant record is missing owner_id. Please contact administrator."));
+            }
+            if (propertyId == null) {
+                System.out.println("ERROR: Property ID is null for tenant: " + tenantEntityId);
+                return ResponseEntity.badRequest().body(new ErrorResponse("Tenant record is missing property_id. Please contact administrator."));
+            }
+
+            System.out.println("Creating transaction with tenantId=" + tenantEntityId + 
+                             ", ownerId=" + ownerId + ", propertyId=" + propertyId);
+
             // Create transaction via service
             TransactionResponseDto response = transactionService.createManualPayment(
                     requestDto, tenantEntityId, ownerId, propertyId);
 
+            System.out.println("Transaction created successfully: id=" + response.getId());
+            System.out.println("=================================");
+            
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException ex) {
+            System.out.println("IllegalArgumentException: " + ex.getMessage());
+            ex.printStackTrace();
             return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
         } catch (Exception ex) {
-            return ResponseEntity.status(500).body(new ErrorResponse("Failed to create transaction"));
+            System.out.println("Exception: " + ex.getMessage());
+            ex.printStackTrace(); // Log full stack trace
+            return ResponseEntity.status(500).body(new ErrorResponse("Failed to create transaction: " + ex.getMessage()));
         }
     }
 

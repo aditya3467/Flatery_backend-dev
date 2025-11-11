@@ -2580,9 +2580,7 @@ let paymentSubmissions = [
   {
     id: 1,
     tenantName: 'Amit Kumar',
-    tenantAvatar: 'A',
-    room: '101',
-    bed: 'A',
+    unit: '101',
     rentMonth: 'November 2024',
     amount: 8500,
     paymentMode: 'UPI',
@@ -2594,14 +2592,12 @@ let paymentSubmissions = [
   {
     id: 2,
     tenantName: 'Rajesh Sharma',
-    tenantAvatar: 'R',
-    room: '102',
-    bed: 'B',
+    unit: '102',
     rentMonth: 'November 2024',
     amount: 9000,
     paymentMode: 'BANK_TRANSFER',
     dateSubmitted: '2024-11-08',
-    status: 'APPROVED',
+    status: 'VERIFIED',
     proofUrl: 'proof2.jpg',
     tenantRemark: 'NEFT Transfer',
     approvedDate: '2024-11-08'
@@ -2609,9 +2605,7 @@ let paymentSubmissions = [
   {
     id: 3,
     tenantName: 'Priya Singh',
-    tenantAvatar: 'P',
-    room: '103',
-    bed: 'A',
+    unit: '103',
     rentMonth: 'November 2024',
     amount: 7500,
     paymentMode: 'CASH',
@@ -2624,24 +2618,58 @@ let paymentSubmissions = [
 ];
 
 // Load payment submissions
-function loadPaymentSubmissions() {
-  console.log('Loading payment submissions...');
-  
-  // Update stats
-  updatePaymentSubmissionStats();
-  
-  // Render submissions table
-  renderPaymentSubmissions(paymentSubmissions);
+async function loadPaymentSubmissions() {
+  console.log('Loading payment submissions from API...');
+
+  try {
+    // Fetch all submissions from backend (owner view)
+    const submissions = await apiService.getOwnerAllPayments();
+    console.log('Raw API response:', submissions);
+
+    // Normalize response if needed - backend expected to return array of transactions
+    const rawSubmissions = Array.isArray(submissions) ? submissions : (submissions.items || []);
+
+    // Map backend TransactionResponseDto to frontend format
+    paymentSubmissions = rawSubmissions.map(tx => ({
+      id: tx.id,
+      tenantId: tx.tenantId,
+      // Use real tenant name and unit from backend
+      tenantName: tx.tenantName || `Tenant ${tx.tenantId}`,
+      unit: tx.unitNumber || 'N/A',
+      rentMonth: tx.paymentMonth,
+      amount: tx.amount || 0,
+      paymentMode: tx.paymentMode || 'UPI',
+      dateSubmitted: tx.paymentDate || new Date().toISOString().split('T')[0],
+      status: tx.status || 'PENDING',
+      proofUrl: tx.screenshotUrl || '',
+      tenantRemark: tx.upiRef ? `Ref: ${tx.upiRef}` : '',
+      rejectionRemark: '',
+      approvedDate: tx.status === 'VERIFIED' ? tx.paymentDate : null
+    }));
+
+    console.log('Mapped submissions:', paymentSubmissions);
+
+    // Update stats and render
+    updatePaymentSubmissionStats();
+    renderPaymentSubmissions(paymentSubmissions);
+  } catch (err) {
+    console.error('Failed to load payment submissions from API:', err);
+    showAlert('error', 'Failed to load payment submissions');
+
+    // Fallback to existing mock data rendering so UI isn't empty
+    updatePaymentSubmissionStats();
+    renderPaymentSubmissions(paymentSubmissions);
+  }
 }
 
 // Update stats cards
 function updatePaymentSubmissionStats() {
   const pending = paymentSubmissions.filter(s => s.status === 'PENDING').length;
-  const approved = paymentSubmissions.filter(s => s.status === 'APPROVED').length;
+  const approved = paymentSubmissions.filter(s => s.status === 'VERIFIED' || s.status === 'APPROVED').length;
   const rejected = paymentSubmissions.filter(s => s.status === 'REJECTED').length;
   const totalAmount = paymentSubmissions
     .filter(s => s.status === 'PENDING')
-    .reduce((sum, s) => sum + s.amount, 0);
+    .reduce((sum, s) => sum + (s.amount || 0), 0);
   
   document.getElementById('pendingSubmissionsCount').textContent = pending;
   document.getElementById('approvedSubmissionsCount').textContent = approved;
@@ -2667,11 +2695,10 @@ function renderPaymentSubmissions(submissions) {
     return `
       <tr>
         <td>
-          <div class="tenant-info">
-            <div class="tenant-avatar">${sub.tenantAvatar}</div>
+          <div class="tenant-info-simple">
             <div>
               <strong>${sub.tenantName}</strong>
-              <small>Room ${sub.room}, Bed ${sub.bed}</small>
+              <small>${sub.unit || ''}</small>
             </div>
           </div>
         </td>
@@ -2705,10 +2732,11 @@ function renderPaymentSubmissions(submissions) {
 function getStatusBadge(status) {
   const badges = {
     'PENDING': '<span class="status-badge pending">Pending</span>',
+    'VERIFIED': '<span class="status-badge approved">Approved</span>',
     'APPROVED': '<span class="status-badge approved">Approved</span>',
     'REJECTED': '<span class="status-badge rejected">Rejected</span>'
   };
-  return badges[status] || status;
+  return badges[status] || `<span class="status-badge">${status}</span>`;
 }
 
 // Get payment mode badge HTML
@@ -2734,60 +2762,121 @@ function getActionButtons(submission) {
   if (submission.status === 'PENDING') {
     return `
       <div class="action-buttons">
-        <button class="btn-icon approve" onclick="approvePaymentSubmission(${submission.id})" title="Approve">
-          <i class="fas fa-check"></i>
+        <button class="btn btn-success btn-sm" onclick="approvePaymentSubmission(${submission.id})" title="Approve Payment">
+          <i class="fas fa-check"></i> Approve
         </button>
-        <button class="btn-icon reject" onclick="openRejectModal(${submission.id})" title="Reject">
-          <i class="fas fa-times"></i>
+        <button class="btn btn-danger btn-sm" onclick="openRejectModal(${submission.id})" title="Reject Payment">
+          <i class="fas fa-times"></i> Reject
         </button>
       </div>
     `;
-  } else if (submission.status === 'APPROVED') {
-    return `<div class="action-buttons"><span class="action-completed">Approved on ${formatDate(submission.approvedDate)}</span></div>`;
+  } else if (submission.status === 'VERIFIED' || submission.status === 'APPROVED') {
+    return `<div class="action-buttons"><span class="action-completed">✓ Approved</span></div>`;
   } else if (submission.status === 'REJECTED') {
-    return `
-      <div class="action-buttons">
-        <div class="rejection-info">
-          <small><strong>Rejected:</strong> ${submission.rejectionRemark}</small>
-        </div>
-      </div>
-    `;
+    return `<div class="action-buttons"><span class="action-rejected">✗ Rejected</span></div>`;
   }
   return '';
 }
 
 // Approve payment submission
-function approvePaymentSubmission(submissionId) {
-  if (!confirm('Are you sure you want to approve this payment submission?')) {
+let currentApprovalSubmissionId = null;
+
+async function approvePaymentSubmission(submissionId) {
+  // Store the submission ID and find the submission details
+  currentApprovalSubmissionId = submissionId;
+  const submission = paymentSubmissions.find(s => s.id === submissionId);
+  
+  if (!submission) {
+    showAlert('error', 'Payment submission not found');
     return;
   }
+
+  // Populate modal with payment details
+  const detailsHtml = `
+    <div class="detail-row">
+      <span class="detail-label">Tenant:</span>
+      <span class="detail-value"><strong>${submission.tenantName}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Unit:</span>
+      <span class="detail-value">${submission.unit}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Amount:</span>
+      <span class="detail-value"><strong>₹${submission.amount.toLocaleString('en-IN')}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Payment Month:</span>
+      <span class="detail-value">${submission.rentMonth}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Payment Mode:</span>
+      <span class="detail-value">${submission.paymentMode}</span>
+    </div>
+    ${submission.tenantRemark ? `
+    <div class="detail-row">
+      <span class="detail-label">Remark:</span>
+      <span class="detail-value">${submission.tenantRemark}</span>
+    </div>
+    ` : ''}
+  `;
   
-  console.log('Approving submission:', submissionId);
-  
-  // Find and update submission
-  const submission = paymentSubmissions.find(s => s.id === submissionId);
-  if (submission) {
-    submission.status = 'APPROVED';
-    submission.approvedDate = new Date().toISOString().split('T')[0];
-    
-    // Show success message
-    showAlert('success', 'Payment approved successfully! Tenant will be notified.');
-    
-    // Refresh the table
-    renderPaymentSubmissions(paymentSubmissions);
-    updatePaymentSubmissionStats();
-    
-    // TODO: When backend is ready, call API to update status and create notification
-    // await apiService.approvePaymentSubmission(submissionId);
-    // Create notification for tenant
-    // apiService.createNotification({
-    //   userId: submission.tenantId, // tenant's user ID
-    //   senderId: currentOwnerId, // current owner's ID
-    //   type: 'PaymentApproved',
-    //   title: 'Payment Approved',
-    //   message: `Your payment for ${submission.rentMonth} has been approved`,
-    //   redirectUrl: '/frontend/tenant-dashboard.html#payments'
-    // });
+  document.getElementById('approvePaymentDetails').innerHTML = detailsHtml;
+  document.getElementById('approvePaymentModal').style.display = 'block';
+}
+
+// Close approve modal
+function closeApproveModal() {
+  document.getElementById('approvePaymentModal').style.display = 'none';
+  currentApprovalSubmissionId = null;
+}
+
+// Confirm approval and call API
+async function confirmApprovePayment() {
+  if (!currentApprovalSubmissionId) {
+    showAlert('error', 'No payment selected');
+    return;
+  }
+
+  const submissionId = currentApprovalSubmissionId;
+
+  try {
+    closeApproveModal();
+    showAlert('info', 'Approving payment...');
+
+    // Call backend to verify/approve
+    console.log('Calling API to approve transaction:', submissionId);
+    await apiService.verifyPaymentSubmission(submissionId);
+
+    // Update local state optimistically (backend uses VERIFIED for approved)
+    const submission = paymentSubmissions.find(s => s.id === submissionId);
+    if (submission) {
+      submission.status = 'VERIFIED';
+      submission.approvedDate = new Date().toISOString().split('T')[0];
+    }
+
+    // Create notification for tenant if tenantId available
+    try {
+      const tenantId = submission?.tenantId;
+      if (tenantId) {
+        await apiService.createNotification({
+          userId: tenantId,
+          type: 'PaymentApproved',
+          title: 'Payment Approved',
+          message: `Your payment has been approved by the owner.`,
+          redirectUrl: '/frontend/tenant-dashboard.html#payments'
+        });
+      }
+    } catch (nerr) {
+      console.warn('Failed to create notification after approval:', nerr);
+    }
+
+    showAlert('success', 'Payment approved successfully');
+    // Refresh list from server to get canonical state
+    await loadPaymentSubmissions();
+  } catch (err) {
+    console.error('Error approving payment:', err);
+    showAlert('error', err.message || 'Failed to approve payment');
   }
 }
 
@@ -2804,7 +2893,7 @@ function closeRejectModal() {
 }
 
 // Handle reject payment form submission
-function handleRejectPayment(event) {
+async function handleRejectPayment(event) {
   event.preventDefault();
   
   const submissionId = parseInt(document.getElementById('rejectSubmissionId').value);
@@ -2816,34 +2905,41 @@ function handleRejectPayment(event) {
   }
   
   console.log('Rejecting submission:', submissionId, 'Reason:', remark);
-  
-  // Find and update submission
-  const submission = paymentSubmissions.find(s => s.id === submissionId);
-  if (submission) {
-    submission.status = 'REJECTED';
-    submission.rejectionRemark = remark;
-    
-    // Show success message
-    showAlert('success', 'Payment rejected. Tenant will be notified with the reason.');
-    
-    // Close modal
+  try {
+    showAlert('info', 'Rejecting payment...');
+
+    // Call backend reject API
+    await apiService.rejectPaymentSubmission(submissionId, remark);
+
+    // Update local state optimistically
+    const submission = paymentSubmissions.find(s => s.id === submissionId || s.transactionId === submissionId);
+    if (submission) {
+      submission.status = 'REJECTED';
+      submission.rejectionRemark = remark;
+    }
+
+    // Notify tenant
+    try {
+      const tenantId = submission?.tenantId || submission?.userId;
+      if (tenantId) {
+        await apiService.createNotification({
+          userId: tenantId,
+          type: 'PaymentRejected',
+          title: 'Payment Rejected',
+          message: `Your payment was rejected. Reason: ${remark}`,
+          redirectUrl: '/frontend/tenant-dashboard.html#payments'
+        });
+      }
+    } catch (nerr) {
+      console.warn('Failed to create notification after rejection:', nerr);
+    }
+
+    showAlert('success', 'Payment rejected and tenant notified');
     closeRejectModal();
-    
-    // Refresh the table
-    renderPaymentSubmissions(paymentSubmissions);
-    updatePaymentSubmissionStats();
-    
-    // TODO: When backend is ready, call API to update status and create notification
-    // await apiService.rejectPaymentSubmission(submissionId, remark);
-    // Create notification for tenant
-    // apiService.createNotification({
-    //   userId: submission.tenantId, // tenant's user ID
-    //   senderId: currentOwnerId, // current owner's ID
-    //   type: 'PaymentRejected',
-    //   title: 'Payment Rejected',
-    //   message: `Your payment for ${submission.rentMonth} was rejected. Reason: ${remark}`,
-    //   redirectUrl: '/frontend/tenant-dashboard.html#payments'
-    // });
+    await loadPaymentSubmissions();
+  } catch (err) {
+    console.error('Failed to reject payment:', err);
+    showAlert('error', err.message || 'Failed to reject payment');
   }
 }
 
@@ -2851,16 +2947,25 @@ function handleRejectPayment(event) {
 function viewPaymentProof(proofUrl) {
   console.log('Viewing proof:', proofUrl);
   
-  // In production, this would load the actual image from server
-  // For now, show a placeholder
   const img = document.getElementById('proofImage');
-  img.src = 'https://via.placeholder.com/600x800?text=Payment+Proof+Screenshot';
+  
+  // If proofUrl is absolute (http/https) use as-is, otherwise prepend API base
+  if (proofUrl.startsWith('http://') || proofUrl.startsWith('https://')) {
+    img.src = proofUrl;
+  } else if (proofUrl.startsWith('/uploads/')) {
+    // Backend returns relative path like /uploads/payment-proofs/payment-xxx.jpg
+    img.src = API_BASE_URL.replace('/api', '') + proofUrl;
+  } else {
+    img.src = proofUrl;
+  }
+  
   img.alt = 'Payment Proof';
+  img.onerror = function() {
+    console.error('Failed to load image:', proofUrl);
+    img.src = 'https://via.placeholder.com/600x800?text=Image+Not+Found';
+  };
   
   document.getElementById('viewProofModal').style.display = 'block';
-  
-  // TODO: When backend is ready, load actual proof image
-  // img.src = `/api/payments/proof/${proofUrl}`;
 }
 
 // Close proof modal

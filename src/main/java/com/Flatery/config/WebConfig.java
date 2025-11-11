@@ -36,5 +36,12 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/properties/**")
                 .addResourceLocations(uploadPathStr)
                 .setCachePeriod(0);
+
+        // Serve payment proof images
+        Path paymentProofPath = Paths.get("uploads/payment-proofs").toAbsolutePath().normalize();
+        String paymentProofPathStr = paymentProofPath.toUri().toString();
+        registry.addResourceHandler("/uploads/payment-proofs/**")
+                .addResourceLocations(paymentProofPathStr)
+                .setCachePeriod(0);
     }
 }

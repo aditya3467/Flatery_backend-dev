@@ -47,7 +47,7 @@ public class Transaction {
     @Column(name = "upi_ref", length = 100)
     private String upiRef;
 
-    @Column(name = "screenshot_url", length = 255)
+    @Column(name = "screenshot_url", columnDefinition = "TEXT")
     private String screenshotUrl;
 
     @Column(name = "payment_month", length = 20, nullable = false)
@@ -65,7 +65,7 @@ public class Transaction {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by", length = 50, nullable = false, updatable = false)
+    @Column(name = "created_by", length = 50, updatable = false)
     private String createdBy;
 
     @Column(name = "updated_by", length = 50)

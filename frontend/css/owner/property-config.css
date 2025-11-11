@@ -4439,3 +4439,140 @@
   }
 }
 
+/* Payment Submission Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-buttons .btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.action-buttons .btn-success:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.action-buttons .btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.action-buttons .btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.action-buttons .btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.action-completed {
+  color: #10b981;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.action-rejected {
+  color: #ef4444;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/* Payment Details Summary in Modals */
+.payment-details-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #1e293b;
+  font-size: 14px;
+  text-align: right;
+}
+
+.detail-value strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Modal action buttons */
+.modal-actions .btn-success {
+  background: #10b981;
+  color: white;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-actions .btn-success:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.modal-actions .btn-secondary {
+  background: #e2e8f0;
+  color: #475569;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-actions .btn-secondary:hover {
+  background: #cbd5e1;
+}
+
+

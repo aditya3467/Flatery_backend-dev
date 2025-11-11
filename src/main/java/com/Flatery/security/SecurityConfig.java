@@ -48,6 +48,7 @@ public class SecurityConfig {
             .requestMatchers("/").permitAll() // Allow access to root
             .requestMatchers("/error", "/favicon.ico").permitAll() // Allow error page and favicon
                         .requestMatchers("/uploads/properties/**").permitAll() // Allow access to uploaded images
+                        .requestMatchers("/uploads/payment-proofs/**").permitAll() // Allow access to payment proofs
                                 // payment api's endpoint
                                 .requestMatchers("/api/transactions/**").authenticated()
                                 .requestMatchers("/api/owner-payment-info/**").authenticated()

@@ -92,6 +92,53 @@ public class FileStorageService {
     }
 
     /**
+     * Store payment proof screenshot
+     */
+    public String storePaymentProof(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Cannot store empty file");
+        }
+
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
+        }
+
+        // Validate file size (5MB max)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size must not exceed 5MB");
+        }
+
+        try {
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".jpg";
+            
+            String filename = "payment-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString() + extension;
+            
+            // Create payment-proofs directory
+            Path paymentProofsDir = Paths.get("uploads/payment-proofs").toAbsolutePath().normalize();
+            Files.createDirectories(paymentProofsDir);
+            
+            // Store file
+            Path targetLocation = paymentProofsDir.resolve(filename);
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            
+            // Return relative URL path
+            String relativePath = "/uploads/payment-proofs/" + filename;
+            log.info("Payment proof stored successfully: {}", relativePath);
+            return relativePath;
+            
+        } catch (IOException ex) {
+            log.error("Failed to store payment proof", ex);
+            throw new RuntimeException("Failed to store payment proof", ex);
+        }
+    }
+
+    /**
      * Delete a file by its path
      */
     public void deleteFile(String fileUrl) {
