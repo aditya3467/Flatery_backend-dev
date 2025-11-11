@@ -411,6 +411,13 @@ class ApiService {
         });
     }
 
+    // Get tenant's past stays (non-active tenancies)
+    async getTenantPastStays() {
+        return this.makeRequest('/tenants/me/past-stays', {
+            method: 'GET'
+        });
+    }
+
     // Get tenant's payment history
     async getTenantPaymentHistory() {
         return this.makeRequest('/tenants/me/payments', {

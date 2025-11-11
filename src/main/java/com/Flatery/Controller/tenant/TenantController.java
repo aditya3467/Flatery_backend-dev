@@ -76,6 +76,13 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.getTenantPropertyDetails(username));
     }
 
+    @GetMapping("/me/past-stays")
+    public ResponseEntity<List<TenantSummary>> getPastStays(Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
+        return ResponseEntity.ok(tenantService.getPastStays(username));
+    }
+
     // ...existing code...
 
     // Debug/Utility: list tenants for a specific unit to verify occupancy

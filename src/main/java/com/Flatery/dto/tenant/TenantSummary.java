@@ -21,6 +21,7 @@ public class TenantSummary {
     private Long unitId;
     private Integer bedIndex;
     private String leaseStartDate;
+    private String leaseEndDate;
     private String emailAddress;
     private String flatRoomNumber;
     private String ownerName;

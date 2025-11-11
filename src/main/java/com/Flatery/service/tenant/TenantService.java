@@ -187,6 +187,7 @@ public class TenantService {
             t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
             t.getFloorId(), t.getUnitId(), t.getBedIndex(),
             t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+            t.getLeaseEndDate() != null ? t.getLeaseEndDate().toString() : null,
             t.getEmailAddress(),
             t.getFlatRoomNumber(),
             null, null, null, null  // ownerName, ownerPhone, propertyName, propertyCity not needed
@@ -202,11 +203,64 @@ public class TenantService {
             t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
             t.getFloorId(), t.getUnitId(), t.getBedIndex(),
             t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+            t.getLeaseEndDate() != null ? t.getLeaseEndDate().toString() : null,
             t.getEmailAddress(),
             t.getFlatRoomNumber(),
             null, null, null, null  // ownerName, ownerPhone, propertyName, propertyCity not needed
         ))
         .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TenantSummary> getPastStays(String username) {
+        // Get all tenancies for this user (by phone number)
+        List<Tenant> allTenancies = tenantRepository.findAllByPhoneNumber(username);
+        
+        // Filter for non-ACTIVE statuses (VACATED, INACTIVE, etc.)
+        return allTenancies.stream()
+                .filter(t -> t.getStatus() != Tenant.TenantStatus.ACTIVE)
+                .map(t -> {
+                    // Get property details
+                    Property property = propertyRepository.findById(t.getPropertyId()).orElse(null);
+                    String propertyName = property != null ? property.getName() : "Unknown Property";
+                    String propertyCity = property != null ? property.getCity() : "";
+                    
+                    // Get owner details
+                    User owner = null;
+                    String ownerName = null;
+                    String ownerPhone = null;
+                    if (t.getOwnerId() != null) {
+                        owner = userRepository.findById(t.getOwnerId()).orElse(null);
+                        if (owner != null) {
+                            ownerName = owner.getFirstName() + " " + owner.getLastName();
+                            ownerPhone = owner.getUsername();
+                        }
+                    }
+                    
+                    return new TenantSummary(
+                            t.getId(),
+                            t.getTenantId(),
+                            t.getTenantName(),
+                            t.getStatus().name(),
+                            t.getRentAmount(),
+                            t.getSecurityDeposit(),
+                            t.getRentDueDate(),
+                            t.getPropertyId(),
+                            t.getPhoneNumber(),
+                            t.getFloorId(),
+                            t.getUnitId(),
+                            t.getBedIndex(),
+                            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+                            t.getLeaseEndDate() != null ? t.getLeaseEndDate().toString() : null,
+                            t.getEmailAddress(),
+                            t.getFlatRoomNumber(),
+                            ownerName,
+                            ownerPhone,
+                            propertyName,
+                            propertyCity
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     private Tenant.TenantStatus parseStatusOrDefault(String status) {
@@ -266,6 +320,7 @@ public class TenantService {
                 tenant.getUnitId(),
                 tenant.getBedIndex(),
                 tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null,
+                tenant.getLeaseEndDate() != null ? tenant.getLeaseEndDate().toString() : null,
                 tenant.getEmailAddress(),
                 tenant.getFlatRoomNumber(),
                 ownerName,

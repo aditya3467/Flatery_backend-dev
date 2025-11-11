@@ -1,10 +1,60 @@
 // Tenant Dashboard JavaScript
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Check active tenancy status first
+    let hasActiveTenancy = false;
+    try {
+        const propertyDetails = await apiService.getTenantPropertyDetails();
+        if (propertyDetails && propertyDetails.tenantStatus && propertyDetails.tenantStatus.toUpperCase() === 'ACTIVE') {
+            hasActiveTenancy = true;
+        }
+    } catch (e) {
+        // API returns error if no active tenancy
+        hasActiveTenancy = false;
+    }
+
+    // Grey out sidebar if no active tenancy
+    if (!hasActiveTenancy) {
+        // Disable all nav-items except 'Past Stays'
+        document.querySelectorAll('.nav-item').forEach(item => {
+            const section = item.getAttribute('data-section');
+            if (section !== 'past-stays') {
+                item.classList.add('disabled');
+                item.style.pointerEvents = 'none';
+                item.style.opacity = '0.5';
+            } else {
+                item.classList.remove('disabled');
+                item.style.pointerEvents = '';
+                item.style.opacity = '';
+            }
+        });
+
+        // Redirect to Past Stays section
+        const pastStaysNavItem = document.querySelector('.nav-item[data-section="past-stays"]');
+        if (pastStaysNavItem) {
+            // Remove active class from all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            // Activate Past Stays section
+            pastStaysNavItem.classList.add('active');
+            const pastStaysSection = document.getElementById('past-stays-section');
+            if (pastStaysSection) {
+                pastStaysSection.classList.add('active');
+            }
+            
+            // Load past stays data immediately
+            await loadPastStaysData();
+        }
+    }
+
     // Initialize navigation
     setupNavigation();
-    
-    // Load tenant data
+    // Load tenant data (will show error if no active tenancy)
     await loadTenantProfile();
     await loadDashboardData();
 });
@@ -470,27 +520,56 @@ async function loadStayInfoData() {
 async function loadPastStaysData() {
     const grid = document.getElementById('pastStaysGrid');
     
-    // Mock past stays
-    const mockStays = [
-        { property: 'Urban Nest PG', period: 'Jan – Mar 2025', status: 'completed' },
-        { property: 'Classic Stay PG', period: 'Jul – Sep 2024', status: 'completed' }
-    ];
-    
-    grid.innerHTML = mockStays.map(stay => `
-        <div class="past-stay-card">
-            <div class="stay-image">
-                <i class="fas fa-building"></i>
+    try {
+        console.log('Loading past stays...');
+        // Fetch past stays from API
+        const pastStays = await apiService.getTenantPastStays();
+        console.log('Past stays received:', pastStays);
+        
+        if (!pastStays || pastStays.length === 0) {
+            grid.innerHTML = `
+                <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                    <i class="fas fa-history" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+                    <p style="color: #666;">No past stays found.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        grid.innerHTML = pastStays.map(stay => {
+            const startDate = stay.leaseStartDate ? new Date(stay.leaseStartDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+            const endDate = stay.leaseEndDate ? new Date(stay.leaseEndDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present';
+            const period = startDate && endDate ? `${startDate} – ${endDate}` : 'Unknown Period';
+            const statusClass = stay.status ? stay.status.toLowerCase() : 'vacated';
+            const statusText = stay.status ? capitalizeFirst(stay.status.toLowerCase()) : 'Vacated';
+            
+            return `
+                <div class="past-stay-card">
+                    <div class="stay-image">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="stay-content">
+                        <h3>${stay.propertyName || 'Property'}</h3>
+                        <p><i class="fas fa-map-marker-alt"></i> ${stay.propertyCity || ''}</p>
+                        <p><i class="fas fa-calendar"></i> Stay Period: ${period}</p>
+                        <p><i class="fas fa-door-open"></i> Room: ${stay.flatRoomNumber || stay.unitId || 'N/A'}</p>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <button class="btn-view-details" onclick="handleViewPastStay(${stay.id})">
+                        View Details
+                    </button>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading past stays:', error);
+        grid.innerHTML = `
+            <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #dc3545; margin-bottom: 15px;"></i>
+                <p style="color: #666;">Failed to load past stays: ${error.message}</p>
             </div>
-            <div class="stay-content">
-                <h3>${stay.property}</h3>
-                <p>Stay Period: ${stay.period}</p>
-                <span class="status-badge ${stay.status}">${capitalizeFirst(stay.status)}</span>
-            </div>
-            <button class="btn-view-details" onclick="handleViewPastStay('${stay.property}')">
-                View Details
-            </button>
-        </div>
-    `).join('');
+        `;
+    }
 }
 
 // Helper functions
