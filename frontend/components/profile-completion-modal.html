@@ -1,0 +1,36 @@
+<!-- components/profile-completion-modal.html -->
+<div class="welcome-modal" id="profileCompletionModal" style="display: none;">
+    <div class="welcome-modal-overlay"></div>
+    <div class="welcome-modal-content">
+        <div class="welcome-icon">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <h2>Welcome to Flatery! 🎉</h2>
+        <p class="welcome-message">
+            You've been successfully added to a property tenancy. 
+            To get the most out of your experience, please complete your profile.
+        </p>
+        <div class="welcome-features">
+            <div class="feature-item">
+                <i class="fas fa-check-circle"></i>
+                <span>Update your personal information</span>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-check-circle"></i>
+                <span>Add emergency contact details</span>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-check-circle"></i>
+                <span>Secure your account with a new password</span>
+            </div>
+        </div>
+        <div class="welcome-actions">
+            <button class="btn-primary" onclick="goToProfileCompletion()">
+                <i class="fas fa-user-edit"></i> Complete Profile Now
+            </button>
+            <button class="btn-secondary" onclick="closeProfileCompletionModal()">
+                I'll do it later
+            </button>
+        </div>
+    </div>
+</div>

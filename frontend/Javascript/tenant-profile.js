@@ -290,9 +290,9 @@ function addMember() {
     const memberRow = document.createElement('div');
     memberRow.className = 'member-row';
     memberRow.innerHTML = `
-        <input type="text" placeholder="Member name" class="member-name" required>
-        <input type="text" placeholder="Relationship" class="member-relation" required>
-        <input type="number" placeholder="Age" min="1" max="120" class="member-age" required>
+        <input type="text" placeholder="Member name" class="member-name">
+        <input type="text" placeholder="Relationship" class="member-relation">
+        <input type="number" placeholder="Age" min="1" max="120" class="member-age">
         <button type="button" onclick="removeMember(this)"><i class="fas fa-trash"></i></button>
     `;
     container.appendChild(memberRow);
