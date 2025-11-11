@@ -1,5 +1,51 @@
 /* Property Configuration Page Styles */
 
+/* Alert Message Styles */
+.alert {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+  max-width: 400px;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.alert.success {
+  background: #10b981;
+  color: white;
+}
+
+.alert.error {
+  background: #ef4444;
+  color: white;
+}
+
+.alert.info {
+  background: #3b82f6;
+  color: white;
+}
+
+.alert.warning {
+  background: #f59e0b;
+  color: white;
+}
+
 .config-container {
   display: flex;
   min-height: 100vh;

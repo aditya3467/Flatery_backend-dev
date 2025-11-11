@@ -907,6 +907,14 @@ function deleteFloor(floorNumber) {
 // Utility Functions
 function showAlert(type, message) {
   const alert = document.getElementById('alertMessage');
+  
+  if (!alert) {
+    console.error('Alert element not found, creating fallback');
+    // Fallback: just log to console
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    return;
+  }
+  
   alert.className = `alert ${type}`;
   alert.textContent = message;
   alert.style.display = 'block';
@@ -2782,9 +2790,14 @@ function getActionButtons(submission) {
 let currentApprovalSubmissionId = null;
 
 async function approvePaymentSubmission(submissionId) {
+  console.log('=== approvePaymentSubmission called ===');
+  console.log('Submission ID:', submissionId);
+  
   // Store the submission ID and find the submission details
   currentApprovalSubmissionId = submissionId;
   const submission = paymentSubmissions.find(s => s.id === submissionId);
+  
+  console.log('Found submission:', submission);
   
   if (!submission) {
     showAlert('error', 'Payment submission not found');
@@ -2823,6 +2836,7 @@ async function approvePaymentSubmission(submissionId) {
   
   document.getElementById('approvePaymentDetails').innerHTML = detailsHtml;
   document.getElementById('approvePaymentModal').style.display = 'block';
+  console.log('Modal opened');
 }
 
 // Close approve modal
@@ -2833,26 +2847,34 @@ function closeApproveModal() {
 
 // Confirm approval and call API
 async function confirmApprovePayment() {
+  console.log('=== confirmApprovePayment called ===');
+  console.log('currentApprovalSubmissionId:', currentApprovalSubmissionId);
+  
   if (!currentApprovalSubmissionId) {
     showAlert('error', 'No payment selected');
     return;
   }
 
   const submissionId = currentApprovalSubmissionId;
+  console.log('Approving submission ID:', submissionId);
 
   try {
     closeApproveModal();
     showAlert('info', 'Approving payment...');
 
     // Call backend to verify/approve
-    console.log('Calling API to approve transaction:', submissionId);
-    await apiService.verifyPaymentSubmission(submissionId);
+    console.log('Calling API: verifyPaymentSubmission with ID:', submissionId);
+    const response = await apiService.verifyPaymentSubmission(submissionId);
+    console.log('API response:', response);
 
     // Update local state optimistically (backend uses VERIFIED for approved)
     const submission = paymentSubmissions.find(s => s.id === submissionId);
+    console.log('Found submission in local state:', submission);
+    
     if (submission) {
       submission.status = 'VERIFIED';
       submission.approvedDate = new Date().toISOString().split('T')[0];
+      console.log('Updated submission status to VERIFIED');
     }
 
     // Create notification for tenant if tenantId available
