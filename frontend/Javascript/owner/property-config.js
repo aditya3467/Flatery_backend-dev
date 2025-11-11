@@ -52,6 +52,8 @@ function setupNavigationHandlers() {
         showTenantsSection();
       } else if (href === '#payments') {
         showPaymentsSection();
+      } else if (href === '#manage-payments') {
+        showManagePaymentsSection();
       }
     });
   });
@@ -64,6 +66,7 @@ function showDashboardSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   toggleTopMeta(false);
   loadDashboardData();
 }
@@ -75,6 +78,7 @@ function showFinancialSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   toggleTopMeta(false);
   loadFinancialData();
 }
@@ -96,6 +100,7 @@ function showFloorsSection() {
   document.querySelector('.floors-section').style.display = 'block';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   // Show top meta (title/filters/stats) in floors view
   toggleTopMeta(true);
 }
@@ -107,6 +112,7 @@ function showTenantsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'block';
   document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   // Hide top meta (title/filters/stats) in tenants view
   toggleTopMeta(false);
   loadTenants();
@@ -119,9 +125,23 @@ function showPaymentsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'block';
+  document.querySelector('.manage-payments-section').style.display = 'none';
   // Hide top meta (title/filters/stats) in payments view
   toggleTopMeta(false);
   loadPayments();
+}
+
+function showManagePaymentsSection() {
+  currentView = 'manage-payments';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  document.querySelector('.manage-payments-section').style.display = 'block';
+  // Hide top meta (title/filters/stats) in manage payments view
+  toggleTopMeta(false);
+  loadPaymentSubmissions();
 }
 
 // ========================================
@@ -2550,6 +2570,399 @@ function downloadReceiptPDF() {
 function downloadPaymentReport() {
   alert('Payment report download functionality will be implemented with backend integration');
 }
+
+// ===============================================
+// MANAGE PAYMENT SUBMISSIONS (TENANT SUBMISSIONS)
+// ===============================================
+
+// Mock data for payment submissions (will be replaced with API calls when backend is ready)
+let paymentSubmissions = [
+  {
+    id: 1,
+    tenantName: 'Amit Kumar',
+    tenantAvatar: 'A',
+    room: '101',
+    bed: 'A',
+    rentMonth: 'November 2024',
+    amount: 8500,
+    paymentMode: 'UPI',
+    dateSubmitted: '2024-11-10',
+    status: 'PENDING',
+    proofUrl: 'proof1.jpg',
+    tenantRemark: 'Paid via PhonePe'
+  },
+  {
+    id: 2,
+    tenantName: 'Rajesh Sharma',
+    tenantAvatar: 'R',
+    room: '102',
+    bed: 'B',
+    rentMonth: 'November 2024',
+    amount: 9000,
+    paymentMode: 'BANK_TRANSFER',
+    dateSubmitted: '2024-11-08',
+    status: 'APPROVED',
+    proofUrl: 'proof2.jpg',
+    tenantRemark: 'NEFT Transfer',
+    approvedDate: '2024-11-08'
+  },
+  {
+    id: 3,
+    tenantName: 'Priya Singh',
+    tenantAvatar: 'P',
+    room: '103',
+    bed: 'A',
+    rentMonth: 'November 2024',
+    amount: 7500,
+    paymentMode: 'CASH',
+    dateSubmitted: '2024-11-05',
+    status: 'REJECTED',
+    proofUrl: 'proof3.jpg',
+    tenantRemark: 'Paid to security guard',
+    rejectionRemark: 'Payment not received in account'
+  }
+];
+
+// Load payment submissions
+function loadPaymentSubmissions() {
+  console.log('Loading payment submissions...');
+  
+  // Update stats
+  updatePaymentSubmissionStats();
+  
+  // Render submissions table
+  renderPaymentSubmissions(paymentSubmissions);
+}
+
+// Update stats cards
+function updatePaymentSubmissionStats() {
+  const pending = paymentSubmissions.filter(s => s.status === 'PENDING').length;
+  const approved = paymentSubmissions.filter(s => s.status === 'APPROVED').length;
+  const rejected = paymentSubmissions.filter(s => s.status === 'REJECTED').length;
+  const totalAmount = paymentSubmissions
+    .filter(s => s.status === 'PENDING')
+    .reduce((sum, s) => sum + s.amount, 0);
+  
+  document.getElementById('pendingSubmissionsCount').textContent = pending;
+  document.getElementById('approvedSubmissionsCount').textContent = approved;
+  document.getElementById('rejectedSubmissionsCount').textContent = rejected;
+  document.getElementById('totalSubmittedAmount').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
+}
+
+// Render payment submissions table
+function renderPaymentSubmissions(submissions) {
+  const tbody = document.getElementById('paymentSubmissionsTableBody');
+  
+  if (submissions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="no-data-row">No payment submissions found</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = submissions.map(sub => {
+    const daysAgo = getDaysAgo(sub.dateSubmitted);
+    const statusBadge = getStatusBadge(sub.status);
+    const modeBadge = getPaymentModeBadge(sub.paymentMode);
+    const actions = getActionButtons(sub);
+    
+    return `
+      <tr>
+        <td>
+          <div class="tenant-info">
+            <div class="tenant-avatar">${sub.tenantAvatar}</div>
+            <div>
+              <strong>${sub.tenantName}</strong>
+              <small>Room ${sub.room}, Bed ${sub.bed}</small>
+            </div>
+          </div>
+        </td>
+        <td>${sub.rentMonth}</td>
+        <td><strong>₹${sub.amount.toLocaleString('en-IN')}</strong></td>
+        <td>${modeBadge}</td>
+        <td>
+          <div class="date-info">
+            <div>${formatDate(sub.dateSubmitted)}</div>
+            <small>${daysAgo}</small>
+          </div>
+        </td>
+        <td>${statusBadge}</td>
+        <td>
+          <button class="btn-icon" onclick="viewPaymentProof('${sub.proofUrl}')" title="View Proof">
+            <i class="fas fa-image"></i>
+          </button>
+        </td>
+        <td>
+          <div class="tenant-remark">
+            <small>${sub.tenantRemark || '-'}</small>
+          </div>
+        </td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Get status badge HTML
+function getStatusBadge(status) {
+  const badges = {
+    'PENDING': '<span class="status-badge pending">Pending</span>',
+    'APPROVED': '<span class="status-badge approved">Approved</span>',
+    'REJECTED': '<span class="status-badge rejected">Rejected</span>'
+  };
+  return badges[status] || status;
+}
+
+// Get payment mode badge HTML
+function getPaymentModeBadge(mode) {
+  const modeMap = {
+    'UPI': 'upi',
+    'BANK_TRANSFER': 'bank',
+    'CASH': 'cash',
+    'CARD': 'card'
+  };
+  const modeText = {
+    'UPI': 'UPI',
+    'BANK_TRANSFER': 'Bank Transfer',
+    'CASH': 'Cash',
+    'CARD': 'Card'
+  };
+  const cssClass = modeMap[mode] || 'upi';
+  return `<span class="payment-mode-badge ${cssClass}">${modeText[mode] || mode}</span>`;
+}
+
+// Get action buttons HTML
+function getActionButtons(submission) {
+  if (submission.status === 'PENDING') {
+    return `
+      <div class="action-buttons">
+        <button class="btn-icon approve" onclick="approvePaymentSubmission(${submission.id})" title="Approve">
+          <i class="fas fa-check"></i>
+        </button>
+        <button class="btn-icon reject" onclick="openRejectModal(${submission.id})" title="Reject">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `;
+  } else if (submission.status === 'APPROVED') {
+    return `<div class="action-buttons"><span class="action-completed">Approved on ${formatDate(submission.approvedDate)}</span></div>`;
+  } else if (submission.status === 'REJECTED') {
+    return `
+      <div class="action-buttons">
+        <div class="rejection-info">
+          <small><strong>Rejected:</strong> ${submission.rejectionRemark}</small>
+        </div>
+      </div>
+    `;
+  }
+  return '';
+}
+
+// Approve payment submission
+function approvePaymentSubmission(submissionId) {
+  if (!confirm('Are you sure you want to approve this payment submission?')) {
+    return;
+  }
+  
+  console.log('Approving submission:', submissionId);
+  
+  // Find and update submission
+  const submission = paymentSubmissions.find(s => s.id === submissionId);
+  if (submission) {
+    submission.status = 'APPROVED';
+    submission.approvedDate = new Date().toISOString().split('T')[0];
+    
+    // Show success message
+    showAlert('success', 'Payment approved successfully! Tenant will be notified.');
+    
+    // Refresh the table
+    renderPaymentSubmissions(paymentSubmissions);
+    updatePaymentSubmissionStats();
+    
+    // TODO: When backend is ready, call API to update status and create notification
+    // await apiService.approvePaymentSubmission(submissionId);
+    // Create notification for tenant
+    // apiService.createNotification({
+    //   userId: submission.tenantId, // tenant's user ID
+    //   senderId: currentOwnerId, // current owner's ID
+    //   type: 'PaymentApproved',
+    //   title: 'Payment Approved',
+    //   message: `Your payment for ${submission.rentMonth} has been approved`,
+    //   redirectUrl: '/frontend/tenant-dashboard.html#payments'
+    // });
+  }
+}
+
+// Open reject modal
+function openRejectModal(submissionId) {
+  document.getElementById('rejectSubmissionId').value = submissionId;
+  document.getElementById('rejectionRemark').value = '';
+  document.getElementById('rejectPaymentModal').style.display = 'block';
+}
+
+// Close reject modal
+function closeRejectModal() {
+  document.getElementById('rejectPaymentModal').style.display = 'none';
+}
+
+// Handle reject payment form submission
+function handleRejectPayment(event) {
+  event.preventDefault();
+  
+  const submissionId = parseInt(document.getElementById('rejectSubmissionId').value);
+  const remark = document.getElementById('rejectionRemark').value.trim();
+  
+  if (remark.length < 10) {
+    showAlert('error', 'Rejection reason must be at least 10 characters');
+    return;
+  }
+  
+  console.log('Rejecting submission:', submissionId, 'Reason:', remark);
+  
+  // Find and update submission
+  const submission = paymentSubmissions.find(s => s.id === submissionId);
+  if (submission) {
+    submission.status = 'REJECTED';
+    submission.rejectionRemark = remark;
+    
+    // Show success message
+    showAlert('success', 'Payment rejected. Tenant will be notified with the reason.');
+    
+    // Close modal
+    closeRejectModal();
+    
+    // Refresh the table
+    renderPaymentSubmissions(paymentSubmissions);
+    updatePaymentSubmissionStats();
+    
+    // TODO: When backend is ready, call API to update status and create notification
+    // await apiService.rejectPaymentSubmission(submissionId, remark);
+    // Create notification for tenant
+    // apiService.createNotification({
+    //   userId: submission.tenantId, // tenant's user ID
+    //   senderId: currentOwnerId, // current owner's ID
+    //   type: 'PaymentRejected',
+    //   title: 'Payment Rejected',
+    //   message: `Your payment for ${submission.rentMonth} was rejected. Reason: ${remark}`,
+    //   redirectUrl: '/frontend/tenant-dashboard.html#payments'
+    // });
+  }
+}
+
+// View payment proof
+function viewPaymentProof(proofUrl) {
+  console.log('Viewing proof:', proofUrl);
+  
+  // In production, this would load the actual image from server
+  // For now, show a placeholder
+  const img = document.getElementById('proofImage');
+  img.src = 'https://via.placeholder.com/600x800?text=Payment+Proof+Screenshot';
+  img.alt = 'Payment Proof';
+  
+  document.getElementById('viewProofModal').style.display = 'block';
+  
+  // TODO: When backend is ready, load actual proof image
+  // img.src = `/api/payments/proof/${proofUrl}`;
+}
+
+// Close proof modal
+function closeProofModal() {
+  document.getElementById('viewProofModal').style.display = 'none';
+}
+
+// Download proof
+function downloadProof() {
+  const img = document.getElementById('proofImage');
+  const link = document.createElement('a');
+  link.href = img.src;
+  link.download = 'payment-proof.jpg';
+  link.click();
+  
+  showAlert('success', 'Proof downloaded successfully');
+}
+
+// Open proof in new tab
+function openProofInNewTab() {
+  const img = document.getElementById('proofImage');
+  window.open(img.src, '_blank');
+}
+
+// Filter payment submissions
+function filterPaymentSubmissions() {
+  const statusFilter = document.getElementById('submissionStatusFilter').value;
+  const monthFilter = document.getElementById('submissionMonthFilter').value;
+  const searchTerm = document.getElementById('submissionTenantSearch').value.toLowerCase();
+  
+  let filtered = paymentSubmissions;
+  
+  // Filter by status
+  if (statusFilter) {
+    filtered = filtered.filter(s => s.status === statusFilter);
+  }
+  
+  // Filter by month
+  if (monthFilter) {
+    filtered = filtered.filter(s => {
+      // monthFilter format: "11-2024"
+      const [month, year] = monthFilter.split('-');
+      return s.rentMonth.includes(getMonthName(parseInt(month))) && s.rentMonth.includes(year);
+    });
+  }
+  
+  // Filter by search term
+  if (searchTerm) {
+    filtered = filtered.filter(s => 
+      s.tenantName.toLowerCase().includes(searchTerm) ||
+      s.room.toLowerCase().includes(searchTerm) ||
+      s.bed.toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  renderPaymentSubmissions(filtered);
+}
+
+// Refresh payment submissions
+function refreshPaymentSubmissions() {
+  showAlert('info', 'Refreshing payment submissions...');
+  loadPaymentSubmissions();
+  // TODO: When backend is ready, fetch from API
+  // const submissions = await apiService.getPaymentSubmissions(currentPropertyId);
+  // paymentSubmissions = submissions;
+  // renderPaymentSubmissions(paymentSubmissions);
+}
+
+// Export payment submissions
+function exportPaymentSubmissions() {
+  showAlert('info', 'Export functionality will be implemented with backend integration');
+  // TODO: Implement CSV/Excel export
+}
+
+// Utility: Get days ago text
+function getDaysAgo(dateString) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const diffTime = Math.abs(today - date);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return `${diffDays} days ago`;
+}
+
+// Utility: Format date
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+// Utility: Get month name
+function getMonthName(monthNum) {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December'];
+  return months[monthNum - 1];
+}
+
 
 // Export functions
 window.loadPayments = loadPayments;

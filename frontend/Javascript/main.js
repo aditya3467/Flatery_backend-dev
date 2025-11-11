@@ -453,11 +453,11 @@ async function handleLogin(e) { // e can be a form event or an object with crede
             window.location.href = '/frontend/owner/Owner.html';
         }, 100);
         return;
-    } else if (roles.includes('USER')) {
-        setTimeout(() => {
-            window.location.href = '/frontend/tenant.html';
-        }, 100);
-        return;
+  } else if (roles.includes('USER')) {
+    setTimeout(() => {
+      window.location.href = '/frontend/index.html';
+    }, 100);
+    return;
     }
   } catch (error) {
     showError(error.message || 'Login failed. Please check your username and password.');
@@ -594,6 +594,11 @@ function updateUIForLoggedInUser() {
       superadminItems.forEach(item => {
           item.style.display = roles.includes('SUPERADMIN') ? 'block' : 'none';
       });
+  }
+
+  // Initialize notification manager
+  if (window.notificationManager) {
+    notificationManager.init();
   }
 }
 

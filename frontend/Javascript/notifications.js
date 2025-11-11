@@ -1,0 +1,374 @@
+/**
+ * Notification Manager
+ * Handles notification fetching, display, and interactions
+ */
+
+class NotificationManager {
+    constructor() {
+        this.notificationBell = null;
+        this.notificationBadge = null;
+        this.notificationDropdown = null;
+        this.notificationList = null;
+        this.notificationSection = null;
+        this.notifications = [];
+        this.unreadCount = 0;
+        this.refreshInterval = null;
+        this.isAuthenticated = false;
+        this.isInitialized = false;
+    }
+
+    /**
+     * Initialize notification manager
+     */
+    async init() {
+        // Prevent double initialization
+        if (this.isInitialized) {
+            console.log('Notification manager already initialized');
+            return;
+        }
+
+        // Check if user is authenticated
+        this.isAuthenticated = apiService.isAuthenticated();
+        
+        if (!this.isAuthenticated) {
+            return; // Don't initialize if user is not logged in
+        }
+
+        // Get DOM elements
+        this.notificationSection = document.getElementById('notificationSection');
+        this.notificationBell = document.getElementById('notificationBell');
+        this.notificationBadge = document.getElementById('notificationBadge');
+        this.notificationDropdown = document.getElementById('notificationDropdown');
+        this.notificationList = document.getElementById('notificationList');
+
+        if (!this.notificationSection || !this.notificationBell) {
+            console.warn('Notification elements not found');
+            return;
+        }
+
+        // Show notification section
+        this.notificationSection.style.display = 'flex';
+
+        // Setup event listeners
+        this.setupEventListeners();
+
+        // Load initial notifications
+        await this.loadNotifications();
+
+        // Start auto-refresh (every 30 seconds)
+        this.startAutoRefresh();
+
+        // Mark as initialized
+        this.isInitialized = true;
+        console.log('Notification manager initialized successfully');
+    }
+
+    /**
+     * Setup event listeners
+     */
+    setupEventListeners() {
+        // Toggle dropdown
+        this.notificationBell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log('Notification bell clicked');
+            this.toggleDropdown();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!this.notificationSection.contains(e.target)) {
+                this.closeDropdown();
+            }
+        });
+
+        // Mark all as read button
+        const markAllReadBtn = document.getElementById('markAllReadBtn');
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
+        }
+
+        // Clear notifications button
+        const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
+        if (clearNotificationsBtn) {
+            clearNotificationsBtn.addEventListener('click', () => this.clearReadNotifications());
+        }
+    }
+
+    /**
+     * Load notifications from API
+     */
+    async loadNotifications() {
+        try {
+            // Fetch unread count
+            const countResponse = await apiService.getUnreadNotificationCount();
+            this.unreadCount = countResponse.count || 0;
+            this.updateBadge();
+
+            // Fetch all notifications
+            const notifications = await apiService.getAllNotifications();
+            this.notifications = notifications || [];
+            
+            // Render notifications
+            this.renderNotifications();
+        } catch (error) {
+            console.error('Failed to load notifications:', error);
+            this.showError();
+        }
+    }
+
+    /**
+     * Render notifications in the dropdown
+     */
+    renderNotifications() {
+        if (!this.notificationList) return;
+
+        if (this.notifications.length === 0) {
+            this.notificationList.innerHTML = `
+                <div class="notification-empty">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No new notifications</p>
+                </div>
+            `;
+            return;
+        }
+
+        this.notificationList.innerHTML = this.notifications.map(notification => {
+            const icon = this.getNotificationIcon(notification.type);
+            const timeAgo = this.getTimeAgo(notification.createdAt);
+            const unreadClass = !notification.isRead ? 'unread' : '';
+
+            return `
+                <div class="notification-item ${unreadClass}" data-id="${notification.id}" data-url="${notification.redirectUrl || ''}">
+                    <div class="notification-icon ${icon.class}">
+                        <i class="${icon.icon}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-message">${notification.message}</div>
+                        <div class="notification-time">${timeAgo}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click listeners to notification items
+        this.notificationList.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = parseInt(item.dataset.id);
+                const url = item.dataset.url;
+                this.handleNotificationClick(id, url);
+            });
+        });
+    }
+
+    /**
+     * Get icon for notification type
+     */
+    getNotificationIcon(type) {
+        const icons = {
+            'PaymentSubmitted': { icon: 'fas fa-money-bill-wave', class: 'payment' },
+            'PaymentApproved': { icon: 'fas fa-check-circle', class: 'payment' },
+            'PaymentRejected': { icon: 'fas fa-times-circle', class: 'rejection' },
+            'TenantAdded': { icon: 'fas fa-user-plus', class: 'tenant' },
+            'MaintenanceRequest': { icon: 'fas fa-tools', class: 'maintenance' },
+            'ReminderDue': { icon: 'fas fa-calendar-exclamation', class: 'reminder' },
+            'ProfileUpdate': { icon: 'fas fa-user-edit', class: 'tenant' }
+        };
+        return icons[type] || { icon: 'fas fa-bell', class: 'tenant' };
+    }
+
+    /**
+     * Get time ago string
+     */
+    getTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    /**
+     * Handle notification click
+     */
+    async handleNotificationClick(notificationId, redirectUrl) {
+        // Mark as read
+        await this.markAsRead(notificationId);
+
+        // Close dropdown
+        this.closeDropdown();
+
+        // Redirect if URL is provided
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        }
+    }
+
+    /**
+     * Mark a notification as read
+     */
+    async markAsRead(notificationId) {
+        try {
+            await apiService.markNotificationAsRead(notificationId);
+            
+            // Update local state
+            const notification = this.notifications.find(n => n.id === notificationId);
+            if (notification && !notification.isRead) {
+                notification.isRead = true;
+                this.unreadCount = Math.max(0, this.unreadCount - 1);
+                this.updateBadge();
+                this.renderNotifications();
+            }
+        } catch (error) {
+            console.error('Failed to mark notification as read:', error);
+        }
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    async markAllAsRead() {
+        try {
+            await apiService.markAllNotificationsAsRead();
+            
+            // Update local state
+            this.notifications.forEach(n => n.isRead = true);
+            this.unreadCount = 0;
+            this.updateBadge();
+            this.renderNotifications();
+            
+            console.log('All notifications marked as read');
+        } catch (error) {
+            console.error('Failed to mark all as read:', error);
+        }
+    }
+
+    /**
+     * Clear read notifications
+     */
+    async clearReadNotifications() {
+        if (!confirm('Clear all read notifications?')) {
+            return;
+        }
+
+        try {
+            await apiService.clearReadNotifications();
+            
+            // Update local state
+            this.notifications = this.notifications.filter(n => !n.isRead);
+            this.renderNotifications();
+            
+            console.log('Read notifications cleared');
+        } catch (error) {
+            console.error('Failed to clear notifications:', error);
+        }
+    }
+
+    /**
+     * Update badge count
+     */
+    updateBadge() {
+        if (!this.notificationBadge) return;
+
+        if (this.unreadCount > 0) {
+            this.notificationBadge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+            this.notificationBadge.style.display = 'block';
+        } else {
+            this.notificationBadge.style.display = 'none';
+        }
+    }
+
+    /**
+     * Toggle dropdown visibility
+     */
+    toggleDropdown() {
+        if (!this.notificationDropdown) {
+            console.warn('Notification dropdown element not found');
+            return;
+        }
+
+        const isActive = this.notificationDropdown.classList.contains('active');
+        console.log('Dropdown toggle - currently active:', isActive);
+        
+        if (isActive) {
+            this.closeDropdown();
+        } else {
+            this.openDropdown();
+        }
+    }
+
+    /**
+     * Open dropdown
+     */
+    openDropdown() {
+        if (!this.notificationDropdown) return;
+        console.log('Opening notification dropdown');
+        this.notificationDropdown.classList.add('active');
+    }
+
+    /**
+     * Close dropdown
+     */
+    closeDropdown() {
+        if (!this.notificationDropdown) return;
+        console.log('Closing notification dropdown');
+        this.notificationDropdown.classList.remove('active');
+    }
+
+    /**
+     * Show error message
+     */
+    showError() {
+        if (!this.notificationList) return;
+        this.notificationList.innerHTML = `
+            <div class="notification-empty">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Failed to load notifications</p>
+            </div>
+        `;
+    }
+
+    /**
+     * Start auto-refresh
+     */
+    startAutoRefresh() {
+        // Refresh every 30 seconds
+        this.refreshInterval = setInterval(() => {
+            this.loadNotifications();
+        }, 30000);
+    }
+
+    /**
+     * Stop auto-refresh
+     */
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+    }
+
+    /**
+     * Destroy notification manager
+     */
+    destroy() {
+        this.stopAutoRefresh();
+        if (this.notificationSection) {
+            this.notificationSection.style.display = 'none';
+        }
+    }
+}
+
+// Create global instance
+const notificationManager = new NotificationManager();
+
+// Export for use in other files
+window.notificationManager = notificationManager;

@@ -484,6 +484,67 @@ class ApiService {
             body: JSON.stringify(complaintData)
         });
     }
+
+    // ========================================
+    // NOTIFICATION API METHODS
+    // ========================================
+
+    // Get all notifications for current user
+    async getAllNotifications() {
+        return this.makeRequest('/notifications', {
+            method: 'GET'
+        });
+    }
+
+    // Get unread notifications
+    async getUnreadNotifications() {
+        return this.makeRequest('/notifications/unread', {
+            method: 'GET'
+        });
+    }
+
+    // Get unread notification count
+    async getUnreadNotificationCount() {
+        return this.makeRequest('/notifications/count', {
+            method: 'GET'
+        });
+    }
+
+    // Mark a notification as read
+    async markNotificationAsRead(notificationId) {
+        return this.makeRequest(`/notifications/${notificationId}/read`, {
+            method: 'PUT'
+        });
+    }
+
+    // Mark all notifications as read
+    async markAllNotificationsAsRead() {
+        return this.makeRequest('/notifications/read-all', {
+            method: 'PUT'
+        });
+    }
+
+    // Delete a notification
+    async deleteNotification(notificationId) {
+        return this.makeRequest(`/notifications/${notificationId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Clear all read notifications
+    async clearReadNotifications() {
+        return this.makeRequest('/notifications/clear-read', {
+            method: 'DELETE'
+        });
+    }
+
+    // Create a notification (admin/system use)
+    async createNotification(notificationData) {
+        return this.makeRequest('/notifications', {
+            method: 'POST',
+            body: JSON.stringify(notificationData)
+        });
+    }
 }
 
 // Create global API service instance
