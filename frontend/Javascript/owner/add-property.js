@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
         if (!roles.includes('ADMIN')) {
             alert('Only owners (ADMIN) can list properties.');
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
             return;
         }
     } catch (_) {
         alert('Please login as owner to list properties.');
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
     const addPropertyForm = document.getElementById('addPropertyForm');

@@ -1,4 +1,5 @@
 ﻿<!DOCTYPE html>
+<!-- moved to ./owner/Owner.html; paths adjusted to ../ -->
 <html lang="en">
 
 <head>
@@ -8,16 +9,17 @@
     <!--===== Font Awesome =====-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!--===== Main CSS =====-->
-    <link rel="stylesheet" href="css/style.css">
-    <script src="Javascript/component-loader.js" defer></script>
-    <script src="Javascript/api.js" defer></script>
-    <script src="Javascript/main.js" defer></script>
-    <script src="Javascript/owner.js" defer></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../Javascript/api.js"></script>
+    <script src="../Javascript/component-loader.js" defer></script>
+    <script src="../Javascript/notifications.js" defer></script>
+    <script src="../Javascript/main.js" defer></script>
+    <script src="../Javascript/owner/owner.js" defer></script>
 </head>
 
 <body>
     <!--===== Navbar Component =====-->
-    <div id="navbar-container" data-component="components/navbar.html"></div>
+    <div id="navbar-container" data-component="../components/navbar.html"></div>
 
 
 
@@ -31,7 +33,7 @@
                     <i class="fas fa-plus-circle"></i>
                     Add Property
                 </a>
-                <a href="add-tenant.html" class="btn success" style="padding: 10px 14px; background:#28a745; color:#fff; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                <a href="/frontend/owner/add-tenant.html" class="btn success" style="padding: 10px 14px; background:#28a745; color:#fff; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
                     <i class="fas fa-user-plus"></i>
                     Add Tenant
                 </a>
@@ -218,4 +220,4 @@
 
 </body>
     <!--===== Modals Component =====-->
-    <div id="modals-container" data-component="components/modals.html"></div>
+    <div id="modals-container" data-component="../components/modals.html"></div>

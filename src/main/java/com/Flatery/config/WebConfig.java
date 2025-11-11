@@ -16,21 +16,32 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve static files from the frontend directory
+        // Resolve absolute paths for resource locations
+        String projectRoot = Paths.get("").toAbsolutePath().normalize().toString();
+        String frontendPath = Paths.get(projectRoot, "frontend").toAbsolutePath().normalize().toUri().toString();
+
+        // Serve static files from the frontend directory (entire tree)
         registry.addResourceHandler("/frontend/**")
-                .addResourceLocations("file:frontend/")
-                .setCachePeriod(3600);
-        
-        // Serve the main index.html at root
-        registry.addResourceHandler("/")
-                .addResourceLocations("file:frontend/")
-                .setCachePeriod(3600);
+                .addResourceLocations(frontendPath)
+                .setCachePeriod(0);
+
+        // Optionally also expose common static subpaths if referenced directly
+        registry.addResourceHandler("/css/**", "/Javascript/**", "/img/**")
+                .addResourceLocations(frontendPath + "css/", frontendPath + "Javascript/", frontendPath + "img/")
+                .setCachePeriod(0);
 
         // Serve uploaded property images
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         String uploadPathStr = uploadPath.toUri().toString();
-        
         registry.addResourceHandler("/uploads/properties/**")
-                .addResourceLocations(uploadPathStr + "/");
+                .addResourceLocations(uploadPathStr)
+                .setCachePeriod(0);
+
+        // Serve payment proof images
+        Path paymentProofPath = Paths.get("uploads/payment-proofs").toAbsolutePath().normalize();
+        String paymentProofPathStr = paymentProofPath.toUri().toString();
+        registry.addResourceHandler("/uploads/payment-proofs/**")
+                .addResourceLocations(paymentProofPathStr)
+                .setCachePeriod(0);
     }
 }

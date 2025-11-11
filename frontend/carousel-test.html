@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>Carousel Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="Javascript/component-loader.js" defer></script>
     <style>
         .property-image {
             position: relative;
@@ -69,6 +72,9 @@
     </style>
 </head>
 <body>
+    <!-- Navbar -->
+    <div id="navbar-container" data-component="components/navbar.html"></div>
+    
     <h1>Carousel Test</h1>
     
     <div class="property-image" data-images='["https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400", "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400", "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400"]' data-image-index="0">
@@ -190,5 +196,9 @@
         // Set up listeners on page load
         document.addEventListener('DOMContentLoaded', setupCarouselEventListeners);
     </script>
+    
+    <script src="Javascript/api.js"></script>
+    <script src="Javascript/notifications.js"></script>
+    <script src="Javascript/main.js"></script>
 </body>
 </html>

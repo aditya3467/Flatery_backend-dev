@@ -41,6 +41,9 @@ class ComponentLoader {
      * Reinitialize event listeners for dynamically loaded components
      */
     reinitializeEventListeners() {
+        // Fix logo link to work from any directory
+        this.setupLogoLink();
+        
         // Re-setup login button listeners
         if (typeof setupLoginButtonListeners === 'function') {
             setupLoginButtonListeners();
@@ -66,6 +69,11 @@ class ComponentLoader {
         // Also call global setupProfileDropdown if available
         if (typeof setupProfileDropdown === 'function') {
             setTimeout(() => setupProfileDropdown(), 50);
+        }
+        
+        // Initialize notification manager after navbar is loaded
+        if (typeof notificationManager !== 'undefined' && notificationManager.init) {
+            setTimeout(() => notificationManager.init(), 100);
         }
         
         // Check authentication state and update UI
@@ -137,7 +145,7 @@ class ComponentLoader {
         // Close hamburger menu when clicking outside
         document.removeEventListener('click', this.handleOutsideClick);
         document.addEventListener('click', (e) => {
-            const burgerMenu = document.querySelector('.burger-menu');
+            const burgerMenu = document.querySelector('.nav-menu') || document.querySelector('.burger-menu');
             const burgerBtn = document.querySelector('.burger-btn');
             const burgerToggle = document.getElementById('burger-toggle');
 
@@ -146,6 +154,26 @@ class ComponentLoader {
                 burgerToggle.checked = false;
             }
         });
+    }
+
+    /**
+     * Setup logo link to work from any directory
+     */
+    setupLogoLink() {
+        const logoLink = document.getElementById('logoLink');
+        if (logoLink) {
+            // Determine the correct path to index.html based on current location
+            const currentPath = window.location.pathname;
+            let indexPath = 'index.html';
+            
+            // If we're in a subdirectory (like /owner/), go up one level
+            if (currentPath.includes('/owner/') || currentPath.includes('/tenant/')) {
+                indexPath = '../index.html';
+            }
+            
+            logoLink.href = indexPath;
+            console.log('Logo link set to:', indexPath);
+        }
     }
 
     /**

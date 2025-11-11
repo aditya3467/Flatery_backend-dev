@@ -47,14 +47,16 @@ public class Transaction {
     @Column(name = "upi_ref", length = 100)
     private String upiRef;
 
-    @Column(name = "screenshot_url", length = 255)
+    @Column(name = "screenshot_url", columnDefinition = "TEXT")
     private String screenshotUrl;
 
     @Column(name = "payment_month", length = 20, nullable = false)
     private String paymentMonth;  // e.g., "Nov 2025"
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    // Define explicit MySQL ENUM to let Hibernate auto-update schema to include CANCELED
+    @Column(name = "status", nullable = false,
+            columnDefinition = "ENUM('PENDING','VERIFIED','REJECTED','CANCELED')")
     private PaymentStatus status;
 
     @CreationTimestamp
@@ -65,7 +67,7 @@ public class Transaction {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by", length = 50, nullable = false, updatable = false)
+    @Column(name = "created_by", length = 50, updatable = false)
     private String createdBy;
 
     @Column(name = "updated_by", length = 50)

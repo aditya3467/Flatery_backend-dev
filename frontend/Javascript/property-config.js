@@ -973,6 +973,9 @@ function renderTenants() {
             <button class="delete" onclick="removeTenant(${tenant.id})">
               <i class="fas fa-trash"></i> Remove
             </button>
+            <button class="deactivate" onclick="deactivateTenantFromList('${tenant.tenantId}')" ${String(tenant.status).toUpperCase()==='VACATED'?'disabled':''}>
+              <i class="fas fa-user-slash"></i> ${String(tenant.status).toUpperCase()==='VACATED'?'Deactivated':'Deactivate'}
+            </button>
           </div>
         </div>
       </div>
@@ -1684,6 +1687,10 @@ function renderTenantsTable(tenants) {
             <button class="action-btn remove" onclick="confirmRemoveTenant(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}')">
               <i class="fas fa-user-minus"></i> Remove
             </button>
+            
+            <button class="action-btn deactivate" data-tenant-id="${tenant.tenantId || tenant.id}" onclick="deactivateTenantAction(this)" ${String(tenant.status).toUpperCase() === 'VACATED' ? 'disabled' : ''}>
+              <i class="fas fa-user-slash"></i> ${String(tenant.status).toUpperCase() === 'VACATED' ? 'Deactivated' : 'Deactivate'}
+            </button>
           </div>
         </td>
       </tr>
@@ -1966,8 +1973,63 @@ async function removeTenantFromProperty(tenantId) {
   }
 }
 
+// Deactivate tenant from the compact list dropdown
+window.deactivateTenantFromList = async function(externalTenantId){
+  if(!externalTenantId) return;
+  if(!confirm('Are you sure you want to deactivate this tenant? This will free their bed/room.')) return;
+  try {
+    await apiService.deactivateTenant(externalTenantId);
+    showAlert && showAlert('success','Tenant deactivated');
+    await loadTenants();
+    // Refresh floors/units & stats so the freed bed is immediately visible
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+    if (currentView === 'dashboard') {
+      loadDashboardData();
+    } else if (currentView === 'financial') {
+      loadFinancialData();
+    }
+  } catch(e){
+    console.error('Deactivate failed', e);
+    showAlert && showAlert('error', e.message || 'Failed to deactivate tenant');
+  }
+};
+
 // Deactivate tenant (mark VACATED and free bed) with button loading state
-// ...existing code...
+window.deactivateTenantAction = async function(btn) {
+  const tenantId = btn.getAttribute('data-tenant-id');
+  if (!tenantId) return;
+  if (btn.disabled) return;
+  if (!confirm('Are you sure you want to deactivate this tenant?\n\nThis will free their bed/room and mark them as VACATED.')) return;
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deactivating...';
+  try {
+    await apiService.deactivateTenant(tenantId);
+    btn.innerHTML = '<i class="fas fa-check"></i> Deactivated';
+    btn.classList.remove('loading');
+    btn.classList.add('success');
+    // Reload tenants to reflect status badge
+    await loadTenants();
+    // Refresh floors/units & stats so the bed shows as free
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+    if (currentView === 'dashboard') {
+      loadDashboardData();
+    } else if (currentView === 'financial') {
+      loadFinancialData();
+    }
+  } catch (e) {
+    console.error('Failed to deactivate:', e);
+    alert(e.message || 'Failed to deactivate tenant');
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = originalText;
+  }
+};
 
 // Export tenants to Excel
 function exportTenantsToExcel() {
@@ -2061,7 +2123,6 @@ window.switchProfileTab = switchProfileTab;
 window.exportTenantsToExcel = exportTenantsToExcel;
 window.confirmRemoveTenant = confirmRemoveTenant;
 window.removeTenantFromProperty = removeTenantFromProperty;
-window.deactivateTenant = deactivateTenant;
 window.sendWhatsAppReminder = sendWhatsAppReminder;
 window.generateAgreement = generateAgreement;
 window.downloadRentReceipts = downloadRentReceipts;

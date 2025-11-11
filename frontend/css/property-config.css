@@ -901,6 +901,22 @@
   color: #dc2626;
 }
 
+.tenant-dropdown button.deactivate {
+  color: #6b7280;
+}
+
+.tenant-dropdown button.deactivate:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tenant-dropdown button.deactivate:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .tenant-dropdown button i {
   width: 16px;
 }
@@ -2404,6 +2420,43 @@
 .action-btn.remove:hover {
   background: #c0392b;
   transform: translateY(-2px);
+}
+
+.action-btn.deactivate {
+  background: #95a5a6;
+  color: white;
+  position: relative;
+}
+
+.action-btn.deactivate:hover:not(:disabled) {
+  background: #7f8c8d;
+  transform: translateY(-2px);
+}
+
+.action-btn.deactivate.loading {
+  background: #bdc3c7;
+  cursor: wait;
+}
+
+.action-btn.deactivate.loading i {
+  animation: spin 1s linear infinite;
+}
+
+.action-btn.deactivate.success {
+  background: #27ae60;
+  cursor: default;
+}
+
+.action-btn.deactivate:disabled {
+  background: #ecf0f1;
+  color: #95a5a6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .no-data-row {
