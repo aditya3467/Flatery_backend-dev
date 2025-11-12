@@ -923,46 +923,105 @@ async function loadRentPayments() {
             currentMonth: getCurrentMonthYear(),
             monthlyRent: propertyDetails.rentAmount || propertyDetails.monthlyRent || 0,
             rentDueDate: propertyDetails.rentDueDate || propertyDetails.dueDate || 1,
-            currentStatus: 'pending', // Will be determined by payment/transaction API later
+            currentStatus: 'pending', // Will be determined by payment/transaction API
             lateFeePolicy: '₹100/day after due date', // Hardcoded for now, can be added to property model
             paymentMode: 'UPI / Manual',
             securityDeposit: propertyDetails.securityDeposit || propertyDetails.deposit || 0,
             depositStatus: 'paid', // Assuming paid for now
-            ownerName: propertyDetails.ownerName || 'Property Owner'
+            ownerName: propertyDetails.ownerName || 'Property Owner',
+            ownerId: propertyDetails.ownerId
         };
 
         console.log('🔍 Processed Rent Data:', rentData);
 
-        // Store owner name globally for QR modal
+        // Store owner info globally for QR modal and reminder functionality
         window.currentOwnerName = rentData.ownerName;
+        window.currentOwnerId = rentData.ownerId;
+
+        // Fetch real transaction/payment data
+        let transactions = [];
+        try {
+            transactions = await apiService.getTenantPayments();
+            console.log('🔍 Fetched Transactions:', transactions);
+        } catch (error) {
+            console.warn('Failed to fetch transactions, using empty array:', error);
+        }
+
+        // Determine current month status and details from transactions
+        const currentMonthStr = getCurrentMonthYearShort(); // e.g., "Nov 2025"
+        const currentMonthTransaction = transactions.find(t => t.paymentMonth === currentMonthStr);
+        
+        let currentMonthDetails = {
+            status: rentData.currentStatus,
+            amount: rentData.monthlyRent,
+            paymentMode: rentData.paymentMode,
+            upiRef: null,
+            paymentDate: null
+        };
+
+        if (currentMonthTransaction) {
+            // Handle both uppercase and lowercase status from backend
+            currentMonthDetails.status = (currentMonthTransaction.status || 'pending').toLowerCase();
+            currentMonthDetails.amount = currentMonthTransaction.amount || rentData.monthlyRent;
+            currentMonthDetails.paymentMode = currentMonthTransaction.paymentMode || rentData.paymentMode;
+            currentMonthDetails.upiRef = currentMonthTransaction.upiRef;
+            currentMonthDetails.paymentDate = currentMonthTransaction.paymentDate;
+            rentData.currentStatus = currentMonthDetails.status;
+            
+            console.log('📊 Current Month Transaction Found:', {
+                month: currentMonthTransaction.paymentMonth,
+                status: currentMonthDetails.status,
+                amount: currentMonthDetails.amount,
+                mode: currentMonthDetails.paymentMode,
+                ref: currentMonthDetails.upiRef
+            });
+        } else {
+            console.log('📊 No transaction found for current month:', currentMonthStr);
+        }
 
         // Calculate next due date based on actual rent due date
         const nextDueDate = calculateNextRentDue(rentData.rentDueDate);
 
-        // Update current month rent summary
+        // Update current month rent summary with transaction details
         document.getElementById('currentMonth').textContent = rentData.currentMonth;
-        document.getElementById('monthlyRentAmount').textContent = `₹${formatNumber(rentData.monthlyRent)}`;
+        document.getElementById('monthlyRentAmount').textContent = `₹${formatNumber(currentMonthDetails.amount)}`;
         document.getElementById('nextDueDate').textContent = nextDueDate;
         document.getElementById('lateFeePolicy').textContent = rentData.lateFeePolicy;
-        document.getElementById('paymentMode').textContent = rentData.paymentMode;
+        
+        // Update payment mode - show actual mode if payment exists
+        const paymentModeText = currentMonthDetails.upiRef 
+            ? `${currentMonthDetails.paymentMode} (Ref: ${currentMonthDetails.upiRef})` 
+            : currentMonthDetails.paymentMode;
+        document.getElementById('paymentMode').textContent = paymentModeText;
+        
         document.getElementById('depositInfo').textContent = `₹${formatNumber(rentData.securityDeposit)} (${capitalizeFirst(rentData.depositStatus)})`;
         
-        // Update status badge
+        // Update status badge with more context
         const statusBadge = document.getElementById('currentMonthStatus');
-        statusBadge.className = `payment-status-badge ${rentData.currentStatus}`;
-        statusBadge.textContent = getStatusIcon(rentData.currentStatus) + ' ' + capitalizeFirst(rentData.currentStatus);
-
-        // Load payment history (still mock until payment API is ready)
-        await loadPaymentHistory(rentData.monthlyRent);
+        statusBadge.className = `payment-status-badge ${currentMonthDetails.status}`;
         
-        // Load analytics (still mock until payment API is ready)
-        await loadRentAnalytics(rentData.monthlyRent);
+        let statusText = capitalizeFirst(currentMonthDetails.status);
+        if (currentMonthDetails.paymentDate && currentMonthDetails.status === 'verified') {
+            const paidDate = new Date(currentMonthDetails.paymentDate);
+            statusText += ` (Paid: ${paidDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})`;
+        } else if (currentMonthDetails.status === 'pending') {
+            statusText += ' (Awaiting Verification)';
+        }
+        
+        statusBadge.textContent = getStatusIcon(currentMonthDetails.status) + ' ' + statusText;
+
+        // Load payment history with real transactions
+        await loadPaymentHistory(rentData.monthlyRent, transactions);
+        
+        // Load analytics with real transactions
+        await loadRentAnalytics(rentData.monthlyRent, transactions);
 
         console.log('Rent payments loaded with real data:', {
             rentAmount: rentData.monthlyRent,
             dueDate: rentData.rentDueDate,
             securityDeposit: rentData.securityDeposit,
-            nextDueDate: nextDueDate
+            nextDueDate: nextDueDate,
+            transactionCount: transactions.length
         });
 
     } catch (error) {
@@ -971,6 +1030,14 @@ async function loadRentPayments() {
         // NO FALLBACK - Force user to fix the API issue
         throw error;
     }
+}
+
+// Get current month and year (short format for API matching)
+function getCurrentMonthYearShort() {
+    const now = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[now.getMonth()]} ${now.getFullYear()}`;
 }
 
 // Get current month and year
@@ -988,83 +1055,154 @@ function getStatusIcon(status) {
         'pending': '🟡',
         'overdue': '🔴',
         'upcoming': '🔲',
+        'rejected': '❌',
         'canceled': '⚫'
     };
     return icons[status] || '🔲';
 }
 
 // Load payment history table
-async function loadPaymentHistory(rentAmount = 6000) {
+async function loadPaymentHistory(rentAmount = 6000, transactions = []) {
     try {
-        // Mock data - will be replaced with payment/transaction API call
-        const paymentHistory = [
-            {
-                month: 'Oct 2025',
-                amount: rentAmount,
-                mode: 'UPI',
-                refId: '32498ABC',
-                status: 'verified',
-                hasReceipt: true
-            },
-            {
-                month: 'Nov 2025',
-                amount: rentAmount,
-                mode: 'UPI',
-                refId: null,
-                status: 'pending',
-                hasReceipt: false
-            },
-            {
-                month: 'Dec 2025',
-                amount: rentAmount,
-                mode: null,
-                refId: null,
-                status: 'upcoming',
-                hasReceipt: false
-            }
-        ];
-
         const tableBody = document.getElementById('paymentHistoryTableBody');
         tableBody.innerHTML = '';
 
-        paymentHistory.forEach(payment => {
+        // If no transactions, show "no data" message
+        if (transactions.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #999;">
+                        No payment history found
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Sort transactions by payment month (newest first)
+        transactions.sort((a, b) => {
+            const dateA = parseMonthYear(a.paymentMonth);
+            const dateB = parseMonthYear(b.paymentMonth);
+            return dateB - dateA;
+        });
+
+        transactions.forEach(transaction => {
             const row = document.createElement('tr');
+            // Handle both uppercase and lowercase status from backend (e.g., "VERIFIED" or "verified")
+            const status = (transaction.status || 'pending').toLowerCase();
+            
+            // Determine which buttons to show
+            const isPending = status === 'pending';
+            const hasProof = transaction.screenshotUrl;
+            const showDownloadButton = status === 'verified' || status === 'completed';
+            
             row.innerHTML = `
-                <td>${payment.month}</td>
-                <td>₹${formatNumber(payment.amount)}</td>
-                <td>${payment.mode || '–'}</td>
-                <td>${payment.refId || '–'}</td>
-                <td><span class="payment-status-badge ${payment.status}">${getStatusIcon(payment.status)} ${capitalizeFirst(payment.status)}</span></td>
-                <td>${payment.hasReceipt ? '<button class="table-action-btn download" onclick="downloadReceipt(\'' + payment.month + '\')">Download</button>' : '-'}</td>
-                <td>${payment.status === 'pending' ? '<button class="table-action-btn upload" onclick="handleUploadProof(\'' + payment.month + '\')">Upload Proof</button>' : '-'}</td>
+                <td>${transaction.paymentMonth}</td>
+                <td>₹${formatNumber(transaction.amount)}</td>
+                <td>${transaction.paymentMode || '–'}</td>
+                <td>${transaction.upiRef || '–'}</td>
+                <td><span class="payment-status-badge ${status}">${getStatusIcon(status)} ${capitalizeFirst(status)}</span></td>
+                <td>${showDownloadButton ? '<button class="table-action-btn download" onclick="downloadReceipt(\'' + transaction.paymentMonth + '\')">📄 Download</button>' : '–'}</td>
+                <td>
+                    ${isPending && hasProof ? 
+                        '<button class="table-action-btn remind" onclick="remindOwnerForPayment(\'' + transaction.paymentMonth + '\', ' + transaction.id + ')">🔔 Remind</button> ' +
+                        '<button class="table-action-btn withdraw" onclick="withdrawPaymentRequest(' + transaction.id + ', \'' + transaction.paymentMonth + '\')">�️ Withdraw</button>' : 
+                        isPending && !hasProof ? '<button class="table-action-btn upload" onclick="handleUploadProof(\'' + transaction.paymentMonth + '\')">� Upload</button>' : 
+                        '–'}
+                </td>
             `;
             tableBody.appendChild(row);
         });
 
     } catch (error) {
         console.error('Error loading payment history:', error);
+        const tableBody = document.getElementById('paymentHistoryTableBody');
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #f44336;">
+                    Failed to load payment history
+                </td>
+            </tr>
+        `;
     }
 }
 
+// Parse month year string to Date for sorting
+function parseMonthYear(monthYearStr) {
+    const months = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+    const parts = monthYearStr.split(' ');
+    if (parts.length === 2) {
+        const month = months[parts[0]];
+        const year = parseInt(parts[1]);
+        if (month !== undefined && !isNaN(year)) {
+            return new Date(year, month, 1);
+        }
+    }
+    return new Date();
+}
+
 // Load rent analytics
-async function loadRentAnalytics(rentAmount = 6000) {
+async function loadRentAnalytics(rentAmount = 6000, transactions = []) {
     try {
-        // Mock data - will be replaced with payment/transaction API call
-        // Calculate analytics based on real rent amount
-        const monthsStayed = 6; // This will come from payment history API
-        const totalRentPaid = rentAmount * (monthsStayed - 1); // Assuming last month is current/pending
+        // Calculate analytics based on real transaction data
+        let totalRentPaid = 0;
+        let onTimePayments = 0;
+        let totalPayments = 0;
+        let lateFeesPaid = 0;
+        let currentStreak = 0;
+        
+        if (transactions.length > 0) {
+            // Calculate total rent paid (only verified/completed payments)
+            // Handle both uppercase and lowercase status values
+            const verifiedTransactions = transactions.filter(t => {
+                const status = (t.status || '').toLowerCase();
+                return status === 'verified' || status === 'completed';
+            });
+            totalRentPaid = verifiedTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            
+            // Count total expected payments (verified + pending)
+            totalPayments = transactions.filter(t => {
+                const status = (t.status || '').toLowerCase();
+                return status !== 'canceled' && status !== 'upcoming';
+            }).length;
+            
+            // Count on-time payments (verified without late fees)
+            onTimePayments = verifiedTransactions.length;
+            
+            // TODO: Late fees calculation when that field is added to Transaction model
+            lateFeesPaid = 0;
+            
+            // Calculate payment streak (consecutive on-time payments)
+            const sortedTransactions = [...transactions].sort((a, b) => {
+                const dateA = parseMonthYear(a.paymentMonth);
+                const dateB = parseMonthYear(b.paymentMonth);
+                return dateB - dateA; // Newest first
+            });
+            
+            for (const transaction of sortedTransactions) {
+                const status = (transaction.status || '').toLowerCase();
+                if (status === 'verified' || status === 'completed') {
+                    currentStreak++;
+                } else {
+                    break;
+                }
+            }
+        }
         
         const analytics = {
             totalRentPaid: totalRentPaid,
-            onTimePayments: { completed: 5, total: 6 },
-            lateFeesPaid: 200,
-            paymentStreak: 4
+            onTimePayments: { completed: onTimePayments, total: Math.max(totalPayments, 1) },
+            lateFeesPaid: lateFeesPaid,
+            paymentStreak: currentStreak
         };
 
         document.getElementById('totalRentPaid').textContent = `₹${formatNumber(analytics.totalRentPaid)}`;
         document.getElementById('onTimePayments').textContent = `${analytics.onTimePayments.completed} / ${analytics.onTimePayments.total}`;
         document.getElementById('lateFeesPaid').textContent = `₹${formatNumber(analytics.lateFeesPaid)}`;
-        document.getElementById('paymentStreak').textContent = `🔥 ${analytics.paymentStreak} Months`;
+        document.getElementById('paymentStreak').textContent = currentStreak > 0 ? `🔥 ${analytics.paymentStreak} Months` : '0 Months';
 
     } catch (error) {
         console.error('Error loading rent analytics:', error);
@@ -1168,38 +1306,85 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const formData = new FormData(form);
-            const month = form.dataset.month || getCurrentMonthYear();
-            
-            try {
-                // Show loading state
-                const submitBtn = form.querySelector('.payment-modal-btn.submit');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = '⏳ Uploading...';
-                submitBtn.disabled = true;
 
-                // Mock API call - replace with actual implementation
-                await new Promise(resolve => setTimeout(resolve, 2000));
+            const month = form.dataset.month || getCurrentMonthYear();
+            const submitBtn = form.querySelector('.payment-modal-btn.submit');
+            const originalText = submitBtn ? submitBtn.textContent : 'Submit';
+
+            try {
+                if (submitBtn) {
+                    submitBtn.textContent = '⏳ Uploading...';
+                    submitBtn.disabled = true;
+                }
+
+                // Build FormData for file upload
+                const fd = new FormData();
+
+                // Ensure file is present (input id may vary)
+                const fileInput = document.getElementById('paymentProofFile') || form.querySelector('input[type="file"]');
+                const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+                if (!file) {
+                    throw new Error('Please select a proof file to upload');
+                }
+
+                // Attach file for multipart upload
+                fd.append('file', file);
+
+                // Add contextual fields
+                const paidAmountInput = form.querySelector('#paidAmount');
+                const amount = paidAmountInput ? (parseFloat(paidAmountInput.value) || 0) : 0;
+
+                console.log('📤 Uploading payment proof file:', {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    fileType: file.type
+                });
+
+                // Upload file first to get file URL
+                const uploadResp = await apiService.uploadPaymentProof(fd);
+                const fileUrl = uploadResp?.fileUrl || uploadResp?.url || uploadResp?.data?.fileUrl;
+
+                if (!fileUrl) {
+                    throw new Error('File upload succeeded but no URL returned');
+                }
+
+                console.log('✅ File uploaded successfully:', fileUrl);
+
+                // Build payment payload matching PaymentRequestDto on backend
+                // paymentMode must be one of: UPI, BANK_TRANSFER, GATEWAY, CASH (enum on backend)
+                const paymentPayload = {
+                    amount: amount,
+                    paymentMonth: month,
+                    paymentMode: form.querySelector('#paymentModeSelect')?.value || 'UPI',
+                    upiRef: form.querySelector('#upiRefId')?.value || null,
+                    screenshotUrl: fileUrl
+                };
+
+                console.log('📤 Submitting payment payload:', {
+                    amount: paymentPayload.amount,
+                    paymentMonth: paymentPayload.paymentMonth,
+                    paymentMode: paymentPayload.paymentMode,
+                    upiRef: paymentPayload.upiRef,
+                    screenshotUrl: paymentPayload.screenshotUrl
+                });
+
+                await apiService.submitPayment(paymentPayload);
 
                 // Success
-                showSuccess('Payment proof uploaded successfully! Your payment is now pending verification.');
+                showSuccess('Payment submitted successfully! Your payment is now pending verification.');
                 closePaymentModal();
                 
-                // Refresh payment history
-                await loadPaymentHistory();
-
-                // Reset button
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
+                // Reload the complete rent payments section to refresh all data including payment history
+                await loadRentPaymentsData();
 
             } catch (error) {
                 console.error('Error uploading payment proof:', error);
-                showError('Failed to upload payment proof. Please try again.');
-                
-                // Reset button
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
+                showError(error.message || 'Failed to upload payment proof. Please try again.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
             }
         });
     }
@@ -1218,13 +1403,396 @@ function copyToClipboard(elementId) {
     });
 }
 
-// Download receipt
-function downloadReceipt(month) {
-    // Mock download - replace with actual implementation
-    alert(`🧾 Downloading receipt for ${month}\n\nThis will download the official rent receipt PDF.`);
+// Download receipt - Generate PDF receipt for verified payments
+async function downloadReceipt(month) {
+    try {
+        // Find the transaction for this month
+        const transactions = await apiService.getTenantPayments();
+        const transaction = transactions.find(t => t.paymentMonth === month);
+        
+        if (!transaction) {
+            showError('Transaction not found for ' + month);
+            return;
+        }
+
+        // Only generate receipt for verified payments
+        const status = (transaction.status || '').toLowerCase();
+        if (status !== 'verified' && status !== 'completed') {
+            showError('Receipt can only be generated for verified payments');
+            return;
+        }
+
+        // Get property and user details
+        const propertyDetails = await apiService.getTenantPropertyDetails();
+        const currentUser = await apiService.getCurrentUser();
+
+        // Generate the receipt
+        await generateReceiptPDF(transaction, propertyDetails, currentUser);
+        
+        showSuccess(`Receipt for ${month} downloaded successfully!`);
+        
+    } catch (error) {
+        console.error('Error generating receipt:', error);
+        showError('Failed to generate receipt. Please try again.');
+    }
+}
+
+// Generate PDF receipt
+async function generateReceiptPDF(transaction, propertyDetails, tenantUser) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
     
-    // Real implementation would be:
-    // window.open(`/api/receipts/download?month=${encodeURIComponent(month)}`, '_blank');
+    // Receipt number format: FLT-YYYY-MMDD-TXN_ID
+    const now = new Date();
+    const receiptNumber = `FLT-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${transaction.id}`;
+    const issueDate = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    
+    // Colors
+    const primaryColor = [122, 122, 255]; // #7A7AFF
+    const darkColor = [13, 19, 33]; // #0D1321
+    const grayColor = [176, 183, 195]; // #B0B7C3
+    
+    let yPos = 20;
+    
+    // ===== HEADER SECTION =====
+    // Company name
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...primaryColor);
+    doc.text('FLATERY', 20, yPos);
+    
+    // Receipt title
+    yPos += 15;
+    doc.setFontSize(18);
+    doc.setTextColor(...darkColor);
+    doc.text('RENT PAYMENT RECEIPT', 105, yPos, { align: 'center' });
+    
+    // Receipt number and date
+    yPos += 10;
+    doc.setFontSize(10);
+    doc.setTextColor(...grayColor);
+    doc.text(`Receipt No: ${receiptNumber}`, 20, yPos);
+    doc.text(`Date of Issue: ${issueDate}`, 190, yPos, { align: 'right' });
+    
+    // Separator line
+    yPos += 5;
+    doc.setDrawColor(...primaryColor);
+    doc.setLineWidth(0.5);
+    doc.line(20, yPos, 190, yPos);
+    
+    // ===== OWNER & TENANT DETAILS =====
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...darkColor);
+    doc.text('Owner Details', 20, yPos);
+    doc.text('Tenant Details', 110, yPos);
+    
+    yPos += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...darkColor);
+    
+    // Owner details (left column)
+    doc.text(`Name: ${propertyDetails.ownerName || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Contact: ${propertyDetails.ownerPhone || 'N/A'}`, 20, yPos);
+    
+    // Tenant details (right column)
+    yPos -= 6;
+    doc.text(`Name: ${tenantUser.fullName || tenantUser.username}`, 110, yPos);
+    yPos += 6;
+    doc.text(`Contact: ${tenantUser.username}`, 110, yPos);
+    
+    // Property details
+    yPos += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Property Details', 20, yPos);
+    yPos += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Property: ${propertyDetails.propertyName || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Address: ${propertyDetails.address || ''}, ${propertyDetails.city || ''}, ${propertyDetails.state || ''}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Unit: ${transaction.unitNumber || propertyDetails.unitCode || 'N/A'}`, 20, yPos);
+    
+    // Separator line
+    yPos += 8;
+    doc.setDrawColor(...grayColor);
+    doc.setLineWidth(0.3);
+    doc.line(20, yPos, 190, yPos);
+    
+    // ===== PAYMENT DETAILS =====
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...primaryColor);
+    doc.text('PAYMENT DETAILS', 105, yPos, { align: 'center' });
+    
+    yPos += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...darkColor);
+    
+    // Payment table
+    const paymentDetails = [
+        ['Rent Period:', transaction.paymentMonth],
+        ['Rent Amount:', `₹${formatNumber(transaction.amount)}`],
+        ['Payment Date:', transaction.paymentDate ? new Date(transaction.paymentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'],
+        ['Payment Mode:', transaction.paymentMode || 'N/A'],
+        ['Transaction ID / Ref:', transaction.upiRef || 'N/A'],
+        ['Status:', capitalizeFirst((transaction.status || '').toLowerCase())],
+        ['Approval Date:', transaction.paymentDate ? new Date(transaction.paymentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A']
+    ];
+    
+    paymentDetails.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, 30, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value, 90, yPos);
+        yPos += 7;
+    });
+    
+    // Separator line
+    yPos += 3;
+    doc.setDrawColor(...grayColor);
+    doc.line(20, yPos, 190, yPos);
+    
+    // ===== SUMMARY SECTION =====
+    yPos += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Amount in Words:', 20, yPos);
+    yPos += 6;
+    doc.setFont('helvetica', 'normal');
+    const amountInWords = numberToWords(transaction.amount) + ' Rupees Only';
+    doc.text(amountInWords, 20, yPos);
+    
+    yPos += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.text("Owner's Remark:", 20, yPos);
+    yPos += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Payment received and verified.', 20, yPos);
+    
+    // ===== SIGNATURE & FOOTER =====
+    yPos += 20;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Owner Signature:', 20, yPos);
+    doc.text('Date:', 140, yPos);
+    
+    yPos += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text('______________________', 20, yPos);
+    doc.text('______________________', 140, yPos);
+    
+    yPos += 3;
+    doc.setFontSize(9);
+    doc.text(propertyDetails.ownerName || 'Property Owner', 20, yPos);
+    doc.text(issueDate, 140, yPos);
+    
+    // Footer
+    yPos = 270; // Near bottom of page
+    doc.setFontSize(8);
+    doc.setTextColor(...grayColor);
+    doc.text(`Generated automatically by Flatery on ${new Date().toLocaleString('en-IN')}`, 105, yPos, { align: 'center' });
+    
+    yPos += 5;
+    doc.setFontSize(7);
+    doc.text('This is a system-generated receipt and does not require a physical signature.', 105, yPos, { align: 'center' });
+    
+    // Add watermark
+    doc.setFontSize(50);
+    doc.setTextColor(200, 200, 200);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FLATERY', 105, 150, { align: 'center', angle: 45 });
+    
+    // Save the PDF
+    const fileName = `Flatery_Receipt_${transaction.paymentMonth.replace(' ', '_')}_${receiptNumber}.pdf`;
+    doc.save(fileName);
+}
+
+// Convert number to words (Indian numbering system)
+function numberToWords(num) {
+    if (!num || num === 0) return 'Zero';
+    
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    
+    function convertLessThanThousand(n) {
+        if (n === 0) return '';
+        if (n < 10) return ones[n];
+        if (n < 20) return teens[n - 10];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+        return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + convertLessThanThousand(n % 100) : '');
+    }
+    
+    if (num < 1000) return convertLessThanThousand(num);
+    if (num < 100000) {
+        const thousands = Math.floor(num / 1000);
+        const remainder = num % 1000;
+        return convertLessThanThousand(thousands) + ' Thousand' + (remainder ? ' ' + convertLessThanThousand(remainder) : '');
+    }
+    if (num < 10000000) {
+        const lakhs = Math.floor(num / 100000);
+        const remainder = num % 100000;
+        return convertLessThanThousand(lakhs) + ' Lakh' + (remainder ? ' ' + numberToWords(remainder) : '');
+    }
+    
+    const crores = Math.floor(num / 10000000);
+    const remainder = num % 10000000;
+    return convertLessThanThousand(crores) + ' Crore' + (remainder ? ' ' + numberToWords(remainder) : '');
+}
+
+// Remind owner for pending payment
+async function remindOwnerForPayment(paymentMonth, transactionId) {
+    try {
+        const ownerId = window.currentOwnerId;
+        const ownerName = window.currentOwnerName || 'Property Owner';
+        
+        if (!ownerId) {
+            showError('Unable to send reminder. Owner information not available.');
+            return;
+        }
+
+        // Get current user info
+        const currentUser = await apiService.getCurrentUser();
+        const tenantName = currentUser.fullName || currentUser.username;
+
+        // Create notification for owner
+        const notificationData = {
+            userId: ownerId,
+            senderId: currentUser.id,
+            type: 'PAYMENT_REMINDER',
+            title: '💰 Payment Reminder',
+            message: `${tenantName} has reminded you about their pending payment for ${paymentMonth}. Please verify their payment submission.`,
+            redirectUrl: '/owner/Owner.html#pending-payments'
+        };
+
+        console.log('Sending reminder notification:', notificationData);
+
+        // Show loading state
+        const reminderButtons = document.querySelectorAll('.table-action-btn.remind');
+        reminderButtons.forEach(btn => {
+            if (btn.textContent.includes(paymentMonth)) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Sending...';
+            }
+        });
+
+        // Send notification
+        await apiService.createNotification(notificationData);
+
+        // Show success message
+        showSuccess(`Reminder sent to ${ownerName} successfully!`);
+
+        // Update button text
+        reminderButtons.forEach(btn => {
+            if (btn.textContent.includes('Sending')) {
+                btn.textContent = '✅ Reminded';
+                btn.disabled = true;
+                btn.classList.add('reminded');
+                
+                // Re-enable after 30 seconds
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🔔 Remind Again';
+                    btn.classList.remove('reminded');
+                }, 30000);
+            }
+        });
+
+    } catch (error) {
+        console.error('Error sending reminder:', error);
+        showError('Failed to send reminder to owner. Please try again.');
+        
+        // Reset button state
+        const reminderButtons = document.querySelectorAll('.table-action-btn.remind');
+        reminderButtons.forEach(btn => {
+            if (btn.textContent.includes('Sending')) {
+                btn.disabled = false;
+                btn.textContent = '🔔 Remind Owner';
+            }
+        });
+    }
+}
+
+// Withdraw/cancel payment request
+async function withdrawPaymentRequest(transactionId, paymentMonth) {
+    // Confirm with user
+    const confirmed = confirm(
+        `Are you sure you want to withdraw your payment submission for ${paymentMonth}?\n\n` +
+        `This action will cancel your payment request and you will need to submit it again if needed.\n\n` +
+        `Reason to withdraw:\n` +
+        `• Made a mistake in the details\n` +
+        `• Wrong payment proof uploaded\n` +
+        `• Need to resubmit with correct information`
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        console.log('Withdrawing payment request:', { transactionId, paymentMonth });
+
+        // Show loading state - find the withdraw button
+        const withdrawButtons = document.querySelectorAll('.table-action-btn.withdraw');
+        let targetButton = null;
+        withdrawButtons.forEach(btn => {
+            if (btn.onclick && btn.onclick.toString().includes(transactionId)) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Canceling...';
+                targetButton = btn;
+            }
+        });
+
+        // Call API to withdraw
+    const response = await apiService.withdrawPaymentSubmission(transactionId);
+    console.log('Withdraw response:', response);
+
+        // Show success message
+        showSuccess(`Payment request for ${paymentMonth} has been withdrawn successfully!`);
+
+        // Reload the payment history to reflect changes
+        await loadRentPaymentsData();
+
+    } catch (error) {
+        console.error('Error withdrawing payment:', error);
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response,
+            stack: error.stack
+        });
+        
+        // Show detailed error message
+        let errorMessage = 'Failed to withdraw payment request. ';
+        
+        if (error.message) {
+            if (error.message.includes('already')) {
+                errorMessage = 'Cannot withdraw: Payment has already been processed by the owner.';
+            } else if (error.message.includes('not belong') || error.message.includes('Unauthorized')) {
+                errorMessage = 'Unauthorized: You can only withdraw your own payments.';
+            } else if (error.message.includes('not found')) {
+                errorMessage = 'Transaction not found.';
+            } else {
+                errorMessage += error.message;
+            }
+        } else {
+            errorMessage += 'Please try again or contact support if the issue persists.';
+        }
+        
+        showError(errorMessage);
+        
+        // Reset button state
+        const withdrawButtons = document.querySelectorAll('.table-action-btn.withdraw');
+        withdrawButtons.forEach(btn => {
+            if (btn.textContent.includes('Canceling')) {
+                btn.disabled = false;
+                btn.textContent = '🗑️ Withdraw';
+            }
+        });
+    }
 }
 
 // ============================================

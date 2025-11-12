@@ -53,11 +53,39 @@ public class TenantService {
             throw new IllegalArgumentException("You do not own this property");
         }
 
-    // Create tenant entity
-    Tenant tenant = new Tenant();
-    tenant.setTenantId(generateTenantId());
-    tenant.setOwnerId(ownerId);
-    tenant.setPropertyId(property.getId());
+    // Check if user already exists by phone or email
+    User existing = null;
+    if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
+        existing = userRepository.findByPhoneNumber(req.getPhoneNumber().trim()).orElse(null);
+    }
+    if (existing == null && req.getEmailAddress() != null && !req.getEmailAddress().isBlank()) {
+        existing = userRepository.findByEmail(req.getEmailAddress().trim()).orElse(null);
+    }
+
+    // Check if there's an existing tenant record for this user at this property
+    // If so, reactivate it instead of creating a duplicate
+    Tenant tenant = null;
+    Tenant existingTenant = null;
+    if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
+        existingTenant = tenantRepository.findByPhoneNumber(req.getPhoneNumber().trim()).orElse(null);
+        // Check if it's for the same property
+        if (existingTenant != null && !existingTenant.getPropertyId().equals(property.getId())) {
+            existingTenant = null; // Different property, treat as new tenant
+        }
+    }
+
+    // If existing tenant found, reactivate and update instead of creating new
+    if (existingTenant != null) {
+        tenant = existingTenant;
+    } else {
+        // Create new tenant entity
+        tenant = new Tenant();
+        tenant.setTenantId(generateTenantId());
+        tenant.setOwnerId(ownerId);
+        tenant.setPropertyId(property.getId());
+    }
+    
+    // Set or update tenant details
     tenant.setTenantName(req.getTenantName().trim());
     tenant.setPhoneNumber(req.getPhoneNumber());
     tenant.setEmailAddress(req.getEmailAddress());
@@ -68,6 +96,8 @@ public class TenantService {
     tenant.setLeaseStartDate(java.time.LocalDate.parse(req.getLeaseStartDate()));
     if (req.getLeaseEndDate() != null && !req.getLeaseEndDate().isBlank()) {
         tenant.setLeaseEndDate(java.time.LocalDate.parse(req.getLeaseEndDate()));
+    } else {
+        tenant.setLeaseEndDate(null); // Clear end date if reactivating
     }
     Tenant.TenantStatus status = parseStatusOrDefault(req.getStatus());
     tenant.setStatus(status);
@@ -121,19 +151,10 @@ public class TenantService {
         tenant.setFloorId(unit.getFloorId());
     }
 
-    // Check if user already exists by phone or email
-    User existing = null;
-    if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
-        existing = userRepository.findByPhoneNumber(req.getPhoneNumber().trim()).orElse(null);
-    }
-    if (existing == null && req.getEmailAddress() != null && !req.getEmailAddress().isBlank()) {
-        existing = userRepository.findByEmail(req.getEmailAddress().trim()).orElse(null);
-    }
-
     String username;
     String rawPassword = null;
     if (existing != null) {
-        // Link to existing user account: do not create temp password
+        // Link to existing user account: do not create temp password or change password
         tenant.setTemporaryPassword(null);
         tenant.setPasswordChanged(true);
         username = existing.getUsername();
@@ -403,6 +424,66 @@ public class TenantService {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return sb.toString();
+    }
+
+    /**
+     * Deactivate a tenant by external tenantId (TENxxxxx):
+     * - Validate ownership
+     * - Mark status VACATED
+     * - Set leaseEndDate to today (ensures not counted as active)
+     * - Clear bedIndex to free the bed
+     * - Recompute unit occupancy if assigned
+     * Returns updated TenantSummary
+     */
+    @Transactional
+    public TenantSummary deactivateTenant(Long ownerId, String externalTenantId) {
+        Tenant tenant = tenantRepository.findByTenantId(externalTenantId)
+                .orElseGet(() -> {
+                    try {
+                        Long internalId = Long.parseLong(externalTenantId);
+                        return tenantRepository.findById(internalId).orElse(null);
+                    } catch (NumberFormatException nfe) {
+                        return null;
+                    }
+                });
+        if (tenant == null) {
+            throw new IllegalArgumentException("Tenant not found");
+        }
+
+        if (!tenant.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("You do not have permission to modify this tenant");
+        }
+
+        // Update status and dates; set lease end date to today (ensures not active) and clear bed assignment
+        tenant.setStatus(Tenant.TenantStatus.VACATED);
+        tenant.setLeaseEndDate(java.time.LocalDate.now()); // even if already set, override to today to guarantee vacancy
+        tenant.setBedIndex(null); // free the bed explicitly
+
+        tenantRepository.save(tenant);
+
+        // Update unit occupancy if applicable
+        if (tenant.getUnitId() != null) {
+            unitService.recomputeUnitStatus(tenant.getUnitId());
+        }
+
+        return new TenantSummary(
+                tenant.getId(),
+                tenant.getTenantId(),
+                tenant.getTenantName(),
+                tenant.getStatus().name(),
+                tenant.getRentAmount(),
+                tenant.getSecurityDeposit(),
+                tenant.getRentDueDate(),
+                tenant.getPropertyId(),
+                tenant.getPhoneNumber(),
+                tenant.getFloorId(),
+                tenant.getUnitId(),
+                tenant.getBedIndex(),
+                tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null,
+                tenant.getEmailAddress(),
+                tenant.getFlatRoomNumber(),
+                null, null, null, null
+        );
     }
 
     // ...existing code...

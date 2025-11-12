@@ -350,6 +350,16 @@ class ApiService {
         }
     }
 
+    async deactivateTenant(tenantId) {
+        try {
+            return await this.makeRequest(`/tenants/${tenantId}/deactivate`, {
+                method: 'POST'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
     // User lookup for owners adding tenants
     async findUser({ username, email, phone }) {
         try {
@@ -472,6 +482,122 @@ class ApiService {
         return this.makeRequest('/tenants/me/complaints', {
             method: 'POST',
             body: JSON.stringify(complaintData)
+        });
+    }
+
+    // ========================================
+    // NOTIFICATION API METHODS
+    // ========================================
+
+    // Get all notifications for current user
+    async getAllNotifications() {
+        return this.makeRequest('/notifications', {
+            method: 'GET'
+        });
+    }
+
+    // Get unread notifications
+    async getUnreadNotifications() {
+        return this.makeRequest('/notifications/unread', {
+            method: 'GET'
+        });
+    }
+
+    // Get unread notification count
+    async getUnreadNotificationCount() {
+        return this.makeRequest('/notifications/count', {
+            method: 'GET'
+        });
+    }
+
+    // Mark a notification as read
+    async markNotificationAsRead(notificationId) {
+        return this.makeRequest(`/notifications/${notificationId}/read`, {
+            method: 'PUT'
+        });
+    }
+
+    // Mark all notifications as read
+    async markAllNotificationsAsRead() {
+        return this.makeRequest('/notifications/read-all', {
+            method: 'PUT'
+        });
+    }
+
+    // Delete a notification
+    async deleteNotification(notificationId) {
+        return this.makeRequest(`/notifications/${notificationId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Clear all read notifications
+    async clearReadNotifications() {
+        return this.makeRequest('/notifications/clear-read', {
+            method: 'DELETE'
+        });
+    }
+
+    // Create a notification (admin/system use)
+    async createNotification(notificationData) {
+        return this.makeRequest('/notifications', {
+            method: 'POST',
+            body: JSON.stringify(notificationData)
+        });
+    }
+
+    // ========================================
+    // PAYMENT/TRANSACTION API METHODS
+    // ========================================
+
+    // Get pending payment submissions for owner
+    async getOwnerPendingPayments() {
+        return this.makeRequest('/transactions/owner/pending', {
+            method: 'GET'
+        });
+    }
+
+    // Get all payment submissions for owner (any status)
+    async getOwnerAllPayments() {
+        return this.makeRequest('/transactions/owner/all', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's payment history
+    async getTenantPayments() {
+        return this.makeRequest('/transactions/tenant/my-payments', {
+            method: 'GET'
+        });
+    }
+
+    // Submit payment (tenant)
+    async submitPayment(paymentData) {
+        return this.makeRequest('/transactions', {
+            method: 'POST',
+            body: JSON.stringify(paymentData)
+        });
+    }
+
+    // Verify/Approve payment submission (owner)
+    async verifyPaymentSubmission(transactionId) {
+        return this.makeRequest(`/transactions/${transactionId}/verify`, {
+            method: 'POST'
+        });
+    }
+
+    // Reject payment submission (owner)
+    async rejectPaymentSubmission(transactionId, rejectionReason) {
+        return this.makeRequest(`/transactions/${transactionId}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason: rejectionReason })
+        });
+    }
+
+    // Withdraw/cancel payment submission (tenant)
+    async withdrawPaymentSubmission(transactionId) {
+        return this.makeRequest(`/transactions/${transactionId}/withdraw`, {
+            method: 'POST'
         });
     }
 }

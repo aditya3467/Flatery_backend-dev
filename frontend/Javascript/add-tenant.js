@@ -65,7 +65,7 @@ async function loadOwnerProperties() {
       option.value = p.id;
       const name = p.name || (p.type ? p.type : 'Property');
       const loc = p.location || p.city || '';
-      option.textContent = `${name} - ${loc}`;
+  option.textContent = `${name} - ${loc}`;
       select.appendChild(option);
     });
 
@@ -75,9 +75,9 @@ async function loadOwnerProperties() {
     if (urlPropId) {
       const match = properties.find(p => String(p.id) === String(urlPropId));
       if (match) {
-        select.value = String(match.id);
-        // Trigger units load for PG properties
-        await loadPropertyUnits(match.id);
+  select.value = String(match.id);
+  // Trigger units load for PG properties
+  await loadPropertyUnits(match.id);
       }
     } else if (properties.length === 1) {
       // If only one property, preselect it for convenience

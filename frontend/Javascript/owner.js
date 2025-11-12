@@ -214,7 +214,7 @@
     card.addEventListener('click', () => {
         const type = (property.type || '').toString().toUpperCase();
         if (type === 'PG') {
-          window.location.href = `property-config.html?id=${property.id}`;
+          window.location.href = `owner/property-config.html?id=${property.id}`;
         } else {
           window.location.href = `property-details.html?id=${property.id}`;
         }
@@ -273,7 +273,7 @@
   }
 
   function handleEdit(property) {
-    window.location.href = `edit-property.html?id=${property.id}`;
+  window.location.href = `owner/edit-property.html?id=${property.id}`;
   }
 
   function safeNotify(message, type) {

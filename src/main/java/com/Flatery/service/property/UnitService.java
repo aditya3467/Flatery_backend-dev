@@ -120,12 +120,12 @@ public class UnitService {
         Unit unit = unitRepository.findById(unitId)
                 .orElseThrow(() -> new IllegalArgumentException("Unit not found"));
 
-    // Count active tenancies: status ACTIVE AND (lease end date null or in future)
-    java.time.LocalDate today = java.time.LocalDate.now();
-    long activeCount = tenantRepository.findByUnitId(unitId).stream()
-        .filter(t -> t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE)
-        .filter(t -> t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(today))
-        .count();
+        // Count active tenancies: status ACTIVE AND (lease end date null or strictly after today)
+        java.time.LocalDate today = java.time.LocalDate.now();
+        long activeCount = tenantRepository.findByUnitId(unitId).stream()
+                .filter(t -> t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE)
+                .filter(t -> t.getLeaseEndDate() == null || t.getLeaseEndDate().isAfter(today))
+                .count();
 
         Integer capacity = unit.getCapacity() == null ? 1 : unit.getCapacity();
         if (activeCount == 0) {
@@ -153,10 +153,10 @@ public class UnitService {
         List<Unit> units = unitRepository.findByPropertyId(propertyId);
         java.time.LocalDate today = java.time.LocalDate.now();
         for (Unit u : units) {
-        long activeCount = tenantRepository.findByUnitId(u.getId()).stream()
-            .filter(t -> t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE)
-            .filter(t -> t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(today))
-            .count();
+            long activeCount = tenantRepository.findByUnitId(u.getId()).stream()
+                    .filter(t -> t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE)
+                    .filter(t -> t.getLeaseEndDate() == null || t.getLeaseEndDate().isAfter(today))
+                    .count();
             int capacity = u.getCapacity() == null ? 1 : u.getCapacity();
             if (activeCount == 0) {
                 u.setStatus(UnitStatus.AVAILABLE);
@@ -172,41 +172,42 @@ public class UnitService {
 
     @Transactional(readOnly = true)
     public UnitOccupancyResponse getUnitOccupancy(Long unitId, Long actorUserId) {
-    Unit unit = unitRepository.findById(unitId)
-        .orElseThrow(() -> new IllegalArgumentException("Unit not found"));
+        Unit unit = unitRepository.findById(unitId)
+                .orElseThrow(() -> new IllegalArgumentException("Unit not found"));
 
-    // Verify property ownership
-    Property property = propertyRepository.findById(unit.getPropertyId())
-        .orElseThrow(() -> new IllegalArgumentException("Property not found"));
-    if (!property.getOwnerId().equals(actorUserId)) {
-        throw new SecurityException("Not authorized to view this unit");
-    }
+        // Verify property ownership
+        Property property = propertyRepository.findById(unit.getPropertyId())
+                .orElseThrow(() -> new IllegalArgumentException("Property not found"));
+        if (!property.getOwnerId().equals(actorUserId)) {
+            throw new SecurityException("Not authorized to view this unit");
+        }
 
-    var tenants = tenantRepository.findByUnitId(unitId);
-    java.time.LocalDate today = java.time.LocalDate.now();
-    long activeCount = tenants.stream()
-        .filter(t -> t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(today))
-        .count();
+        var tenants = tenantRepository.findByUnitId(unitId);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        long activeCount = tenants.stream()
+                .filter(t -> t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE)
+                .filter(t -> t.getLeaseEndDate() == null || t.getLeaseEndDate().isAfter(today))
+                .count();
 
-    List<UnitOccupancyResponse.TenantBedInfo> list = tenants.stream()
-        .map(t -> new UnitOccupancyResponse.TenantBedInfo(
-            t.getId(),
-            t.getTenantId(),
-            t.getTenantName(),
-            t.getBedIndex(),
-            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
-            t.getLeaseEndDate() != null ? t.getLeaseEndDate().toString() : null,
-            (t.getLeaseEndDate() == null || !t.getLeaseEndDate().isBefore(today))
-        ))
-        .toList();
+        List<UnitOccupancyResponse.TenantBedInfo> list = tenants.stream()
+                .map(t -> new UnitOccupancyResponse.TenantBedInfo(
+                        t.getId(),
+                        t.getTenantId(),
+                        t.getTenantName(),
+                        t.getBedIndex(),
+                        t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+                        t.getLeaseEndDate() != null ? t.getLeaseEndDate().toString() : null,
+                        t.getStatus() == com.Flatery.model.tenant.Tenant.TenantStatus.ACTIVE && (t.getLeaseEndDate() == null || t.getLeaseEndDate().isAfter(today))
+                ))
+                .toList();
 
-    return new UnitOccupancyResponse(
-        unitId,
-        unit.getCapacity() == null ? 1 : unit.getCapacity(),
-        activeCount,
-        tenants.size(),
-        list
-    );
+        return new UnitOccupancyResponse(
+                unitId,
+                unit.getCapacity() == null ? 1 : unit.getCapacity(),
+                activeCount,
+                tenants.size(),
+                list
+        );
     }
 
     @Transactional
