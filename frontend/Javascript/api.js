@@ -83,6 +83,31 @@ class ApiService {
         }
     }
 
+    // Generic HTTP methods
+    async get(endpoint, options = {}) {
+        return await this.makeRequest(endpoint, { ...options, method: 'GET' });
+    }
+
+    async post(endpoint, data, options = {}) {
+        return await this.makeRequest(endpoint, {
+            ...options,
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async put(endpoint, data, options = {}) {
+        return await this.makeRequest(endpoint, {
+            ...options,
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async delete(endpoint, options = {}) {
+        return await this.makeRequest(endpoint, { ...options, method: 'DELETE' });
+    }
+
     // Authentication API methods
     async login(credentials) {
         try {
@@ -156,10 +181,19 @@ class ApiService {
 
     async getMyProperties(all = false, page = 0, size = 10) {
         try {
-            const params = new URLSearchParams({ all: all.toString(), page: page.toString(), size: size.toString() });
+            const params = new URLSearchParams({ all: all.toString(), page: page.toString(), size: page.toString() });
             return await this.makeRequest(`/admin/properties?${params}`);
         } catch (error) {
             throw new Error('Failed to fetch my properties: ' + error.message);
+        }
+    }
+
+    async getFlatProperties(page = 0, size = 10) {
+        try {
+            const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
+            return await this.makeRequest(`/admin/properties/flats?${params}`);
+        } catch (error) {
+            throw new Error('Failed to fetch flat properties: ' + error.message);
         }
     }
 
@@ -347,6 +381,14 @@ class ApiService {
             return await this.makeRequest('/tenants');
         } catch (error) {
             throw new Error('Failed to fetch tenants: ' + error.message);
+        }
+    }
+
+    async getFlatTenants() {
+        try {
+            return await this.makeRequest('/tenants/flats');
+        } catch (error) {
+            throw new Error('Failed to fetch flat tenants: ' + error.message);
         }
     }
 

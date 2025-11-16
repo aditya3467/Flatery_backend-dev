@@ -27,4 +27,5 @@ public class TenantSummary {
     private String ownerPhone;
     private String propertyName;
     private String propertyCity;
+    private Boolean primary;
 }

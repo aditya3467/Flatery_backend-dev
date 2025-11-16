@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flatery - Flat Dashboard</title>
+    <!--===== Font Awesome =====-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!--===== Lucide Icons =====-->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!--===== Chart.js =====-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!--===== Main CSS =====-->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/owner/flat-dashboard.css">
+    <!--===== Scripts =====-->
+    <script src="../Javascript/api.js"></script>
+    <script src="../Javascript/component-loader.js" defer></script>
+    <script src="../Javascript/notifications.js" defer></script>
+    <script src="../Javascript/main.js" defer></script>
+    <script src="../Javascript/owner/flat-dashboard.js" defer></script>
+</head>
+
+<body>
+    <!--===== Navbar Component =====-->
+    <div id="navbar-container" data-component="../components/navbar.html"></div>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mobile-logo">
+            <h2>Flatery Owner</h2>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <!-- Main Layout Container -->
+    <div class="dashboard-layout">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar">
+            <!-- Logo Header -->
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h2>Flatery</h2>
+                        <span>Owner Panel</span>
+                    </div>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <!-- Main Navigation -->
+            <div class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active" data-section="dashboard">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-section="properties">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <span class="nav-text">My Properties</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-section="tenants">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <span class="nav-text">Tenants</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-section="payments">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <span class="nav-text">Payments</span>
+                            <span class="nav-badge" id="paymentsBadge">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-section="maintenance">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-wrench"></i>
+                            </div>
+                            <span class="nav-text">Maintenance</span>
+                            <span class="nav-badge" id="maintenanceBadge">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-section="reports">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <span class="nav-text">Reports</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-section="notifications">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <span class="nav-text">Notifications</span>
+                            <span class="nav-badge" id="notificationsBadge">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" data-section="settings">
+                        <a href="#" class="nav-link">
+                            <div class="nav-icon">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <span class="nav-text">Settings</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Quick Tools Section -->
+                <div class="quick-tools">
+                    <h4 class="quick-tools-title">Quick Tools</h4>
+                    <div class="quick-tool-item" id="remindAllTenants">
+                        <i class="fas fa-bell"></i>
+                        <span>Remind All Tenants</span>
+                    </div>
+                    <div class="quick-tool-item" id="generateReport">
+                        <i class="fas fa-file-download"></i>
+                        <span>Generate Report</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar profile section removed as requested -->
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb" id="breadcrumb">
+                <span class="breadcrumb-item active">Dashboard</span>
+            </div>
+
+            <!-- Content Container -->
+            <div class="content-container" id="contentContainer">
+                
+                <!-- Dashboard Content -->
+                <div class="content-section active" id="dashboardContent">
+                    <div class="section-header">
+                        <h1>Flat Dashboard</h1>
+                        <p>This Dashboard is the home screen of your Owner Panel. Get a quick understanding of your flat properties.</p>
+                    </div>
+
+                    <!-- KPI Cards (3x2 Grid) -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="totalFlatsCount">0</div>
+                                <div class="kpi-label">Total Flats</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon occupied">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="occupiedFlatsCount">0</div>
+                                <div class="kpi-label">Occupied Flats</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon vacant">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="vacantFlatsCount">0</div>
+                                <div class="kpi-label">Vacant Flats</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon due">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="paymentsDueCount">0</div>
+                                <div class="kpi-label">Payments Due</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon pending">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="pendingApprovalsCount">0</div>
+                                <div class="kpi-label">Pending Approvals</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon collected">
+                                <i class="fas fa-rupee-sign"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <div class="kpi-value" id="collectedRentAmount">₹0</div>
+                                <div class="kpi-label">This Month's Collected</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts and Widgets Row -->
+                    <div class="dashboard-row">
+                        <!-- Rent Collection Chart -->
+                        <div class="dashboard-widget chart-widget">
+                            <div class="widget-header">
+                                <h3>Rent Collection (Last 6 Months)</h3>
+                            </div>
+                            <div class="widget-content">
+                                <canvas id="rentCollectionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Payment Status Donut Chart -->
+                        <div class="dashboard-widget donut-widget">
+                            <div class="widget-header">
+                                <h3>Payment Status Overview</h3>
+                            </div>
+                            <div class="widget-content">
+                                <canvas id="paymentStatusChart"></canvas>
+                                <div class="donut-legend">
+                                    <div class="legend-item">
+                                        <span class="legend-color approved"></span>
+                                        <span class="legend-text">Approved: <span id="approvedCount">0</span></span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color pending"></span>
+                                        <span class="legend-text">Pending: <span id="pendingCount">0</span></span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color due"></span>
+                                        <span class="legend-text">Due: <span id="dueCount">0</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Flats and Activities Row -->
+                    <div class="dashboard-row">
+                        <!-- Recent Flats Overview -->
+                        <div class="dashboard-widget table-widget">
+                            <div class="widget-header">
+                                <h3>Recent Flats Overview</h3>
+                            </div>
+                            <div class="widget-content">
+                                <div class="recent-flats-table">
+                                    <div class="table-header">
+                                        <div class="table-col">Flat Name</div>
+                                        <div class="table-col">Tenant</div>
+                                        <div class="table-col">Status</div>
+                                        <div class="table-col">Last Activity</div>
+                                    </div>
+                                    <div class="table-body" id="recentFlatsTableBody">
+                                        <!-- Will be populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activities Feed -->
+                        <div class="dashboard-widget activities-widget">
+                            <div class="widget-header">
+                                <h3>Recent Activities</h3>
+                            </div>
+                            <div class="widget-content">
+                                <div class="activities-feed" id="activitiesFeed">
+                                    <!-- Will be populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts and Insights Row -->
+                    <div class="dashboard-row">
+                        <!-- Alerts / Important Notifications -->
+                        <div class="dashboard-widget alerts-widget">
+                            <div class="widget-header">
+                                <h3>Important Alerts</h3>
+                            </div>
+                            <div class="widget-content">
+                                <div class="alerts-list" id="alertsList">
+                                    <!-- Will be populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Smart Insights -->
+                        <div class="dashboard-widget insights-widget">
+                            <div class="widget-header">
+                                <h3>Smart Insights</h3>
+                            </div>
+                            <div class="widget-content">
+                                <div class="insights-list" id="insightsList">
+                                    <!-- Will be populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="dashboard-section">
+                        <div class="widget-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="quick-actions-grid">
+                            <button class="quick-action-btn" id="remindAllTenantsBtn">
+                                <i class="fas fa-bell"></i>
+                                <span>Remind All Pending Tenants</span>
+                            </button>
+                            <button class="quick-action-btn" id="generateReportBtn">
+                                <i class="fas fa-file-download"></i>
+                                <span>Generate Monthly Report</span>
+                            </button>
+                            <button class="quick-action-btn" id="addTenantBtn">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add Tenant</span>
+                            </button>
+                            <button class="quick-action-btn" id="viewAllPaymentsBtn">
+                                <i class="fas fa-credit-card"></i>
+                                <span>View All Payments</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Properties Content -->
+                <div class="content-section" id="propertiesContent">
+                    <div class="section-header">
+                        <h1>My Flat Properties</h1>
+                        <div class="section-actions">
+                            <button class="btn btn-primary" id="addPropertyBtn">
+                                <i class="fas fa-plus"></i>
+                                Add Property
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Properties Stats Summary -->
+                    <div class="properties-summary">
+                        <div class="summary-card">
+                            <div class="summary-icon occupied">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="summary-content">
+                                <div class="summary-value" id="summaryOccupied">0</div>
+                                <div class="summary-label">Occupied Flats</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon vacant">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <div class="summary-content">
+                                <div class="summary-value" id="summaryVacant">0</div>
+                                <div class="summary-label">Vacant Flats</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon pending">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="summary-content">
+                                <div class="summary-value" id="summaryPending">0</div>
+                                <div class="summary-label">Pending Payments</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-icon rent">
+                                <i class="fas fa-rupee-sign"></i>
+                            </div>
+                            <div class="summary-content">
+                                <div class="summary-value" id="summaryRent">₹0</div>
+                                <div class="summary-label">Monthly Rent</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters & Search -->
+                    <div class="properties-filters">
+                        <div class="filter-row">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" placeholder="Search by flat name, tenant name..." id="propertySearch">
+                            </div>
+                            <div class="filter-controls">
+                                <select id="occupancyFilter" class="filter-select">
+                                    <option value="">All Flats</option>
+                                    <option value="occupied">Occupied</option>
+                                    <option value="vacant">Vacant</option>
+                                </select>
+                                <select id="paymentStatusFilter" class="filter-select">
+                                    <option value="">All Payment Status</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="due">Due</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                                <select id="cityFilter" class="filter-select">
+                                    <option value="">All Cities</option>
+                                    <!-- Will be populated by JS -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Properties Table -->
+                    <div class="properties-table-container">
+                        <div class="properties-table" id="propertiesTable">
+                            <!-- Table Header -->
+                            <div class="table-header">
+                                <div class="header-col flat-col">Flat</div>
+                                <div class="header-col tenant-col">Primary Tenant</div>
+                                <div class="header-col others-col">Other Tenants</div>
+                                <div class="header-col rent-col">Rent</div>
+                                <div class="header-col status-col">Payment Status</div>
+                                <div class="header-col paid-col">Last Paid</div>
+                                <div class="header-col actions-col">Actions</div>
+                            </div>
+                            
+                            <!-- Table Body -->
+                            <div class="table-body" id="propertiesTableBody">
+                                <!-- Will be populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div class="empty-state" id="propertiesEmptyState" style="display: none;">
+                            <div class="empty-icon">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="empty-text">
+                                <h3>No properties found</h3>
+                                <p>Add your first flat property to get started</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="flatDashboard.navigateToSection('add-property')">
+                                <i class="fas fa-plus"></i>
+                                Add Property
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-container" id="propertiesPagination">
+                        <!-- Will be populated by JS if needed -->
+                    </div>
+                </div>
+
+                <!-- Tenants Content -->
+                <div class="content-section" id="tenantsContent">
+                    <div class="section-header">
+                        <h1>Tenants</h1>
+                        <div class="section-actions">
+                            <button class="btn btn-primary" id="addTenantBtn">
+                                <i class="fas fa-user-plus"></i>
+                                Add Tenant
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tenant Filters -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <input type="text" placeholder="Search tenants..." id="tenantSearch">
+                            <select id="tenantPropertyFilter">
+                                <option value="">All Properties</option>
+                                <!-- Will be populated by JS -->
+                            </select>
+                            <select id="tenantStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tenants Table -->
+                    <div class="data-table-container">
+                        <table class="data-table" id="tenantsTable">
+                            <thead>
+                                <tr>
+                                    <th>Tenant</th>
+                                    <th>Property</th>
+                                    <th>Unit</th>
+                                    <th>Rent</th>
+                                    <th>Join Date</th>
+                                    <th>Payment Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tenantsTableBody">
+                                <!-- Will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Payments Content -->
+                <div class="content-section" id="paymentsContent">
+                    <div class="section-header">
+                        <h1>Payment Management</h1>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary" id="exportPaymentsBtn">
+                                <i class="fas fa-download"></i>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payment Filters -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <select id="paymentStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                            <input type="month" id="paymentMonthFilter">
+                            <select id="paymentPropertyFilter">
+                                <option value="">All Properties</option>
+                                <!-- Will be populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Payments Table -->
+                    <div class="data-table-container">
+                        <table class="data-table" id="paymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Tenant</th>
+                                    <th>Property</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentsTableBody">
+                                <!-- Will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Other content sections (maintenance, reports, notifications, settings) will be similar structures -->
+                <!-- For brevity, showing placeholder structure -->
+                <div class="content-section" id="maintenanceContent">
+                    <div class="section-header">
+                        <h1>Maintenance Requests</h1>
+                    </div>
+                    <p>Maintenance requests content will go here...</p>
+                </div>
+
+                <div class="content-section" id="reportsContent">
+                    <div class="section-header">
+                        <h1>Reports & Analytics</h1>
+                    </div>
+                    <p>Reports content will go here...</p>
+                </div>
+
+                <div class="content-section" id="notificationsContent">
+                    <div class="section-header">
+                        <h1>Notifications</h1>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary" id="markAllReadBtn">
+                                <i class="fas fa-check-double"></i>
+                                Mark All Read
+                            </button>
+                            <button class="btn btn-primary" id="refreshNotificationsBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notification Filters -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <select id="notificationTypeFilter">
+                                <option value="">All Types</option>
+                                <option value="payment">Payment</option>
+                                <option value="maintenance">Maintenance</option>
+                                <option value="system">System</option>
+                            </select>
+                            <select id="notificationStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="unread">Unread</option>
+                                <option value="read">Read</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Container -->
+                    <div class="notifications-container" id="notificationsList">
+                        <!-- Will be populated by notifications.js -->
+                        <div class="notification-placeholder" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                            <i class="fas fa-bell" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <div>Loading notifications...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="settingsContent">
+                    <div class="section-header">
+                        <h1>Settings</h1>
+                    </div>
+                    <p>Settings content will go here...</p>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Right Drawer -->
+        <div class="right-drawer" id="rightDrawer">
+            <div class="drawer-header">
+                <h3 id="drawerTitle">Details</h3>
+                <button class="drawer-close" id="drawerClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="drawer-content" id="drawerContent">
+                <!-- Dynamic content will be populated here -->
+            </div>
+        </div>
+
+        <!-- Right Drawer Overlay -->
+        <div class="right-drawer-overlay" id="rightDrawerOverlay"></div>
+    </div>
+
+
+</body>
+
+</html>

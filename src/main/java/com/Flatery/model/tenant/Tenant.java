@@ -90,6 +90,10 @@ public class Tenant {
     @Column(name = "bed_index")
     private Integer bedIndex;
 
+    // Primary tenant indicator (1 = primary, 0 = secondary)
+    @Column(name = "`primary`", nullable = false)
+    private boolean primary = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

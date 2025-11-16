@@ -1,6 +1,7 @@
 package com.Flatery.Controller.tenant;
 
 import com.Flatery.dto.tenant.AddTenantRequest;
+import com.Flatery.dto.tenant.AddMultipleTenantsRequest;
 import com.Flatery.dto.tenant.TenantResponse;
 import com.Flatery.dto.tenant.TenantSummary;
 import com.Flatery.dto.tenant.TenantPropertyDetails;
@@ -40,10 +41,31 @@ public class TenantController {
         }
     }
 
+    @PostMapping("/multiple")
+    public ResponseEntity<?> addMultipleTenants(@Valid @RequestBody AddMultipleTenantsRequest request,
+                                                Authentication authentication) {
+        try {
+            request.validatePrimaryTenant();
+            Long ownerId = getAuthenticatedUserId(authentication);
+            List<TenantResponse> responses = tenantService.addMultipleTenants(ownerId, request.getTenants());
+            return ResponseEntity.status(HttpStatus.CREATED).body(responses);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to add tenants"));
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<TenantSummary>> getOwnerTenants(Authentication authentication) {
         Long ownerId = getAuthenticatedUserId(authentication);
         return ResponseEntity.ok(tenantService.getOwnerTenants(ownerId));
+    }
+
+    @GetMapping("/flats")
+    public ResponseEntity<List<TenantSummary>> getOwnerFlatTenants(Authentication authentication) {
+        Long ownerId = getAuthenticatedUserId(authentication);
+        return ResponseEntity.ok(tenantService.getOwnerFlatTenants(ownerId));
     }
 
     @GetMapping("/me")

@@ -75,6 +75,12 @@ public class PropertyService {
         return page.map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())));
     }
 
+    @Transactional(readOnly = true)
+    public Page<PropertySummary> listFlatPropertiesForOwner(Long actorUserId, Pageable pageable) {
+        Page<Property> page = propertyRepository.findByOwnerIdAndType(actorUserId, PropertyType.FLAT, pageable);
+        return page.map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())));
+    }
+
     /**
      * Returns total active security deposits for an owner (all ongoing tenancies).
      */

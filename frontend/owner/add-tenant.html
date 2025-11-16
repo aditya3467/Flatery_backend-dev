@@ -32,12 +32,116 @@
         <div id="alertMessage" class="alert" style="display:none;"></div>
 
         <form id="addTenantForm" onsubmit="handleSubmit(event)">
-      <div class="form-group">
-        <label style="display:flex; align-items:center; gap:8px;">
-          <input type="checkbox" id="existingToggle" onchange="onExistingToggleChange(this.checked)"> Tenant already registered?
-        </label>
-        <small style="color:#666;">If the tenant already has an account, look them up by phone or email to autofill details. We'll not create a temporary password.</small>
-      </div>
+          <!-- Property selection should be first -->
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>Property</label>
+              <select id="propertyId" name="propertyId" required onchange="onPropertyChanged(this.value)">
+                <option value="">Select property</option>
+              </select>
+            </div>
+            <div class="form-group" id="flatRoomGroup" style="flex:1;">
+              <label>Flat / Room Number</label>
+              <input type="text" name="flatRoomNumber" placeholder="e.g., A-302" />
+            </div>
+          </div>
+
+          <!-- MULTI TENANT (FLAT) SECTION -->
+          <div id="multiTenantSection" style="display:none;">
+            <div class="tenant-count-section" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+              <h3 style="margin: 0 0 1rem 0; color: #333;">How many tenants are you adding?</h3>
+              <div class="form-group">
+                <label>Number of Tenants</label>
+                <select id="tenantCount" onchange="onTenantCountChange(this.value)" style="max-width: 200px;">
+                  <option value="1">1 Tenant (Single)</option>
+                  <option value="2">2 Tenants</option>
+                  <option value="3">3 Tenants</option>
+                  <option value="4">4 Tenants</option>
+                  <option value="5">5 Tenants</option>
+                </select>
+                <small style="display: block; margin-top: 0.5rem; color: #666;">
+                  For multiple tenants, you'll designate one as the primary tenant responsible for payments.
+                </small>
+              </div>
+            </div>
+
+            <!-- Shared Financial Details -->
+            <div class="shared-details-section" style="background: #fef3c7; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #fbbf24;">
+              <h3 style="margin: 0 0 1rem 0; color: #333;">Shared Details (applies to all tenants)</h3>
+              <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                  <label>Rent Amount *</label>
+                  <input type="number" name="sharedRentAmount" min="0" required placeholder="e.g., 12000" />
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label>Security Deposit *</label>
+                  <input type="number" name="sharedSecurityDeposit" min="0" required placeholder="e.g., 24000" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                  <label>Rent Due Date *</label>
+                  <select name="sharedRentDueDate" required>
+                    <option value="1" selected>1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19">19</option>
+                    <option value="20">20</option>
+                    <option value="21">21</option>
+                    <option value="22">22</option>
+                    <option value="23">23</option>
+                    <option value="24">24</option>
+                    <option value="25">25</option>
+                    <option value="26">26</option>
+                    <option value="27">27</option>
+                    <option value="28">28</option>
+                    <option value="29">29</option>
+                    <option value="30">30</option>
+                    <option value="31">31</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label>Lease Start Date *</label>
+                  <input type="date" name="sharedLeaseStartDate" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Lease End Date</label>
+                <input type="date" name="sharedLeaseEndDate" placeholder="Leave blank for indefinite" />
+                <small>Leave blank for open-ended lease</small>
+              </div>
+            </div>
+
+            <div id="tenantForms"></div>
+            
+            <!-- Submit button for FLAT properties -->
+            <button type="button" class="btn-1" id="flatSubmitBtn" onclick="handleSubmit(event)" style="display: block !important; visibility: visible !important; margin-top: 24px;">Create Tenant(s)</button>
+          </div>
+
+          <!-- SINGLE TENANT (PG) SECTION: original form blocks -->
+          <div id="singleTenantSection" style="display:none;">
+          <div class="existing-tenant-section">
+            <div class="form-group">
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="existingToggle" onchange="onExistingToggleChange(this.checked)"> Tenant already registered?
+              </label>
+              <small style="color:#666;">If the tenant already has an account, look them up by phone or email to autofill details. We'll not create a temporary password.</small>
+            </div>
 
   <div id="existingLookup" class="lookup-box" style="display:none;">
         <div class="form-row">
@@ -76,18 +180,7 @@
         </div>
       </div>
 
-        <div class="form-row">
-        <div class="form-group" style="flex:1;">
-          <label>Property</label>
-          <select id="propertyId" name="propertyId" required onchange="loadPropertyUnits(this.value)">
-            <option value="">Select property</option>
-          </select>
-        </div>
-        <div class="form-group" id="flatRoomGroup" style="flex:1;">
-          <label>Flat / Room Number</label>
-          <input type="text" name="flatRoomNumber" placeholder="e.g., A-302" />
-        </div>
-      </div>
+      <!-- Property row moved to top of form -->
 
       <!-- PG Unit assignment section (visible only for PG properties) -->
       <div id="pgUnitSection" style="display:none; margin-top:12px; border:1px dashed #e5e7eb; padding:12px; border-radius:8px;">
@@ -165,9 +258,14 @@
           </div>
         </div>
       </div>
+      
+      <!-- Submit button for PG properties -->
+      <button type="button" class="btn-1" id="pgSubmitBtn" onclick="handleSubmit(event)" style="display: block !important; visibility: visible !important; margin-top: 24px;">Create Tenant</button>
+      </div><!-- end singleTenantSection -->
 
-      <button type="submit" class="btn-1">Create Tenant</button>
-    </form>
+          <!-- Fallback submit button (hidden by default) -->
+          <button type="button" class="btn-1" id="defaultSubmitBtn" onclick="handleSubmit(event)" style="display: none;">Create Tenant</button>
+        </form>
 
     <div id="loadingIndicator" class="loading" style="display:none;">Creating tenant...</div>
 

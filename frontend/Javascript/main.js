@@ -549,7 +549,7 @@ function updateUIForLoggedInUser() {
       dropdownUsername.textContent = `${firstName}`;
       console.log('Dropdown username set to:', firstName);
     } else {
-      console.error('dropdownUsername element not found');
+      console.log('dropdownUsername element not found (this is expected in some pages)');
     }
     // Setup profile dropdown handlers after showing the profile section
     setTimeout(() => {

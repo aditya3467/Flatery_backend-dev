@@ -21,6 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Locale;
@@ -101,6 +104,20 @@ public class TenantService {
     }
     Tenant.TenantStatus status = parseStatusOrDefault(req.getStatus());
     tenant.setStatus(status);
+    
+    // Set primary tenant indicator
+    tenant.setPrimary(req.getPrimary() != null ? req.getPrimary() : false);
+    
+    // If this tenant is marked as primary, ensure no other tenant for this property is primary
+    if (tenant.isPrimary()) {
+        List<Tenant> existingPrimaryTenants = tenantRepository.findByPropertyIdAndPrimary(property.getId(), true);
+        for (Tenant existingPrimary : existingPrimaryTenants) {
+            if (!existingPrimary.getId().equals(tenant.getId())) {
+                existingPrimary.setPrimary(false);
+                tenantRepository.save(existingPrimary);
+            }
+        }
+    }
 
     // Optional: Assign to PG unit
     if (req.getUnitId() != null) {
@@ -200,6 +217,36 @@ public class TenantService {
         return response;
     }
 
+    @Transactional
+    public List<TenantResponse> addMultipleTenants(Long ownerId, List<AddTenantRequest> requests) {
+        // Validate that exactly one tenant is marked as primary
+        long primaryCount = requests.stream()
+                .mapToLong(req -> Boolean.TRUE.equals(req.getPrimary()) ? 1 : 0)
+                .sum();
+        
+        if (primaryCount != 1) {
+            throw new IllegalArgumentException("Exactly one tenant must be marked as primary");
+        }
+        
+        // Validate that all tenants belong to the same property
+        Long propertyId = requests.get(0).getPropertyId();
+        boolean allSameProperty = requests.stream()
+                .allMatch(req -> req.getPropertyId().equals(propertyId));
+        
+        if (!allSameProperty) {
+            throw new IllegalArgumentException("All tenants must belong to the same property");
+        }
+        
+        // Add each tenant
+        List<TenantResponse> responses = new ArrayList<>();
+        for (AddTenantRequest request : requests) {
+            TenantResponse response = addTenant(ownerId, request);
+            responses.add(response);
+        }
+        
+        return responses;
+    }
+
     @Transactional(readOnly = true)
     public List<TenantSummary> getOwnerTenants(Long ownerId) {
         return tenantRepository.findByOwnerId(ownerId).stream()
@@ -210,7 +257,33 @@ public class TenantService {
             t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
             t.getEmailAddress(),
             t.getFlatRoomNumber(),
-            null, null, null, null  // ownerName, ownerPhone, propertyName, propertyCity not needed
+            null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
+            t.isPrimary()  // primary field
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TenantSummary> getOwnerFlatTenants(Long ownerId) {
+        return tenantRepository.findByOwnerId(ownerId).stream()
+                .filter(t -> {
+                    // Filter tenants who belong to FLAT properties only
+                    if (t.getPropertyId() != null) {
+                        return propertyRepository.findById(t.getPropertyId())
+                                .map(p -> p.getType() == com.Flatery.model.property.enums.PropertyType.FLAT)
+                                .orElse(false);
+                    }
+                    return false;
+                })
+                .map(t -> new TenantSummary(
+            t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
+            t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
+            t.getFloorId(), t.getUnitId(), t.getBedIndex(),
+            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+            t.getEmailAddress(),
+            t.getFlatRoomNumber(),
+            null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
+            t.isPrimary()  // primary field
                 ))
                 .collect(Collectors.toList());
     }
@@ -225,7 +298,8 @@ public class TenantService {
             t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
             t.getEmailAddress(),
             t.getFlatRoomNumber(),
-            null, null, null, null  // ownerName, ownerPhone, propertyName, propertyCity not needed
+            null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
+            t.isPrimary()
         ))
         .collect(Collectors.toList());
     }
@@ -292,7 +366,8 @@ public class TenantService {
                 ownerName,
                 ownerPhone,
                 propertyName,
-                propertyCity
+        propertyCity,
+        tenant.isPrimary()
         );
     }
 
@@ -482,7 +557,8 @@ public class TenantService {
                 tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null,
                 tenant.getEmailAddress(),
                 tenant.getFlatRoomNumber(),
-                null, null, null, null
+        null, null, null, null,
+        tenant.isPrimary()
         );
     }
 

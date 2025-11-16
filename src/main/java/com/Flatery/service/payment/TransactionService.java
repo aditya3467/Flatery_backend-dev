@@ -210,6 +210,9 @@ public class TransactionService {
         
         System.out.println("Transaction updated to VERIFIED status");
         
+        // Handle multi-tenant payment status update
+        handleMultiTenantPaymentUpdate(updated);
+        
         // Send notification to tenant about payment approval
         try {
             System.out.println("Attempting to create notification...");
@@ -427,5 +430,96 @@ public class TransactionService {
         .status(statusForDto)
                 .paymentDate(tx.getPaymentDate() != null ? tx.getPaymentDate().toString() : null)
                 .build();
+    }
+    
+    /**
+     * Handle multi-tenant payment update logic.
+     * When a primary tenant's payment is verified, all other tenants for the same property
+     * should get auto-generated VERIFIED transactions for the same payment month.
+     */
+    @Transactional
+    private void handleMultiTenantPaymentUpdate(Transaction verifiedTransaction) {
+        try {
+            // Find the tenant who made this payment
+            Optional<Tenant> payingTenantOpt = tenantRepository.findById(verifiedTransaction.getTenantId());
+            if (!payingTenantOpt.isPresent()) {
+                System.out.println("Could not find tenant for transaction, skipping multi-tenant update");
+                return;
+            }
+            
+            Tenant payingTenant = payingTenantOpt.get();
+            
+            System.out.println("Payment verified, updating other tenants for property: " + verifiedTransaction.getPropertyId());
+            
+            // Find all other tenants for the same property (excluding the paying tenant)
+        List<Tenant> otherTenants = tenantRepository.findByPropertyId(verifiedTransaction.getPropertyId())
+            .stream()
+            .filter(t -> !t.getId().equals(verifiedTransaction.getTenantId()) && 
+                   t.getStatus() == Tenant.TenantStatus.ACTIVE)
+            .collect(Collectors.toList());
+            
+            System.out.println("Found " + otherTenants.size() + " other tenants to update");
+            
+            // For each other tenant, create a VERIFIED transaction if one doesn't already exist
+            for (Tenant otherTenant : otherTenants) {
+                // Check if transaction already exists for this tenant and payment month
+                boolean transactionExists = repository.existsByTenantIdAndPaymentMonth(
+                    otherTenant.getId(), 
+                    verifiedTransaction.getPaymentMonth()
+                );
+                
+                if (!transactionExists) {
+                    // Create auto-generated VERIFIED transaction for the other tenant
+                    Transaction autoTransaction = Transaction.builder()
+                            .tenantId(otherTenant.getId())
+                            .ownerId(verifiedTransaction.getOwnerId())
+                            .propertyId(verifiedTransaction.getPropertyId())
+                            .amount((double) otherTenant.getRentAmount()) // Use tenant's rent amount
+                            .paymentMode(PaymentMode.CASH) // Default to CASH for auto-generated
+                            .upiRef("AUTO-GENERATED-FROM-PRIMARY")
+                            .screenshotUrl(null)
+                            .paymentMonth(verifiedTransaction.getPaymentMonth())
+                            .status(PaymentStatus.VERIFIED)
+                            .paymentDate(verifiedTransaction.getPaymentDate())
+                            .createdBy("system-auto-primary-payment")
+                            .updatedBy("system-auto-primary-payment")
+                            .build();
+                    
+                    Transaction saved = repository.save(autoTransaction);
+                    
+                    System.out.println("Auto-generated VERIFIED transaction for tenant: " + otherTenant.getTenantName() + 
+                                     " (ID: " + saved.getId() + ")");
+                    
+                    // Send notification to the other tenant
+                    try {
+                        Long tenantUserId = resolveUserIdFromTenantId(otherTenant.getId());
+                        if (tenantUserId != null) {
+                            String title = "Payment Status Updated ✅";
+                            String message = String.format("Your payment for %s has been marked as paid (handled by primary tenant).", 
+                                verifiedTransaction.getPaymentMonth());
+                            
+                            notificationService.createNotification(
+                                tenantUserId,
+                                verifiedTransaction.getOwnerId(),
+                                "PaymentStatusUpdate",
+                                title,
+                                message,
+                                "/tenant-dashboard.html"
+                            );
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Failed to send notification to tenant " + otherTenant.getId() + ": " + e.getMessage());
+                    }
+                } else {
+                    System.out.println("Transaction already exists for tenant: " + otherTenant.getTenantName() + 
+                                     " for month: " + verifiedTransaction.getPaymentMonth());
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error in multi-tenant payment update: " + e.getMessage());
+            e.printStackTrace();
+            // Don't fail the main transaction, just log the error
+        }
     }
 }
