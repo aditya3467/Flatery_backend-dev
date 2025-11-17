@@ -331,25 +331,36 @@ async function handleSubmit(e) {
 }
 
 async function handleSingleTenantSubmit(fd) {
+  // For FLAT properties, use shared fields; for PG properties, use individual fields
+  const isFlat = currentPropertyType === 'FLAT';
+  
+  console.log('[Single Tenant] Property type:', currentPropertyType, 'isFlat:', isFlat);
+  console.log('[Single Tenant] Form data entries:');
+  for (let [key, value] of fd.entries()) {
+    console.log(`  ${key}: ${value}`);
+  }
+  
   const data = {
     tenantName: (fd.get('tenantName_0') || '').trim(),
     phoneNumber: (fd.get('phoneNumber_0') || '').trim(),
     emailAddress: (fd.get('emailAddress_0') || '').trim() || null,
     propertyId: parseInt(document.getElementById('propertyId').value),
-    flatRoomNumber: (fd.get('flatRoomNumber_0') || '').trim(),
+    flatRoomNumber: (fd.get('flatRoomNumber_0') || fd.get('flatRoomNumber') || '').trim(),
     unitId: fd.get('unitId_0') ? parseInt(fd.get('unitId_0')) : null,
     bedIndex: fd.get('bedIndex_0') ? parseInt(fd.get('bedIndex_0')) : null,
-    rentAmount: parseInt(fd.get('rentAmount_0')),
-    securityDeposit: parseInt(fd.get('securityDeposit_0')),
-    rentDueDate: parseInt(fd.get('rentDueDate_0')),
-    leaseStartDate: fd.get('leaseStartDate_0'),
-    leaseEndDate: fd.get('leaseEndDate_0') || null,
+    rentAmount: isFlat ? parseInt(fd.get('sharedRentAmount')) : parseInt(fd.get('rentAmount_0')),
+    securityDeposit: isFlat ? parseInt(fd.get('sharedSecurityDeposit')) : parseInt(fd.get('securityDeposit_0')),
+    rentDueDate: isFlat ? parseInt(fd.get('sharedRentDueDate')) : parseInt(fd.get('rentDueDate_0')),
+    leaseStartDate: isFlat ? fd.get('sharedLeaseStartDate') : fd.get('leaseStartDate_0'),
+    leaseEndDate: isFlat ? (fd.get('sharedLeaseEndDate') || null) : (fd.get('leaseEndDate_0') || null),
     temporaryPassword: (fd.get('temporaryPassword_0') || '').trim() || null,
     status: 'ACTIVE',
     primary: true // Single tenant is always primary
   };
 
   if (!validateTenantData(data, 0)) return;
+
+  console.log('[Single Tenant] Validation passed, data:', data);
 
   try {
     console.log('[Add Tenant] Calling API with data:', data);
@@ -365,6 +376,12 @@ async function handleSingleTenantSubmit(fd) {
     currentTenantCount = 1;
   } catch (error) {
     console.error('[Add Tenant] Error:', error);
+    console.error('[Add Tenant] Error details:', {
+      message: error.message,
+      status: error.status,
+      statusText: error.statusText,
+      response: error.response
+    });
     showAlert('error', error.message || 'Failed to add tenant');
   }
 }
@@ -438,28 +455,54 @@ async function handleMultipleTenantSubmit(fd) {
     toggleSections(currentPropertyType);
   } catch (error) {
     console.error('[Add Multiple Tenants] Error:', error);
+    console.error('[Add Multiple Tenants] Error details:', {
+      message: error.message,
+      status: error.status,
+      statusText: error.statusText,
+      response: error.response
+    });
     showAlert('error', error.message || 'Failed to add tenants');
   }
 }
 
 function validateTenantData(data, index) {
+  console.log(`[Validation] Tenant ${index + 1} data:`, data);
+  
   if (!data.tenantName || !data.propertyId || isNaN(data.rentAmount) || isNaN(data.securityDeposit)) {
+    console.log(`[Validation] Failed basic validation - tenantName: '${data.tenantName}', propertyId: ${data.propertyId}, rentAmount: ${data.rentAmount}, securityDeposit: ${data.securityDeposit}`);
     showAlert('error', `Tenant ${index + 1}: Please fill all required fields (name, property, rent, deposit).`);
     return false;
   }
   
   if (!data.flatRoomNumber && !data.unitId) {
-    showAlert('error', `Tenant ${index + 1}: Please provide either a Flat/Room Number or assign a PG Unit.`);
-    return false;
+    // For FLAT properties, flatRoomNumber is optional if it's provided at the top level
+    if (currentPropertyType === 'FLAT') {
+      // Check if there's a top-level flatRoomNumber
+      const topLevelFlatRoom = document.querySelector('input[name="flatRoomNumber"]')?.value?.trim();
+      if (topLevelFlatRoom) {
+        console.log(`[Validation] Using top-level flat room number: '${topLevelFlatRoom}'`);
+        data.flatRoomNumber = topLevelFlatRoom; // Update the data object
+      } else {
+        console.log(`[Validation] Failed room/unit validation - flatRoomNumber: '${data.flatRoomNumber}', unitId: ${data.unitId}`);
+        showAlert('error', `Tenant ${index + 1}: Please provide a Flat/Room Number.`);
+        return false;
+      }
+    } else {
+      console.log(`[Validation] Failed room/unit validation - flatRoomNumber: '${data.flatRoomNumber}', unitId: ${data.unitId}`);
+      showAlert('error', `Tenant ${index + 1}: Please provide either a Flat/Room Number or assign a PG Unit.`);
+      return false;
+    }
   }
   
   
   if (!data.rentDueDate || data.rentDueDate < 1 || data.rentDueDate > 31) {
+    console.log(`[Validation] Failed rent due date validation - rentDueDate: ${data.rentDueDate}`);
     showAlert('error', `Tenant ${index + 1}: Please pick a valid rent due date`);
     return false;
   }
   
   if (!data.leaseStartDate) {
+    console.log(`[Validation] Failed lease start date validation - leaseStartDate: '${data.leaseStartDate}'`);
     showAlert('error', `Tenant ${index + 1}: Please select lease start date`);
     return false;
   }

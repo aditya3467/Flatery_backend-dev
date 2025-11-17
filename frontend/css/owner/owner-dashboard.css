@@ -769,19 +769,24 @@ body {
 .right-drawer {
     position: fixed;
     top: var(--navbar-height);
-    right: -400px;
+    right: -450px; /* Increased from -400px to account for box-shadow */
     width: var(--drawer-width);
     height: calc(100vh - var(--navbar-height));
     background: var(--card-bg);
     box-shadow: var(--shadow-xl);
-    transition: right 0.3s ease;
+    transition: right 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
     z-index: 1001;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box; /* Ensure padding/borders are included in width */
+    visibility: hidden; /* Hide completely when not active */
+    opacity: 0; /* Additional hiding */
 }
 
 .right-drawer.active {
     right: 0;
+    visibility: visible; /* Show when active */
+    opacity: 1; /* Full opacity when active */
 }
 
 .drawer-header {

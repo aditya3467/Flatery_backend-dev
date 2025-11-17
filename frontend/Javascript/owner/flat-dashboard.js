@@ -28,6 +28,58 @@ class FlatDashboard {
         this.init();
     }
 
+    // ===== GLOBAL UTILITY FUNCTIONS =====
+    /**
+     * Generate formatted flat name: BHK Type + "BHK" + "in" + Locality + (Flat_room_number)
+     * @param {Object} property - Property object
+     * @param {Object} tenant - Optional tenant object for flat room number
+     * @returns {String} - Formatted flat name
+     */
+    generateFlatName(property, tenant = null) {
+        if (!property) return 'Unknown Property';
+        
+        try {
+            // Convert BhkType enum to number (ONE -> 1, TWO -> 2, etc.)
+            let bhkNumber = 'Unknown';
+            if (property.bhkType) {
+                switch (property.bhkType.toUpperCase()) {
+                    case 'ONE': bhkNumber = '1'; break;
+                    case 'TWO': bhkNumber = '2'; break;
+                    case 'THREE': bhkNumber = '3'; break;
+                    case 'FOUR': bhkNumber = '4'; break;
+                    case 'FOUR_PLUS': bhkNumber = '4+'; break;
+                    default: 
+                        // If it's already a number or formatted, extract it
+                        bhkNumber = property.bhkType.toString().replace(/\s*BHK.*$/i, '').replace('_PLUS', '+').trim();
+                }
+            }
+            
+            // Extract locality from property location
+            const locality = property.location || property.city || property.address || 'Unknown Area';
+            
+            // Extract flat room number - prioritize tenant's flatRoomNumber, then property fields
+            let flatRoomNumber = 'Unknown';
+            if (tenant && tenant.flatRoomNumber) {
+                flatRoomNumber = tenant.flatRoomNumber;
+            } else if (property.flatRoomNumber || property.flat_room_number) {
+                flatRoomNumber = property.flatRoomNumber || property.flat_room_number;
+            } else {
+                // Fallback to other property identifiers
+                flatRoomNumber = property.flatNo || 
+                               property.flatNumber || 
+                               property.unitNumber || 
+                               property.number ||
+                               property.id || 'Unknown';
+            }
+            
+            // Format the flat name: bhkNumber + "BHK" + "in" + locality + (flatRoomNumber)
+            return `${bhkNumber} BHK in ${locality} (${flatRoomNumber})`;
+        } catch (error) {
+            console.warn('[FlatDashboard] Error generating flat name for property:', property.id, error);
+            return `Property ${property.id || 'Unknown'}`;
+        }
+    }
+
     async init() {
         console.log('[FlatDashboard] Initializing dashboard...');
         
@@ -43,6 +95,9 @@ class FlatDashboard {
         this.setupRightDrawer();
         this.setupTooltips();
         
+        // Ensure right drawer is closed initially
+        this.ensureDrawerClosed();
+        
         // Load initial data
         await this.loadOwnerData();
         await this.loadDashboardData();
@@ -51,6 +106,9 @@ class FlatDashboard {
         this.initializeNotifications();
         
         console.log('[FlatDashboard] Dashboard initialized successfully');
+        
+        // Expose dashboard instance globally for debugging
+        window.flatDashboard = this;
     }
 
     checkAuth() {
@@ -376,6 +434,14 @@ class FlatDashboard {
             drawerTitle.textContent = title;
             drawerContent.innerHTML = content;
             
+            // Clear any inline styles that might interfere
+            drawer.style.right = '';
+            drawer.style.visibility = '';
+            drawer.style.opacity = '';
+            overlay.style.opacity = '';
+            overlay.style.pointerEvents = '';
+            
+            // Add active classes to trigger CSS transitions
             drawer.classList.add('active');
             overlay.classList.add('active');
             this.rightDrawerOpen = true;
@@ -397,6 +463,101 @@ class FlatDashboard {
             // Enable body scroll
             document.body.style.overflow = 'auto';
         }
+    }
+    
+    ensureDrawerClosed() {
+        // Ensure right drawer is completely closed on initialization
+        console.log('[FlatDashboard] Ensuring right drawer is closed...');
+        const drawer = document.getElementById('rightDrawer');
+        const overlay = document.getElementById('rightDrawerOverlay');
+
+        if (drawer) {
+            // Remove any active classes
+            drawer.classList.remove('active');
+            // Force CSS properties to ensure it's hidden
+            drawer.style.right = '-450px';
+            drawer.style.visibility = 'hidden';
+            drawer.style.opacity = '0';
+        }
+
+        if (overlay) {
+            // Remove any active classes
+            overlay.classList.remove('active');
+            // Force overlay to be hidden
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+        }
+
+        // Set internal state
+        this.rightDrawerOpen = false;
+        
+        // Double check with a small delay to handle any race conditions
+        setTimeout(() => {
+            if (drawer) {
+                drawer.classList.remove('active');
+                // Only set inline styles if still not properly closed
+                if (drawer.classList.contains('active') || window.getComputedStyle(drawer).right !== '-450px') {
+                    drawer.style.right = '-450px';
+                    drawer.style.visibility = 'hidden';
+                    drawer.style.opacity = '0';
+                }
+            }
+            if (overlay && overlay.classList.contains('active')) {
+                overlay.classList.remove('active');
+            }
+        }, 100);
+    }
+    
+    // Debug helper methods
+    async debugRefreshTenants() {
+        console.log('[FlatDashboard] DEBUG: Refreshing tenant data...');
+        try {
+            const tenantsResponse = await apiService.getFlatTenants();
+            this.tenantsData = tenantsResponse || [];
+            console.log('[FlatDashboard] DEBUG: Loaded', this.tenantsData.length, 'tenants');
+            await this.loadTenantsSection();
+            console.log('[FlatDashboard] DEBUG: Tenant section refreshed');
+        } catch (error) {
+            console.error('[FlatDashboard] DEBUG: Error refreshing tenants:', error);
+        }
+    }
+    
+    async debugRefreshProperties() {
+        console.log('[FlatDashboard] DEBUG: Refreshing properties data...');
+        try {
+            const flatPropertiesResponse = await apiService.getFlatProperties(0, 100);
+            this.propertiesData = (flatPropertiesResponse?.content || flatPropertiesResponse) || [];
+            console.log('[FlatDashboard] DEBUG: Loaded', this.propertiesData.length, 'properties');
+            this.updatePropertiesTable();
+            console.log('[FlatDashboard] DEBUG: Properties table refreshed');
+        } catch (error) {
+            console.error('[FlatDashboard] DEBUG: Error refreshing properties:', error);
+        }
+    }
+    
+    async debugRefreshPayments() {
+        console.log('[FlatDashboard] DEBUG: Refreshing payments data...');
+        try {
+            const paymentsResponse = await apiService.get('/transactions/owner/all');
+            const allPayments = paymentsResponse || [];
+            
+            // Filter payments for flat properties only
+            const flatPropertyIds = this.propertiesData.map(p => p.id);
+            this.paymentsData = allPayments.filter(payment => 
+                flatPropertyIds.includes(payment.propertyId)
+            );
+            
+            console.log('[FlatDashboard] DEBUG: Loaded', this.paymentsData.length, 'flat payments out of', allPayments.length, 'total');
+            await this.loadPaymentsSection();
+            console.log('[FlatDashboard] DEBUG: Payments section refreshed');
+        } catch (error) {
+            console.error('[FlatDashboard] DEBUG: Error refreshing payments:', error);
+        }
+    }
+    
+    debugShowRightDrawer() {
+        console.log('[FlatDashboard] DEBUG: Testing right drawer...');
+        this.openRightDrawer('Debug Test', '<p>This is a test of the right drawer functionality.</p>');
     }
 
     // Data Loading Methods
@@ -506,15 +667,26 @@ class FlatDashboard {
                 }
             }
             
-            // Load payments
+            // Load payments (only for flat properties)
             console.log('[FlatDashboard] Loading payments...');
             const paymentsResponse = await apiService.get('/transactions/owner/all');
-            this.paymentsData = paymentsResponse || [];
-            console.log('[FlatDashboard] Loaded payments:', this.paymentsData.length);
+            const allPayments = paymentsResponse || [];
+            console.log('[FlatDashboard] Raw payments response:', allPayments.length);
+            
+            // Filter payments to only include those for flat properties
+            const flatPropertyIds = this.propertiesData.map(p => p.id);
+            this.paymentsData = allPayments.filter(payment => {
+                // Check if payment belongs to a flat property
+                const isForFlatProperty = flatPropertyIds.includes(payment.propertyId);
+                return isForFlatProperty;
+            });
+            
+            console.log('[FlatDashboard] Loaded flat payments:', this.paymentsData.length, 'out of', allPayments.length, 'total payments');
+            console.log('[FlatDashboard] Flat property IDs:', flatPropertyIds);
             
             // Log first payment structure for debugging
             if (this.paymentsData.length > 0) {
-                console.log('[FlatDashboard] First payment structure:', this.paymentsData[0]);
+                console.log('[FlatDashboard] First flat payment structure:', this.paymentsData[0]);
             }
 
             // Update all dashboard widgets
@@ -558,11 +730,20 @@ class FlatDashboard {
                 if (!tenant) return false;
                 
                 const hasCurrentMonthPayment = this.paymentsData.some(payment => {
-                    const paymentDate = new Date(payment.createdAt);
-                    return payment.propertyId === property.id &&
-                           paymentDate.getMonth() === currentMonth &&
-                           paymentDate.getFullYear() === currentYear &&
-                           (payment.status === 'APPROVED' || payment.status === 'PENDING');
+                    try {
+                        const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                        if (isNaN(paymentDate.getTime())) {
+                            console.warn('[FlatDashboard] Invalid payment date for payment:', payment.id);
+                            return false;
+                        }
+                        return payment.propertyId === property.id &&
+                               paymentDate.getMonth() === currentMonth &&
+                               paymentDate.getFullYear() === currentYear &&
+                               (payment.status === 'VERIFIED' || payment.status === 'PENDING');
+                    } catch (error) {
+                        console.warn('[FlatDashboard] Error parsing payment date:', error);
+                        return false;
+                    }
                 });
                 
                 return !hasCurrentMonthPayment;
@@ -572,10 +753,19 @@ class FlatDashboard {
             
             const collectedRent = this.paymentsData
                 .filter(payment => {
-                    const paymentDate = new Date(payment.createdAt);
-                    return payment.status === 'APPROVED' &&
-                           paymentDate.getMonth() === currentMonth &&
-                           paymentDate.getFullYear() === currentYear;
+                    try {
+                        const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                        if (isNaN(paymentDate.getTime())) {
+                            console.warn('[FlatDashboard] Invalid payment date for payment:', payment.id);
+                            return false;
+                        }
+                        return payment.status === 'VERIFIED' &&
+                               paymentDate.getMonth() === currentMonth &&
+                               paymentDate.getFullYear() === currentYear;
+                    } catch (error) {
+                        console.warn('[FlatDashboard] Error parsing payment date:', error);
+                        return false;
+                    }
                 })
                 .reduce((sum, payment) => sum + (payment.amount || 0), 0);
             
@@ -619,10 +809,18 @@ class FlatDashboard {
             
             const monthName = date.toLocaleString('default', { month: 'short' });
             const monthlyPayments = this.paymentsData.filter(payment => {
-                const paymentDate = new Date(payment.createdAt);
-                return payment.status === 'APPROVED' &&
-                       paymentDate.getMonth() === date.getMonth() &&
-                       paymentDate.getFullYear() === date.getFullYear();
+                try {
+                    const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                    if (isNaN(paymentDate.getTime())) {
+                        return false;
+                    }
+                    return payment.status === 'VERIFIED' &&
+                           paymentDate.getMonth() === date.getMonth() &&
+                           paymentDate.getFullYear() === date.getFullYear();
+                } catch (error) {
+                    console.warn('[FlatDashboard] Error parsing payment date in chart:', error);
+                    return false;
+                }
             });
             
             const monthlyTotal = monthlyPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -771,11 +969,17 @@ class FlatDashboard {
             if (!tenant) return false;
             
             const hasCurrentMonthPayment = this.paymentsData.some(payment => {
-                const paymentDate = new Date(payment.createdAt);
-                return payment.propertyId === property.id &&
-                       paymentDate.getMonth() === currentMonth &&
-                       paymentDate.getFullYear() === currentYear &&
-                       (payment.status === 'APPROVED' || payment.status === 'PENDING');
+                try {
+                    const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                    if (isNaN(paymentDate.getTime())) return false;
+                    return payment.propertyId === property.id &&
+                           paymentDate.getMonth() === currentMonth &&
+                           paymentDate.getFullYear() === currentYear &&
+                           (payment.status === 'APPROVED' || payment.status === 'PENDING');
+                } catch (error) {
+                    console.warn('[FlatDashboard] Invalid date in current month check:', payment.id);
+                    return false;
+                }
             });
             
             return !hasCurrentMonthPayment;
@@ -793,13 +997,30 @@ class FlatDashboard {
                 const tenant = this.tenantsData.find(t => t.propertyId === property.id && t.status === 'ACTIVE');
                 const latestPayment = this.paymentsData
                     .filter(p => p.propertyId === property.id)
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+                    .sort((a, b) => {
+                        try {
+                            const dateA = new Date(a.paymentDate || a.createdAt);
+                            const dateB = new Date(b.paymentDate || b.createdAt);
+                            return dateB - dateA;
+                        } catch (error) {
+                            console.warn('[FlatDashboard] Error sorting payments in recent flats:', error);
+                            return 0;
+                        }
+                    })[0];
 
                 return {
                     property,
                     tenant,
                     latestPayment,
-                    lastActivity: latestPayment ? new Date(latestPayment.createdAt) : null
+                    lastActivity: latestPayment ? (() => {
+                        try {
+                            const date = new Date(latestPayment.paymentDate || latestPayment.createdAt);
+                            return isNaN(date.getTime()) ? null : date;
+                        } catch (error) {
+                            console.warn('[FlatDashboard] Invalid last activity date:', latestPayment.id);
+                            return null;
+                        }
+                    })() : null
                 };
             })
             .sort((a, b) => (b.lastActivity || 0) - (a.lastActivity || 0));
@@ -811,7 +1032,7 @@ class FlatDashboard {
 
             return `
                 <div class="table-row" onclick="flatDashboard.openPropertyDetails(${item.property.id})">
-                    <div class="table-col">${item.property.name}</div>
+                    <div class="table-col">${this.generateFlatName(item.property, item.tenant)}</div>
                     <div class="table-col">${tenantName}</div>
                     <div class="table-col">
                         <span class="status-badge ${status.class}">${status.text}</span>
@@ -858,7 +1079,25 @@ class FlatDashboard {
 
         // Payment activities
         this.paymentsData
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .filter(payment => {
+                try {
+                    const date = new Date(payment.paymentDate || payment.createdAt);
+                    return !isNaN(date.getTime());
+                } catch (error) {
+                    console.warn('[FlatDashboard] Invalid payment date in activities:', payment.id);
+                    return false;
+                }
+            })
+            .sort((a, b) => {
+                try {
+                    const dateA = new Date(a.paymentDate || a.createdAt);
+                    const dateB = new Date(b.paymentDate || b.createdAt);
+                    return dateB - dateA;
+                } catch (error) {
+                    console.warn('[FlatDashboard] Error sorting payments by date:', error);
+                    return 0;
+                }
+            })
             .slice(0, 5)
             .forEach(payment => {
                 const property = this.propertiesData.find(p => p.id === payment.propertyId);
@@ -866,21 +1105,39 @@ class FlatDashboard {
                 
                 if (property && tenant) {
                     if (payment.status === 'PENDING') {
-                        activities.push({
-                            type: 'payment',
-                            icon: 'fa-upload',
-                            text: `${tenant.firstName} submitted payment proof for ${property.name}`,
-                            time: this.getTimeAgo(new Date(payment.createdAt)),
-                            date: new Date(payment.createdAt)
-                        });
+                        try {
+                            const date = new Date(payment.paymentDate || payment.createdAt);
+                            if (isNaN(date.getTime())) {
+                                console.warn('[FlatDashboard] Invalid date for pending payment:', payment.id);
+                                return;
+                            }
+                            activities.push({
+                                type: 'payment',
+                                icon: 'fa-upload',
+                                text: `${tenant.firstName} submitted payment proof for ${this.generateFlatName(property)}`,
+                                time: this.getTimeAgo(date),
+                                date: date
+                            });
+                        } catch (error) {
+                            console.warn('[FlatDashboard] Error processing pending payment date:', error);
+                        }
                     } else if (payment.status === 'APPROVED') {
-                        activities.push({
-                            type: 'approval',
-                            icon: 'fa-check',
-                            text: `You approved payment for ${property.name}`,
-                            time: this.getTimeAgo(new Date(payment.createdAt)),
-                            date: new Date(payment.createdAt)
-                        });
+                        try {
+                            const date = new Date(payment.paymentDate || payment.createdAt);
+                            if (isNaN(date.getTime())) {
+                                console.warn('[FlatDashboard] Invalid date for approved payment:', payment.id);
+                                return;
+                            }
+                            activities.push({
+                                type: 'approval',
+                                icon: 'fa-check',
+                                text: `You approved payment for ${this.generateFlatName(property)}`,
+                                time: this.getTimeAgo(date),
+                                date: date
+                            });
+                        } catch (error) {
+                            console.warn('[FlatDashboard] Error processing approved payment date:', error);
+                        }
                     }
                 }
             });
@@ -1002,7 +1259,7 @@ class FlatDashboard {
             const highest = propertyEarnings.sort((a, b) => b.rent - a.rent)[0];
             insights.push({
                 icon: 'fa-trophy',
-                text: `Highest earning flat: ${highest.property.name} (₹${highest.rent.toLocaleString()})`
+                text: `Highest earning flat: ${this.generateFlatName(highest.property)} (₹${highest.rent.toLocaleString()})`
             });
         }
 
@@ -1089,8 +1346,17 @@ class FlatDashboard {
         // Open right drawer with property details
         const property = this.propertiesData.find(p => p.id === propertyId);
         if (property) {
+            // Get primary tenant to include in flat name
+            const propertyTenants = this.tenantsData.filter(t => {
+                const matchById = t.propertyId === property.id;
+                const matchByPropertyId = t.property?.id === property.id;
+                const isActive = t.status === 'ACTIVE';
+                return (matchById || matchByPropertyId) && isActive;
+            });
+            const primaryTenant = propertyTenants.find(t => t.primary === true) || propertyTenants[0] || null;
+            
             const content = this.generatePropertyDetailsHTML(property);
-            this.openRightDrawer(`${property.name} - Details`, content);
+            this.openRightDrawer(`${this.generateFlatName(property, primaryTenant)} - Details`, content);
         }
     }
 
@@ -1143,7 +1409,17 @@ class FlatDashboard {
         if (!container) return;
 
         const recentPayments = this.paymentsData
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .sort((a, b) => {
+                try {
+                    const dateA = new Date(a.paymentDate || a.createdAt);
+                    const dateB = new Date(b.paymentDate || b.createdAt);
+                    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+                    return dateB - dateA;
+                } catch (error) {
+                    console.warn('[FlatDashboard] Error sorting recent payments:', error);
+                    return 0;
+                }
+            })
             .slice(0, 5);
 
         if (recentPayments.length === 0) {
@@ -1151,12 +1427,22 @@ class FlatDashboard {
             return;
         }
 
-        container.innerHTML = recentPayments.map(payment => `
+        container.innerHTML = recentPayments.map(payment => {
+            let displayDate = '';
+            try {
+                const date = new Date(payment.paymentDate || payment.createdAt);
+                displayDate = isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
+            } catch (error) {
+                displayDate = 'Invalid Date';
+                console.warn('[FlatDashboard] Invalid date in recent payments:', payment.id);
+            }
+            
+            return `
             <div class="recent-payment-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
                 <div>
                     <div style="font-weight: 500;">${payment.tenantName || 'Unknown Tenant'}</div>
                     <div style="font-size: 0.875rem; color: var(--text-secondary);">
-                        ${new Date(payment.createdAt).toLocaleDateString()}
+                        ${displayDate}
                     </div>
                 </div>
                 <div style="text-align: right;">
@@ -1164,7 +1450,8 @@ class FlatDashboard {
                     <span class="status-badge ${payment.status?.toLowerCase()}">${payment.status}</span>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     updatePropertyPerformance() {
@@ -1184,7 +1471,7 @@ class FlatDashboard {
             return `
                 <div class="property-performance-item" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <div style="font-weight: 500;">${property.name}</div>
+                        <div style="font-weight: 500;">${this.generateFlatName(property)}</div>
                         <div style="font-size: 0.875rem; font-weight: 600;">${occupancyRate}%</div>
                     </div>
                     <div style="background: var(--border-color); height: 4px; border-radius: 2px;">
@@ -1199,11 +1486,13 @@ class FlatDashboard {
     }
 
     async loadSectionData(section) {
+        console.log(`[FlatDashboard] Loading section data for: ${section}`);
         switch (section) {
             case 'properties':
                 await this.loadPropertiesSection();
                 break;
             case 'tenants':
+                console.log('[FlatDashboard] Loading tenants section with data:', this.tenantsData.length, 'tenants');
                 await this.loadTenantsSection();
                 break;
             case 'payments':
@@ -1221,6 +1510,8 @@ class FlatDashboard {
             case 'settings':
                 await this.loadSettingsSection();
                 break;
+            default:
+                console.warn(`[FlatDashboard] Unknown section: ${section}`);
         }
     }
 
@@ -1301,10 +1592,19 @@ class FlatDashboard {
         // Calculate pending payments
         const pendingPayments = this.paymentsData.filter(p => p.status === 'PENDING').length;
         
-        // Calculate total monthly rent from active tenants
-        const totalRent = this.tenantsData
-            .filter(tenant => tenant.status === 'ACTIVE')
-            .reduce((sum, tenant) => sum + (tenant.rentAmount || 0), 0);
+        // Calculate total monthly rent from primary tenants only (owner receives rent from primary tenant)
+        const totalRent = this.propertiesData.reduce((sum, property) => {
+            // Find primary tenant for this property (support both 'primary' and 'isPrimary' flags)
+            const primaryTenant = this.tenantsData.find(tenant => {
+                const matchById = tenant.propertyId === property.id;
+                const matchByPropertyId = tenant.property?.id === property.id;
+                const isActive = tenant.status === 'ACTIVE';
+                const isPrimaryFlag = tenant.primary === true || tenant.isPrimary === true;
+                return (matchById || matchByPropertyId) && isActive && isPrimaryFlag;
+            });
+
+            return sum + (primaryTenant?.rentAmount || 0);
+        }, 0);
         
         console.log('[FlatDashboard] Summary calculations:', {
             totalProperties: this.propertiesData.length,
@@ -1360,12 +1660,20 @@ class FlatDashboard {
     }
 
     updatePropertiesTable() {
+        console.log('[FlatDashboard] Updating properties table...');
         const tableBody = document.getElementById('propertiesTableBody');
         const emptyState = document.getElementById('propertiesEmptyState');
         
-        if (!tableBody) return;
+        if (!tableBody) {
+            console.error('[FlatDashboard] propertiesTableBody element not found!');
+            return;
+        }
+
+        console.log('[FlatDashboard] Properties data available:', this.propertiesData.length);
+        console.log('[FlatDashboard] Properties data sample:', this.propertiesData.slice(0, 2));
 
         if (this.propertiesData.length === 0) {
+            console.log('[FlatDashboard] No properties data, showing empty state');
             tableBody.innerHTML = '';
             if (emptyState) emptyState.style.display = 'block';
             return;
@@ -1373,11 +1681,20 @@ class FlatDashboard {
 
         if (emptyState) emptyState.style.display = 'none';
 
+        // Validate data structure before processing
+        const firstProperty = this.propertiesData[0];
+        console.log('[FlatDashboard] First property field check:', {
+            hasId: !!firstProperty.id,
+            hasLocation: !!firstProperty.location,
+            hasCity: !!firstProperty.city,
+            hasBhkType: !!firstProperty.bhkType,
+            hasExpectedRent: !!firstProperty.expectedRent,
+            propertyType: firstProperty.type
+        });
+
         console.log('[FlatDashboard] Updating properties table with data:', {
             propertiesCount: this.propertiesData.length,
-            tenantsCount: this.tenantsData.length,
-            propertiesData: this.propertiesData,
-            tenantsData: this.tenantsData
+            tenantsCount: this.tenantsData.length
         });
 
         tableBody.innerHTML = this.propertiesData.map(property => {
@@ -1394,26 +1711,30 @@ class FlatDashboard {
             const primaryTenant = propertyTenants.find(t => t.primary === true) || propertyTenants[0] || null;
             const otherTenants = propertyTenants.filter(t => t.primary !== true && t.id !== primaryTenant?.id);
 
-            console.log(`[FlatDashboard] Property ${property.id} - ${property.name}:`, {
+            console.log(`[FlatDashboard] Property ${property.id} - ${property.location}:`, {
                 propertyTenants: propertyTenants.length,
-                primaryTenant: primaryTenant?.firstName,
+                primaryTenant: primaryTenant?.tenantName,
                 otherTenants: otherTenants.length
             });
 
             const paymentStatus = this.getPropertyPaymentStatus(property, primaryTenant);
             const lastPayment = this.getLastPayment(property.id);
 
+            // Generate property display name from available data
+            const propertyName = this.generateFlatName(property, primaryTenant);
+            const propertyAddress = property.address || property.location || property.city || 'Address not specified';
+
             return `
                 <div class="property-row" data-property-id="${property.id}">
                     <div class="flat-info">
-                        <div class="flat-name">${property.name || 'Unnamed Property'}</div>
-                        <div class="flat-address">${property.address || property.location || 'Address not specified'}</div>
+                        <div class="flat-name">${propertyName}</div>
+                        <div class="flat-address">${propertyAddress}</div>
                     </div>
                     
                     <div class="primary-tenant">
                         ${primaryTenant ? `
-                            <div class="tenant-name">${primaryTenant.firstName || 'Unknown'} ${primaryTenant.lastName || ''}</div>
-                            <div class="tenant-phone">${primaryTenant.phone || primaryTenant.contactNumber || 'Phone not available'}</div>
+                            <div class="tenant-name">${primaryTenant.tenantName || 'Unknown'}</div>
+                            <div class="tenant-phone">${primaryTenant.phoneNumber || 'Phone not available'}</div>
                         ` : `
                             <div class="tenant-vacant">Vacant</div>
                         `}
@@ -1421,12 +1742,12 @@ class FlatDashboard {
                     
                     <div class="other-tenants ${otherTenants.length === 0 ? 'empty' : ''}">
                         ${otherTenants.length === 0 ? '—' : 
-                          otherTenants.length === 1 ? `${otherTenants[0].firstName || 'Unknown'}` :
+                          otherTenants.length === 1 ? `${otherTenants[0].tenantName || 'Unknown'}` :
                           `+${otherTenants.length} members`}
                     </div>
                     
                     <div class="rent-amount">
-                        ${primaryTenant ? `₹${(primaryTenant.rentAmount || primaryTenant.rent || 0).toLocaleString()}/month` : '—'}
+                        ${primaryTenant ? (primaryTenant.rentAmount ? `₹${primaryTenant.rentAmount.toLocaleString()}/month` : '—') : '—'}
                     </div>
                     
                     <div class="payment-status ${paymentStatus.class}">
@@ -1434,7 +1755,15 @@ class FlatDashboard {
                     </div>
                     
                     <div class="last-paid ${lastPayment ? '' : 'empty'}">
-                        ${lastPayment ? this.formatDate(new Date(lastPayment.createdAt)) : '—'}
+                        ${lastPayment ? (() => {
+                            try {
+                                const date = new Date(lastPayment.paymentDate || lastPayment.createdAt);
+                                return isNaN(date.getTime()) ? '—' : this.formatDate(date);
+                            } catch (error) {
+                                console.warn('[FlatDashboard] Invalid last payment date:', lastPayment.id);
+                                return '—';
+                            }
+                        })() : '—'}
                     </div>
                     
                     <div class="property-actions">
@@ -1454,6 +1783,8 @@ class FlatDashboard {
                 </div>
             `;
         }).join('');
+        
+        console.log('[FlatDashboard] Properties table populated successfully with', this.propertiesData.length, 'properties');
     }
 
     getPropertyPaymentStatus(property, primaryTenant) {
@@ -1464,33 +1795,115 @@ class FlatDashboard {
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
         
-        const currentMonthPayment = this.paymentsData.find(payment => {
-            const paymentDate = new Date(payment.createdAt);
-            return payment.propertyId === property.id &&
-                   paymentDate.getMonth() === currentMonth &&
-                   paymentDate.getFullYear() === currentYear;
+        console.log(`[FlatDashboard] Checking payment status for property ${property.id} (${this.generateFlatName(property, primaryTenant)}) in ${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`);
+        console.log(`[FlatDashboard] Total payments data available:`, this.paymentsData.length);
+        
+        // Filter payments for this property first
+        const propertyPayments = this.paymentsData.filter(payment => payment.propertyId === property.id);
+        console.log(`[FlatDashboard] Payments for property ${property.id}:`, propertyPayments.length, propertyPayments);
+        
+        // Check for approved/verified transactions in current month for this property
+        const approvedTransaction = this.paymentsData.find(payment => {
+            try {
+                const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                if (isNaN(paymentDate.getTime())) {
+                    console.log(`[FlatDashboard] Invalid payment date for payment ${payment.id}:`, payment.paymentDate, payment.createdAt);
+                    return false;
+                }
+                
+                const isCurrentMonth = paymentDate.getMonth() === currentMonth && 
+                                     paymentDate.getFullYear() === currentYear;
+                const isApproved = payment.status === 'APPROVED' || payment.status === 'VERIFIED';
+                const isForThisProperty = payment.propertyId === property.id;
+                
+                if (isForThisProperty) {
+                    console.log(`[FlatDashboard] Payment ${payment.id} for property ${property.id}:`, {
+                        propertyId: payment.propertyId,
+                        status: payment.status,
+                        paymentDate: paymentDate.toLocaleDateString(),
+                        paymentMonth: paymentDate.getMonth(),
+                        currentMonth,
+                        paymentYear: paymentDate.getFullYear(),
+                        currentYear,
+                        isCurrentMonth,
+                        isApproved,
+                        isForThisProperty
+                    });
+                }
+                
+                return isForThisProperty && isCurrentMonth && isApproved;
+            } catch (error) {
+                console.warn('[FlatDashboard] Error checking payment status date:', payment.id, error);
+                return false;
+            }
         });
 
-        if (!currentMonthPayment) {
-            return { class: 'due', text: 'Due' };
+        if (approvedTransaction) {
+            console.log(`[FlatDashboard] ✅ Found approved transaction for property ${property.id}:`, approvedTransaction.id);
+            return { class: 'approved', text: 'Paid' };
         }
 
-        switch (currentMonthPayment.status) {
-            case 'APPROVED':
-                return { class: 'approved', text: 'Approved' };
-            case 'PENDING':
-                return { class: 'pending', text: 'Pending' };
-            case 'REJECTED':
-                return { class: 'rejected', text: 'Rejected' };
-            default:
-                return { class: 'due', text: 'Due' };
+        // Check if there's a pending transaction
+        const pendingTransaction = this.paymentsData.find(payment => {
+            try {
+                const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                if (isNaN(paymentDate.getTime())) return false;
+                
+                return payment.propertyId === property.id &&
+                       paymentDate.getMonth() === currentMonth &&
+                       paymentDate.getFullYear() === currentYear &&
+                       payment.status === 'PENDING';
+            } catch (error) {
+                console.warn('[FlatDashboard] Error checking pending payment:', payment.id, error);
+                return false;
+            }
+        });
+
+        if (pendingTransaction) {
+            console.log(`[FlatDashboard] ⏳ Found pending transaction for property ${property.id}:`, pendingTransaction.id);
+            return { class: 'pending', text: 'Pending' };
         }
+
+        // Check if there's a rejected transaction
+        const rejectedTransaction = this.paymentsData.find(payment => {
+            try {
+                const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                if (isNaN(paymentDate.getTime())) return false;
+                
+                return payment.propertyId === property.id &&
+                       paymentDate.getMonth() === currentMonth &&
+                       paymentDate.getFullYear() === currentYear &&
+                       payment.status === 'REJECTED';
+            } catch (error) {
+                console.warn('[FlatDashboard] Error checking rejected payment:', payment.id, error);
+                return false;
+            }
+        });
+
+        if (rejectedTransaction) {
+            console.log(`[FlatDashboard] ❌ Found rejected transaction for property ${property.id}:`, rejectedTransaction.id);
+            return { class: 'rejected', text: 'Rejected' };
+        }
+
+        // No transaction found for current month - mark as due
+        console.log(`[FlatDashboard] 💸 No current month transactions found for property ${property.id} - marking as due`);
+        return { class: 'due', text: 'Due' };
     }
 
     getLastPayment(propertyId) {
         return this.paymentsData
             .filter(p => p.propertyId === propertyId && p.status === 'APPROVED')
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+            .sort((a, b) => {
+                try {
+                    const dateA = new Date(a.paymentDate || a.createdAt);
+                    const dateB = new Date(b.paymentDate || b.createdAt);
+                    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+                    return dateB - dateA;
+                } catch (error) {
+                    console.warn('[FlatDashboard] Error sorting last payments:', error);
+                    return 0;
+                }
+            })[0];
     }
 
     filterProperties() {
@@ -1512,7 +1925,7 @@ class FlatDashboard {
 
             // Search filter
             const searchMatch = !searchTerm || 
-                property.name.toLowerCase().includes(searchTerm) ||
+                this.generateFlatName(property).toLowerCase().includes(searchTerm) ||
                 property.address?.toLowerCase().includes(searchTerm) ||
                 (primaryTenant && `${primaryTenant.firstName} ${primaryTenant.lastName}`.toLowerCase().includes(searchTerm)) ||
                 otherTenants.some(t => `${t.firstName} ${t.lastName}`.toLowerCase().includes(searchTerm));
@@ -1547,10 +1960,19 @@ class FlatDashboard {
     }
 
     async loadTenantsSection() {
+        console.log('[FlatDashboard] Loading tenants section...');
         const tableBody = document.getElementById('tenantsTableBody');
-        if (!tableBody) return;
+        
+        if (!tableBody) {
+            console.error('[FlatDashboard] tenantsTableBody element not found!');
+            return;
+        }
+        
+        console.log('[FlatDashboard] Tenants data available:', this.tenantsData.length);
+        console.log('[FlatDashboard] Tenants data sample:', this.tenantsData.slice(0, 2));
 
         if (this.tenantsData.length === 0) {
+            console.log('[FlatDashboard] No tenants data, showing empty state');
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
@@ -1562,18 +1984,45 @@ class FlatDashboard {
             return;
         }
 
-        tableBody.innerHTML = this.tenantsData.map(tenant => `
+        // Validate data structure before processing
+        const firstTenant = this.tenantsData[0];
+        console.log('[FlatDashboard] First tenant field check:', {
+            hasId: !!firstTenant.id,
+            hasTenantName: !!firstTenant.tenantName,
+            hasPhoneNumber: !!firstTenant.phoneNumber,
+            hasPropertyName: !!firstTenant.propertyName,
+            hasStatus: !!firstTenant.status,
+            statusValue: firstTenant.status
+        });
+
+        console.log('[FlatDashboard] Generating tenant table rows...');
+        tableBody.innerHTML = this.tenantsData.map((tenant, index) => {
+            console.log(`[FlatDashboard] Processing tenant ${index + 1}:`, tenant);
+            
+            // Handle field name mappings from TenantSummary to frontend expectations
+            const displayName = tenant.tenantName || `${tenant.firstName || ''} ${tenant.lastName || ''}`.trim() || 'N/A';
+            const phoneNumber = tenant.phoneNumber || tenant.phone || 'N/A';
+            const unitNumber = tenant.flatRoomNumber || tenant.unitNumber || 'N/A';
+            const joinDate = tenant.leaseStartDate || tenant.joinDate;
+            const status = tenant.status || 'Active';
+            const isPrimary = tenant.primary ? ' (Primary)' : '';
+            
+            // Get property details for this tenant
+            const property = this.propertiesData.find(p => p.id === tenant.propertyId);
+            const flatName = property ? this.generateFlatName(property, tenant) : (tenant.propertyName || 'N/A');
+            
+            return `
             <tr data-tenant-id="${tenant.id}">
                 <td>
-                    <div style="font-weight: 500;">${tenant.firstName} ${tenant.lastName || ''}</div>
-                    <div style="font-size: 0.8125rem; color: var(--text-secondary);">${tenant.phone || 'N/A'}</div>
+                    <div style="font-weight: 500;">${displayName}${isPrimary}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-secondary);">${phoneNumber}</div>
                 </td>
-                <td>${tenant.propertyName || 'N/A'}</td>
-                <td>${tenant.unitNumber || 'N/A'}</td>
+                <td>${flatName}</td>
+                <td>${unitNumber}</td>
                 <td>₹${(tenant.rentAmount || 0).toLocaleString()}</td>
-                <td>${tenant.joinDate ? new Date(tenant.joinDate).toLocaleDateString() : 'N/A'}</td>
+                <td>${joinDate ? new Date(joinDate).toLocaleDateString() : 'N/A'}</td>
                 <td>
-                    <span class="status-badge ${tenant.paymentStatus?.toLowerCase() || 'pending'}">${tenant.paymentStatus || 'Pending'}</span>
+                    <span class="status-badge ${status.toLowerCase()}">${status}</span>
                 </td>
                 <td>
                     <button class="btn btn-sm btn-primary tenant-detail-btn" style="padding: 0.25rem 0.5rem; font-size: 0.8125rem;">
@@ -1581,32 +2030,72 @@ class FlatDashboard {
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
+        console.log('[FlatDashboard] Tenant table populated successfully');
     }
 
     async loadPaymentsSection() {
+        console.log('[FlatDashboard] Loading payments section...');
         const tableBody = document.getElementById('paymentsTableBody');
-        if (!tableBody) return;
+        
+        if (!tableBody) {
+            console.error('[FlatDashboard] paymentsTableBody element not found!');
+            return;
+        }
+
+        console.log('[FlatDashboard] Payments data available:', this.paymentsData.length);
+        console.log('[FlatDashboard] Payments data sample:', this.paymentsData.slice(0, 2));
 
         if (this.paymentsData.length === 0) {
+            console.log('[FlatDashboard] No flat payments data, showing empty state');
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
                         <i class="fas fa-credit-card" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                        <div>No payment records found.</div>
+                        <div>No payment records found for flat properties.</div>
                     </td>
                 </tr>
             `;
             return;
         }
 
-        tableBody.innerHTML = this.paymentsData.map(payment => `
+        // Validate data structure before processing
+        const firstPayment = this.paymentsData[0];
+        console.log('[FlatDashboard] First payment field check:', {
+            hasId: !!firstPayment.id,
+            hasPaymentDate: !!firstPayment.paymentDate,
+            hasCreatedAt: !!firstPayment.createdAt,
+            hasTenantName: !!firstPayment.tenantName,
+            hasPropertyName: !!firstPayment.propertyName,
+            hasPropertyId: !!firstPayment.propertyId,
+            hasAmount: !!firstPayment.amount,
+            hasStatus: !!firstPayment.status,
+            hasPaymentMode: !!firstPayment.paymentMode,
+            actualFields: Object.keys(firstPayment)
+        });
+
+        console.log('[FlatDashboard] Generating payment table rows...');
+        tableBody.innerHTML = this.paymentsData.map((payment, index) => {
+            console.log(`[FlatDashboard] Processing payment ${index + 1}:`, payment);
+            
+            // Get property name from property ID
+            const property = this.propertiesData.find(p => p.id === payment.propertyId);
+            const propertyName = property ? this.generateFlatName(property) : 'Unknown Property';
+            
+            // Handle date field - use paymentDate if available, fallback to createdAt
+            const dateField = payment.paymentDate || payment.createdAt;
+            const displayDate = dateField ? 
+                (typeof dateField === 'string' ? dateField : new Date(dateField).toLocaleDateString()) :
+                'N/A';
+            
+            return `
             <tr data-payment-id="${payment.id}">
-                <td>${new Date(payment.createdAt).toLocaleDateString()}</td>
+                <td>${displayDate}</td>
                 <td>${payment.tenantName || 'Unknown Tenant'}</td>
-                <td>${payment.propertyName || 'N/A'}</td>
+                <td>${propertyName}</td>
                 <td>₹${(payment.amount || 0).toLocaleString()}</td>
-                <td>${payment.type || 'Rent'}</td>
+                <td>${payment.paymentMode || payment.type || 'Rent'}</td>
                 <td>
                     <span class="status-badge ${payment.status?.toLowerCase() || 'pending'}">${payment.status || 'Pending'}</span>
                 </td>
@@ -1616,7 +2105,10 @@ class FlatDashboard {
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
+        
+        console.log('[FlatDashboard] Payments table populated successfully with', this.paymentsData.length, 'flat payments');
     }
 
     async loadMaintenanceSection() {
@@ -1868,7 +2360,7 @@ class FlatDashboard {
                     <h4>Property Information</h4>
                     <div class="detail-item">
                         <label>Name:</label>
-                        <span>${property.name}</span>
+                        <span>${this.generateFlatName(property)}</span>
                     </div>
                     <div class="detail-item">
                         <label>Address:</label>
@@ -1909,7 +2401,7 @@ class FlatDashboard {
             </div>
         `;
 
-        this.openRightDrawer(`Property: ${property.name}`, content);
+        this.openRightDrawer(`Property: ${this.generateFlatName(property)}`, content);
     }
 
     showTenantDetails(tenantId) {
@@ -2196,8 +2688,17 @@ class FlatDashboard {
         const property = this.propertiesData.find(p => p.id === propertyId);
         if (!property) return;
 
+        // Get primary tenant to include in flat name
+        const propertyTenants = this.tenantsData.filter(t => {
+            const matchById = t.propertyId === property.id;
+            const matchByPropertyId = t.property?.id === property.id;
+            const isActive = t.status === 'ACTIVE';
+            return (matchById || matchByPropertyId) && isActive;
+        });
+        const primaryTenant = propertyTenants.find(t => t.primary === true) || propertyTenants[0] || null;
+
         const content = this.generatePropertyDetailsHTML(property);
-        this.openRightDrawer(`${property.name} - Details`, content);
+        this.openRightDrawer(`${this.generateFlatName(property, primaryTenant)} - Details`, content);
     }
 
     generatePropertyDetailsHTML(property) {
@@ -2229,24 +2730,28 @@ class FlatDashboard {
                 <div class="flat-info-grid">
                     <div class="info-item">
                         <div class="info-label">Flat Name</div>
-                        <div class="info-value">${property.name}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Total Rent</div>
-                        <div class="info-value">${primaryTenant ? `₹${(primaryTenant.rentAmount || 0).toLocaleString()}` : '—'}</div>
+                        <div class="info-value">${this.generateFlatName(property, primaryTenant)}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Address</div>
-                        <div class="info-value">${property.address || 'Not specified'}</div>
+                        <div class="info-value">${property.address || property.location || 'Address not specified'}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">City</div>
-                        <div class="info-value">${property.city || 'Not specified'}</div>
+                        <div class="info-value">${property.city || 'City not specified'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">BHK Type</div>
+                        <div class="info-value">${property.bhkType || 'Not specified'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Total Rent</div>
+                        <div class="info-value">${primaryTenant ? `₹${(primaryTenant.rentAmount || 0).toLocaleString()}/month` : property.expectedRent ? `₹${property.expectedRent.toLocaleString()}/month` : '—'}</div>
                     </div>
                     ${primaryTenant ? `
                     <div class="info-item">
                         <div class="info-label">Move-in Date</div>
-                        <div class="info-value">${primaryTenant.joinDate ? this.formatDate(new Date(primaryTenant.joinDate)) : 'Not available'}</div>
+                        <div class="info-value">${primaryTenant.leaseStartDate ? new Date(primaryTenant.leaseStartDate).toLocaleDateString() : 'Not available'}</div>
                     </div>
                     ` : ''}
                 </div>
@@ -2267,25 +2772,33 @@ class FlatDashboard {
                 </div>
                 <div class="tenant-card">
                     <div class="tenant-header">
-                        <div class="tenant-name-primary">${primaryTenant.firstName} ${primaryTenant.lastName || ''}</div>
+                        <div class="tenant-name-primary">${primaryTenant.tenantName || 'Unknown Tenant'}</div>
                         <div class="primary-badge">Primary</div>
                     </div>
                     <div class="tenant-details">
                         <div class="info-item">
                             <div class="info-label">Phone</div>
-                            <div class="info-value">${primaryTenant.phone || 'Not available'}</div>
+                            <div class="info-value">${primaryTenant.phoneNumber || 'Not available'}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Email</div>
-                            <div class="info-value">${primaryTenant.email || 'Not available'}</div>
+                            <div class="info-value">${primaryTenant.emailAddress || 'Not available'}</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">Start Date</div>
-                            <div class="info-value">${primaryTenant.joinDate ? this.formatDate(new Date(primaryTenant.joinDate)) : 'Not available'}</div>
+                            <div class="info-label">Flat/Room Number</div>
+                            <div class="info-value">${primaryTenant.flatRoomNumber || 'Not specified'}</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">ID Proof</div>
-                            <div class="info-value">${primaryTenant.idProof ? 'Available' : 'Not uploaded'}</div>
+                            <div class="info-label">Move-in Date</div>
+                            <div class="info-value">${primaryTenant.leaseStartDate ? new Date(primaryTenant.leaseStartDate).toLocaleDateString() : 'Not available'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Lease End Date</div>
+                            <div class="info-value">${primaryTenant.leaseEndDate ? new Date(primaryTenant.leaseEndDate).toLocaleDateString() : 'Ongoing'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Security Deposit</div>
+                            <div class="info-value">₹${(primaryTenant.securityDeposit || 0).toLocaleString()}</div>
                         </div>
                     </div>
                     <div class="tenant-actions">
@@ -2312,16 +2825,28 @@ class FlatDashboard {
                 ${otherTenants.map(tenant => `
                 <div class="tenant-card">
                     <div class="tenant-header">
-                        <div class="tenant-name-primary">${tenant.firstName} ${tenant.lastName || ''}</div>
+                        <div class="tenant-name-primary">${tenant.tenantName || 'Unknown Tenant'}</div>
                     </div>
                     <div class="tenant-details">
                         <div class="info-item">
                             <div class="info-label">Phone</div>
-                            <div class="info-value">${tenant.phone || 'Not available'}</div>
+                            <div class="info-value">${tenant.phoneNumber || 'Not available'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">${tenant.emailAddress || 'Not available'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Flat/Room Number</div>
+                            <div class="info-value">${tenant.flatRoomNumber || 'Not specified'}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Move-in Date</div>
-                            <div class="info-value">${tenant.joinDate ? this.formatDate(new Date(tenant.joinDate)) : 'Not available'}</div>
+                            <div class="info-value">${tenant.leaseStartDate ? new Date(tenant.leaseStartDate).toLocaleDateString() : 'Not available'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Rent Amount</div>
+                            <div class="info-value">₹${(tenant.rentAmount || 0).toLocaleString()}/month</div>
                         </div>
                     </div>
                     <div class="tenant-actions">
