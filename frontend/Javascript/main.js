@@ -549,7 +549,7 @@ function updateUIForLoggedInUser() {
       dropdownUsername.textContent = `${firstName}`;
       console.log('Dropdown username set to:', firstName);
     } else {
-      console.error('dropdownUsername element not found');
+      console.log('dropdownUsername element not found (this is expected in some pages)');
     }
     // Setup profile dropdown handlers after showing the profile section
     setTimeout(() => {
@@ -573,19 +573,19 @@ function updateUIForLoggedInUser() {
 
   // Update Dashboard link in hamburger menu based on user role
   const roles = JSON.parse(localStorage.getItem('roles') || '[]');
-  const dashboardLink = document.querySelector('.nav-menu ul li a[href="#Dashboard"]'); // Assuming this is the dashboard link
+  const dashboardLink = document.getElementById('dashboardLink'); // Target the dashboard link by ID
   if (dashboardLink) {
       if (roles.includes('SUPERADMIN')) {
           dashboardLink.href = 'superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
-      } else if (roles.includes('ADMIN')) {
+      } else if (roles.includes('ADMIN')) { // ADMIN role is for owners
           dashboardLink.href = 'owner/Owner.html';
           dashboardLink.textContent = 'Owner Dashboard';
-      } else if (roles.includes('USER')) {
-          dashboardLink.href = 'tenant.html';
+      } else if (roles.includes('USER')) { // USER role is for tenants
+          dashboardLink.href = 'tenant-dashboard.html';
           dashboardLink.textContent = 'Tenant Dashboard';
       } else {
-          dashboardLink.href = 'index.html'; // Default or hide
+          dashboardLink.href = 'index.html'; // Default for non-logged in users
           dashboardLink.textContent = 'Dashboard';
       }
 

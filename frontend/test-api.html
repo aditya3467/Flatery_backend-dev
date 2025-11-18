@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Flat Properties API Test</h1>
+    <button onclick="testFlatApi()">Test Flat API</button>
+    <div id="results"></div>
+
+    <script src="Javascript/api.js"></script>
+    <script>
+        async function testFlatApi() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                console.log('Testing flat API...');
+                console.log('API Base URL:', apiService.baseURL);
+                console.log('Auth Token:', apiService.token ? 'Present' : 'Missing');
+                
+                // Test with direct fetch
+                const testUrl = `${apiService.baseURL}/admin/properties/flats?page=0&size=10`;
+                console.log('Test URL:', testUrl);
+                
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiService.token || 'NO_TOKEN'}`
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+                
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    results.innerHTML = `
+                        <h3>Success!</h3>
+                        <p>Status: ${response.status}</p>
+                        <p>Data: ${JSON.stringify(data, null, 2)}</p>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <h3>Error!</h3>
+                        <p>Status: ${response.status}</p>
+                        <p>Response: ${responseText}</p>
+                    `;
+                }
+                
+                // Also test through api service
+                console.log('Testing through API service...');
+                const serviceResponse = await apiService.getFlatProperties();
+                console.log('Service response:', serviceResponse);
+                
+            } catch (error) {
+                console.error('Test error:', error);
+                results.innerHTML = `
+                    <h3>Exception!</h3>
+                    <p>Error: ${error.message}</p>
+                    <p>Stack: ${error.stack}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

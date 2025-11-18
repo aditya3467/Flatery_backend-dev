@@ -19,4 +19,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByPaymentMonthAndStatus(String paymentMonth, PaymentStatus status);
 
     boolean existsByTenantIdAndPaymentMonth(Long tenantId, String paymentMonth);
+    
+    List<Transaction> findByCreatedBy(String createdBy);
 }

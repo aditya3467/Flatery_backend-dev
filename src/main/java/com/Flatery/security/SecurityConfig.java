@@ -49,10 +49,15 @@ public class SecurityConfig {
             .requestMatchers("/error", "/favicon.ico").permitAll() // Allow error page and favicon
                         .requestMatchers("/uploads/properties/**").permitAll() // Allow access to uploaded images
                         .requestMatchers("/uploads/payment-proofs/**").permitAll() // Allow access to payment proofs
-                                // payment api's endpoint
+                        .requestMatchers("/uploads/complaints/**").permitAll() // ← NEW: Complaint attachments
+                        // payment api's endpoint
                                 .requestMatchers("/api/transactions/**").authenticated()
                                 .requestMatchers("/api/owner-payment-info/**").authenticated()
                                 .requestMatchers("/api/receipts/**").authenticated()
+
+
+                        // Complaints APIs - Authenticated (role-based in controller)
+                        .requestMatchers("/api/complaints/**").authenticated() // ← NEW: Complaints endpoints
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

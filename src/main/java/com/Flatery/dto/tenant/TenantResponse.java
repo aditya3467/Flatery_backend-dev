@@ -25,6 +25,7 @@ public class TenantResponse {
     private String leaseStartDate;
     private String leaseEndDate;
     private String status;
+    private Boolean primary;
 
     // Credentials (not stored in tenant table) - shown once after creation
     private String username; // we will use tenantId as username
@@ -48,6 +49,7 @@ public class TenantResponse {
         r.setLeaseStartDate(t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null);
         r.setLeaseEndDate(t.getLeaseEndDate() != null ? t.getLeaseEndDate().toString() : null);
         r.setStatus(t.getStatus().name());
+        r.setPrimary(t.isPrimary());
         return r;
     }
 }
