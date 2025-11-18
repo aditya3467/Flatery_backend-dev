@@ -79,17 +79,6 @@ public class AdminPropertyController {
         return ResponseEntity.noContent().build();
     }
 
-    // Get one of my properties (or any if SUPERADMIN)
-    @GetMapping("/{id}")
-    public ResponseEntity<PropertyResponse> getOne(
-            @PathVariable Long id,
-            Authentication auth
-    ) {
-        Long userId = getUserId(auth);
-        PropertyResponse res = propertyService.getByIdForOwner(id, userId);
-        return ResponseEntity.ok(res);
-    }
-
     // List my properties (or all if SUPERADMIN uses query param ?all=true)
     @GetMapping
     public ResponseEntity<Page<PropertySummary>> listMine(
@@ -100,6 +89,28 @@ public class AdminPropertyController {
         Long userId = getUserId(auth);
         Page<PropertySummary> page = propertyService.listForOwner(userId, all, pageable);
         return ResponseEntity.ok(page);
+    }
+
+    // List my FLAT properties only
+    @GetMapping("/flats")
+    public ResponseEntity<Page<PropertySummary>> listMyFlats(
+            Authentication auth,
+            Pageable pageable
+    ) {
+        Long userId = getUserId(auth);
+        Page<PropertySummary> page = propertyService.listFlatPropertiesForOwner(userId, pageable);
+        return ResponseEntity.ok(page);
+    }
+
+    // Get one of my properties (or any if SUPERADMIN)
+    @GetMapping("/{id}")
+    public ResponseEntity<PropertyResponse> getOne(
+            @PathVariable Long id,
+            Authentication auth
+    ) {
+        Long userId = getUserId(auth);
+        PropertyResponse res = propertyService.getByIdForOwner(id, userId);
+        return ResponseEntity.ok(res);
     }
 
     // Upload images for a property
