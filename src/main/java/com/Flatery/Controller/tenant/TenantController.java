@@ -98,6 +98,37 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.getTenantPropertyDetails(username));
     }
 
+    @GetMapping("/check-active-tenancy")
+    public ResponseEntity<?> checkActiveTenancy(
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String email,
+            Authentication authentication) {
+        try {
+            getAuthenticatedUserId(authentication); // Ensure authenticated
+            
+            if ((phoneNumber == null || phoneNumber.isBlank()) && (email == null || email.isBlank())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ErrorResponse("Either phoneNumber or email must be provided"));
+            }
+            
+            var activeTenancy = tenantService.findActiveTenancy(phoneNumber, email);
+            if (activeTenancy != null) {
+                return ResponseEntity.ok(Map.of(
+                    "hasActiveTenancy", true,
+                    "propertyName", activeTenancy.getPropertyName(),
+                    "propertyId", activeTenancy.getPropertyId(),
+                    "tenantName", activeTenancy.getTenantName()
+                ));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse("No active tenancy found"));
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Error checking active tenancy"));
+        }
+    }
+
     // ...existing code...
 
     // Debug/Utility: list tenants for a specific unit to verify occupancy

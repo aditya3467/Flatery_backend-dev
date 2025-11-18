@@ -15,6 +15,10 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     Optional<Tenant> findByPhoneNumber(String phoneNumber);
     Optional<Tenant> findByEmailAddress(String email);
     
+    // Find all tenants by contact info (for single active tenancy validation)
+    List<Tenant> findAllByPhoneNumber(String phoneNumber);
+    List<Tenant> findAllByEmailAddress(String email);
+    
     // Unit-based queries
     long countByUnitIdAndLeaseEndDateIsNull(Long unitId);
     List<Tenant> findByUnitId(Long unitId);

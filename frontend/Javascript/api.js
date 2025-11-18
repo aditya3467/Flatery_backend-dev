@@ -402,6 +402,22 @@ class ApiService {
         }
     }
 
+    // Check if a user has an active tenancy (for single tenancy validation)
+    async checkActiveTenancy(phoneNumber, email) {
+        try {
+            const params = new URLSearchParams();
+            if (phoneNumber) params.append('phoneNumber', phoneNumber);
+            if (email) params.append('email', email);
+            return await this.makeRequest(`/tenants/check-active-tenancy?${params.toString()}`);
+        } catch (error) {
+            // Return null if no active tenancy found (404 is expected)
+            if (error.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    }
+
     // User lookup for owners adding tenants
     async findUser({ username, email, phone }) {
         try {

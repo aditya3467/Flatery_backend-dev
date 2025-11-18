@@ -21,6 +21,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
+import java.time.LocalDate;
+import java.security.SecureRandom;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,6 +69,101 @@ public class TenantService {
     }
     if (existing == null && req.getEmailAddress() != null && !req.getEmailAddress().isBlank()) {
         existing = userRepository.findByEmail(req.getEmailAddress().trim()).orElse(null);
+    }
+
+    // ENFORCE SINGLE ACTIVE TENANCY RULE: Check for existing active tenancy
+    // A tenant with an active tenancy cannot be added to a new property
+    if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
+        List<Tenant> activeTenancies = tenantRepository.findAllByPhoneNumber(req.getPhoneNumber().trim())
+                .stream()
+                .filter(t -> {
+                    // Check if tenancy is active: status is ACTIVE and (leaseEndDate is null OR leaseEndDate is in the future)
+                    boolean statusActive = t.getStatus() == Tenant.TenantStatus.ACTIVE;
+                    boolean leaseActive = t.getLeaseEndDate() == null || t.getLeaseEndDate().isAfter(java.time.LocalDate.now());
+                    return statusActive && leaseActive;
+                })
+                .filter(t -> !t.getPropertyId().equals(req.getPropertyId())) // Exclude same property (for reactivation cases)
+                .toList();
+        
+        if (!activeTenancies.isEmpty()) {
+            Tenant activeTenant = activeTenancies.get(0);
+            Property activeProperty = propertyRepository.findById(activeTenant.getPropertyId())
+                    .orElse(null);
+            
+            String propertyName;
+            if (activeProperty != null) {
+                // If property has a name, use it
+                if (activeProperty.getName() != null && !activeProperty.getName().trim().isEmpty()) {
+                    propertyName = activeProperty.getName();
+                } else {
+                    // For FLATs without names, create a descriptive name
+                    propertyName = activeProperty.getType().toString() + " at " + activeProperty.getLocation();
+                    if (activeProperty.getCity() != null) {
+                        propertyName += ", " + activeProperty.getCity();
+                    }
+                }
+            } else {
+                propertyName = "Property ID " + activeTenant.getPropertyId();
+            }
+            
+            // Extract first name from the tenant name for a more personal message
+            String firstName = req.getTenantName().trim();
+            if (firstName.contains(" ")) {
+                firstName = firstName.substring(0, firstName.indexOf(" "));
+            }
+            
+            throw new IllegalArgumentException(
+                firstName + " is already added to a property (" + propertyName + "). " +
+                "Please ask them to leave that property first before adding to a new one."
+            );
+        }
+    }
+
+    // Similarly check by email if provided
+    if (req.getEmailAddress() != null && !req.getEmailAddress().isBlank()) {
+        List<Tenant> activeTenancies = tenantRepository.findAllByEmailAddress(req.getEmailAddress().trim())
+                .stream()
+                .filter(t -> {
+                    // Check if tenancy is active: status is ACTIVE and (leaseEndDate is null OR leaseEndDate is in the future)
+                    boolean statusActive = t.getStatus() == Tenant.TenantStatus.ACTIVE;
+                    boolean leaseActive = t.getLeaseEndDate() == null || t.getLeaseEndDate().isAfter(java.time.LocalDate.now());
+                    return statusActive && leaseActive;
+                })
+                .filter(t -> !t.getPropertyId().equals(req.getPropertyId())) // Exclude same property (for reactivation cases)
+                .toList();
+        
+        if (!activeTenancies.isEmpty()) {
+            Tenant activeTenant = activeTenancies.get(0);
+            Property activeProperty = propertyRepository.findById(activeTenant.getPropertyId())
+                    .orElse(null);
+            
+            String propertyName;
+            if (activeProperty != null) {
+                // If property has a name, use it
+                if (activeProperty.getName() != null && !activeProperty.getName().trim().isEmpty()) {
+                    propertyName = activeProperty.getName();
+                } else {
+                    // For FLATs without names, create a descriptive name
+                    propertyName = activeProperty.getType().toString() + " at " + activeProperty.getLocation();
+                    if (activeProperty.getCity() != null) {
+                        propertyName += ", " + activeProperty.getCity();
+                    }
+                }
+            } else {
+                propertyName = "Property ID " + activeTenant.getPropertyId();
+            }
+            
+            // Extract first name from the tenant name for a more personal message
+            String firstName = req.getTenantName().trim();
+            if (firstName.contains(" ")) {
+                firstName = firstName.substring(0, firstName.indexOf(" "));
+            }
+            
+            throw new IllegalArgumentException(
+                firstName + " is already added to a property (" + propertyName + "). " +
+                "Please ask them to leave that property first before adding to a new one."
+            );
+        }
     }
 
     // Check if there's an existing tenant record for this user at this property
@@ -560,6 +661,65 @@ public class TenantService {
         null, null, null, null,
         tenant.isPrimary()
         );
+    }
+
+    /**
+     * Check if a user (identified by phone or email) has an active tenancy.
+     * Used for single active tenancy validation.
+     * @param phoneNumber Phone number to check (optional)
+     * @param email Email address to check (optional)
+     * @return TenantSummary of active tenancy if found, null otherwise
+     */
+    @Transactional(readOnly = true)
+    public TenantSummary findActiveTenancy(String phoneNumber, String email) {
+        List<Tenant> candidates = new ArrayList<>();
+        
+        // Check by phone number
+        if (phoneNumber != null && !phoneNumber.isBlank()) {
+            candidates.addAll(tenantRepository.findAllByPhoneNumber(phoneNumber.trim()));
+        }
+        
+        // Check by email
+        if (email != null && !email.isBlank()) {
+            candidates.addAll(tenantRepository.findAllByEmailAddress(email.trim()));
+        }
+        
+        // Find the first active tenancy
+        for (Tenant tenant : candidates) {
+            boolean statusActive = tenant.getStatus() == Tenant.TenantStatus.ACTIVE;
+            boolean leaseActive = tenant.getLeaseEndDate() == null || tenant.getLeaseEndDate().isAfter(java.time.LocalDate.now());
+            
+            if (statusActive && leaseActive) {
+                // Get property name for better UX
+                Property property = propertyRepository.findById(tenant.getPropertyId()).orElse(null);
+                String propertyName = property != null ? property.getName() : "Property ID " + tenant.getPropertyId();
+                
+                return new TenantSummary(
+                    tenant.getId(),                    // id
+                    tenant.getTenantId(),              // tenantId
+                    tenant.getTenantName(),            // tenantName
+                    tenant.getStatus() != null ? tenant.getStatus().toString() : "ACTIVE", // status
+                    tenant.getRentAmount(),            // rentAmount
+                    tenant.getSecurityDeposit(),       // securityDeposit
+                    tenant.getRentDueDate(),           // rentDueDate
+                    tenant.getPropertyId(),            // propertyId
+                    tenant.getPhoneNumber(),           // phoneNumber
+                    tenant.getFloorId(),               // floorId
+                    tenant.getUnitId(),                // unitId
+                    tenant.getBedIndex(),              // bedIndex
+                    tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null, // leaseStartDate
+                    tenant.getEmailAddress(),          // emailAddress
+                    tenant.getFlatRoomNumber(),        // flatRoomNumber
+                    null,                              // ownerName - not needed
+                    null,                              // ownerPhone - not needed
+                    propertyName,                      // propertyName
+                    null,                              // propertyCity - not needed
+                    tenant.isPrimary()                 // primary
+                );
+            }
+        }
+        
+        return null; // No active tenancy found
     }
 
     // ...existing code...

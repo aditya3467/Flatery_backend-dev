@@ -362,6 +362,27 @@ async function handleSingleTenantSubmit(fd) {
 
   console.log('[Single Tenant] Validation passed, data:', data);
 
+  // Check for existing active tenancy before adding
+  console.log('[Single Tenant] Checking for existing active tenancy...');
+  try {
+    const activeTenancyCheck = await apiService.checkActiveTenancy(data.phoneNumber, data.emailAddress);
+    if (activeTenancyCheck) {
+      // Extract first name for more personal message
+      const firstName = data.tenantName.trim().split(' ')[0];
+      const message = `${firstName} is already added to a property (${activeTenancyCheck.propertyName}). Please ask them to leave that property first before adding to a new one.`;
+      showAlert('error', message);
+      return;
+    }
+  } catch (error) {
+    // If error is not 404 (no active tenancy), it's an actual error
+    if (error.status && error.status !== 404) {
+      console.error('[Single Tenant] Error checking active tenancy:', error);
+      showAlert('error', 'Error checking tenant status. Please try again.');
+      return;
+    }
+    // 404 means no active tenancy found, which is good - continue with adding tenant
+  }
+
   try {
     console.log('[Add Tenant] Calling API with data:', data);
     showAlert('info', 'Adding tenant...');
@@ -424,6 +445,28 @@ async function handleMultipleTenantSubmit(fd) {
     };
 
     if (!validateTenantData(tenantData, i)) return;
+    
+    // Check for existing active tenancy
+    console.log(`[Multiple Tenants] Checking active tenancy for tenant ${i + 1}...`);
+    try {
+      const activeTenancyCheck = await apiService.checkActiveTenancy(tenantData.phoneNumber, tenantData.emailAddress);
+      if (activeTenancyCheck) {
+        // Extract first name for more personal message
+        const firstName = tenantData.tenantName.trim().split(' ')[0];
+        const message = `${firstName} is already added to a property (${activeTenancyCheck.propertyName}). Please ask them to leave that property first before adding to a new one.`;
+        showAlert('error', message);
+        return;
+      }
+    } catch (error) {
+      // If error is not 404 (no active tenancy), it's an actual error
+      if (error.status && error.status !== 404) {
+        console.error(`[Multiple Tenants] Error checking active tenancy for tenant ${i + 1}:`, error);
+        showAlert('error', `Error checking status for tenant ${i + 1}. Please try again.`);
+        return;
+      }
+      // 404 means no active tenancy found, which is good - continue
+    }
+    
     tenants.push(tenantData);
   }
 
