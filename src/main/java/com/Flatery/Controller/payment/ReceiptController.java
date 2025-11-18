@@ -1,6 +1,5 @@
-package com.Flatery.controller.payment;
+package com.Flatery.Controller.payment;
 
-import com.Flatery.dto.payment.ReceiptResponseDto;
 import com.Flatery.model.User;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.service.payment.ReceiptService;
@@ -15,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ReceiptController {
 
-    private final ReceiptService service;
+    private final ReceiptService service; 
     private final UserRepository userRepository;
 
     /**
