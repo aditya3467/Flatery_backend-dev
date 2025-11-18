@@ -26,10 +26,36 @@
     <!--===== Owner Dashboard Section Start =====-->
     <section class="owner-dashboard">
         <div class="dashboard-container">
-            <h2 class="dashboard-title">Owner Dashboard</h2>
-            <p class="dashboard-subtitle">Manage your properties and tenant requests efficiently.</p>
+            <!-- Dashboard Access Banner -->
+            <div class="dashboard-banner" style="background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; color: white; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                <div style="position: absolute; bottom: -30px; left: -30px; width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 50%;"></div>
+                <div style="position: relative; z-index: 2;">
+                    <h3 style="margin: 0 0 8px; font-size: 1.5rem; font-weight: 600;">
+                        <i class="fas fa-crown" style="margin-right: 8px; color: #FFD700;"></i>
+                        Advanced Owner Dashboard
+                    </h3>
+                    <p style="margin: 0 0 16px; opacity: 0.9; font-size: 1rem;">
+                        Access comprehensive property management, tenant oversight, payment tracking, and detailed analytics.
+                    </p>
+                    <a href="flat-dashboard.html" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: all 0.3s; backdrop-filter: blur(10px);" 
+                       onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Launch Dashboard
+                        <i class="fas fa-arrow-right" style="margin-left: 4px;"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <h2 class="dashboard-title">Owner Overview</h2>
+            <p class="dashboard-subtitle">Quick view of your properties and tenant requests. Use the advanced dashboard above for detailed management.</p>
             <div class="quick-actions" style="margin: 16px 0 8px; display: flex; gap: 12px; flex-wrap: wrap;">
-                <a href="add-property.html" class="btn primary" style="padding: 10px 14px; background:#007bff; color:#fff; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                <a href="flat-dashboard.html" class="btn primary" style="padding: 12px 18px; background:#0D6EFD; color:#fff; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; font-weight: 600; box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Owner Dashboard
+                </a>
+                <a href="add-property.html" class="btn secondary" style="padding: 10px 14px; background:#007bff; color:#fff; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
                     <i class="fas fa-plus-circle"></i>
                     Add Property
                 </a>
@@ -64,7 +90,13 @@
 
     <section class="properties-dashboard">
         <div class="properties-container">
-            <h2 class="">Properties</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="">Properties</h2>
+                <a href="flat-dashboard.html" class="btn" style="padding: 8px 16px; background: #0D6EFD; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-external-link-alt"></i>
+                    Manage in Dashboard
+                </a>
+            </div>
             <div class="properties-row">
                 <!-- Skeleton loading cards for faster perceived rendering -->
                 <div class="property-card skeleton-card" style="animation: pulse 1.5s ease-in-out infinite;">

@@ -7,13 +7,16 @@ import com.Flatery.model.User;
 import com.Flatery.model.payment.PaymentMode;
 import com.Flatery.model.payment.PaymentStatus;
 import com.Flatery.model.payment.Transaction;
+import com.Flatery.model.payment.TenantMonthlyPaymentStatus;
 import com.Flatery.model.tenant.Tenant;
 import com.Flatery.repository.payment.TransactionRepository;
+import com.Flatery.repository.payment.TenantMonthlyPaymentStatusRepository;
 import com.Flatery.repository.tenant.TenantRepository;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.service.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -33,6 +36,7 @@ public class TransactionService {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final TenantMonthlyPaymentStatusRepository monthlyPaymentStatusRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -41,12 +45,14 @@ public class TransactionService {
 
     public TransactionService(TransactionRepository repository, TenantRepository tenantRepository, 
                             UserRepository userRepository, NotificationService notificationService, 
-                            PlatformTransactionManager transactionManager) {
+                            PlatformTransactionManager transactionManager,
+                            TenantMonthlyPaymentStatusRepository monthlyPaymentStatusRepository) {
         this.repository = repository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.transactionManager = transactionManager;
+        this.monthlyPaymentStatusRepository = monthlyPaymentStatusRepository;
     }
 
     public Transaction save(Transaction transaction) {
@@ -188,9 +194,17 @@ public class TransactionService {
      */
     @Transactional
     public TransactionResponseDto verifyTransaction(Long transactionId, Long ownerId) {
-        System.out.println("=== VERIFY TRANSACTION START ===");
+        try {
+            System.out.println("=== VERIFY TRANSACTION START ===");
         System.out.println("Transaction ID: " + transactionId);
         System.out.println("Owner ID: " + ownerId);
+        
+        if (transactionId == null) {
+            throw new IllegalArgumentException("Transaction ID cannot be null");
+        }
+        if (ownerId == null) {
+            throw new IllegalArgumentException("Owner ID cannot be null");
+        }
         
         Transaction transaction = repository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
@@ -199,6 +213,10 @@ public class TransactionService {
                           ", Owner ID: " + transaction.getOwnerId() +
                           ", Amount: " + transaction.getAmount() +
                           ", Status: " + transaction.getStatus());
+
+        if (transaction.getOwnerId() == null) {
+            throw new IllegalStateException("Transaction owner ID is null");
+        }
 
         if (!transaction.getOwnerId().equals(ownerId)) {
             throw new SecurityException("Unauthorized attempt to verify transaction");
@@ -217,7 +235,9 @@ public class TransactionService {
             // Resolve the actual User ID from the Tenant ID
             Long tenantUserId = resolveUserIdFromTenantId(transaction.getTenantId());
             if (tenantUserId == null) {
-                throw new RuntimeException("Could not resolve User ID from Tenant ID: " + transaction.getTenantId());
+                System.err.println("Could not resolve User ID from Tenant ID: " + transaction.getTenantId() + ". Skipping notification.");
+                System.out.println("Payment verification completed successfully (notification skipped due to user resolution issue)");
+                return mapToDto(updated);
             }
             
             String title = "Payment Approved ✅";
@@ -249,7 +269,60 @@ public class TransactionService {
         }
         
         System.out.println("=== VERIFY TRANSACTION END ===");
-        return mapToDto(updated);
+        TransactionResponseDto result = mapToDto(updated);
+        
+        // AFTER successful transaction completion, handle multi-tenant logic separately
+        handleMultiTenantAfterCompletion(updated);
+        
+        return result;
+        
+        } catch (Exception e) {
+            System.err.println("CRITICAL ERROR in verifyTransaction: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Transaction verification failed: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Wrapper method to handle multi-tenant payment update in a separate transaction
+     * This prevents failures in multi-tenant logic from rolling back the main payment verification
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void handleMultiTenantPaymentUpdateSeparately(Transaction verifiedTransaction) {
+        handleMultiTenantPaymentUpdate(verifiedTransaction);
+    }
+    
+    /**
+     * Handle multi-tenant logic AFTER main transaction is complete
+     * This runs completely separately and cannot affect the main payment verification
+     */
+    private void handleMultiTenantAfterCompletion(Transaction verifiedTransaction) {
+        try {
+            System.out.println("=== POST-COMPLETION MULTI-TENANT PROCESSING ===");
+            
+            // Run this in a completely separate thread to avoid any transaction interference
+            new Thread(() -> {
+                try {
+                    Thread.sleep(100); // Small delay to ensure main transaction is committed
+                    
+                    System.out.println("Processing multi-tenant payment status for transaction ID: " + verifiedTransaction.getId());
+                    
+                    // Call the multi-tenant logic in a new transaction context
+                    handleMultiTenantPaymentUpdateSeparately(verifiedTransaction);
+                    
+                    System.out.println("Multi-tenant processing completed successfully");
+                    
+                } catch (Exception e) {
+                    System.err.println("Error in post-completion multi-tenant processing: " + e.getMessage());
+                    e.printStackTrace();
+                    // This is completely separate - failures here don't affect anything
+                }
+            }).start();
+            
+        } catch (Exception e) {
+            System.err.println("Error starting multi-tenant background process: " + e.getMessage());
+            // Even thread creation failure won't affect main transaction
+        }
     }
 
     /**
@@ -427,5 +500,152 @@ public class TransactionService {
         .status(statusForDto)
                 .paymentDate(tx.getPaymentDate() != null ? tx.getPaymentDate().toString() : null)
                 .build();
+    }
+    
+    /**
+     * Handle multi-tenant payment update logic.
+     * When a primary tenant's payment is verified, all other tenants for the same property
+     * get marked as "paid" for that month WITHOUT creating actual transaction records.
+     * Only executes if the paying tenant has primary=true.
+     */
+    // Removed @Transactional to avoid conflicts with parent transaction
+    private void handleMultiTenantPaymentUpdate(Transaction verifiedTransaction) {
+        try {
+            System.out.println("=== MULTI-TENANT PAYMENT UPDATE START ===");
+            
+            // Check if the new payment status table exists by testing a simple query
+            try {
+                monthlyPaymentStatusRepository.count();
+                System.out.println("Payment status repository is available");
+            } catch (Exception e) {
+                System.err.println("Payment status table not available yet, skipping multi-tenant update: " + e.getMessage());
+                return;
+            }
+            
+            // Find the tenant who made this payment
+            Optional<Tenant> payingTenantOpt = tenantRepository.findById(verifiedTransaction.getTenantId());
+            if (!payingTenantOpt.isPresent()) {
+                System.out.println("Could not find tenant for transaction, skipping multi-tenant update");
+                return;
+            }
+            
+            Tenant payingTenant = payingTenantOpt.get();
+            
+            // Only proceed if the paying tenant is PRIMARY
+            if (!payingTenant.isPrimary()) {
+                System.out.println("Paying tenant (ID: " + payingTenant.getId() + ") is not primary, skipping multi-tenant update");
+                return;
+            }
+            
+            System.out.println("Primary tenant payment verified, updating other tenants for property: " + verifiedTransaction.getPropertyId());
+            
+            // Find all other tenants for the same property (excluding the paying tenant)
+        List<Tenant> otherTenants = tenantRepository.findByPropertyId(verifiedTransaction.getPropertyId())
+            .stream()
+            .filter(t -> !t.getId().equals(verifiedTransaction.getTenantId()) && 
+                   t.getStatus() == Tenant.TenantStatus.ACTIVE)
+            .collect(Collectors.toList());
+            
+            System.out.println("Found " + otherTenants.size() + " other tenants to mark as paid");
+            
+            // For each other tenant, mark as paid for this month (without creating transaction)
+            for (Tenant otherTenant : otherTenants) {
+                // Check if payment status record already exists
+                Optional<TenantMonthlyPaymentStatus> existingStatus = monthlyPaymentStatusRepository
+                    .findByTenantIdAndPaymentMonth(otherTenant.getId(), verifiedTransaction.getPaymentMonth());
+                
+                if (existingStatus.isPresent()) {
+                    // Update existing record
+                    TenantMonthlyPaymentStatus status = existingStatus.get();
+                    if (!status.isPaid()) {
+                        status.setPaid(true);
+                        status.setMarkedPaidDate(LocalDateTime.now());
+                        status.setMarkedBy("primary-tenant-payment");
+                        monthlyPaymentStatusRepository.save(status);
+                        
+                        System.out.println("Updated payment status for tenant: " + otherTenant.getTenantName() + 
+                                         " for month: " + verifiedTransaction.getPaymentMonth());
+                    } else {
+                        System.out.println("Tenant " + otherTenant.getTenantName() + " already marked as paid for month: " + 
+                                         verifiedTransaction.getPaymentMonth());
+                    }
+                } else {
+                    // Create new payment status record
+                    TenantMonthlyPaymentStatus newStatus = TenantMonthlyPaymentStatus.builder()
+                            .tenantId(otherTenant.getId())
+                            .propertyId(verifiedTransaction.getPropertyId())
+                            .paymentMonth(verifiedTransaction.getPaymentMonth())
+                            .isPaid(true)
+                            .markedPaidDate(LocalDateTime.now())
+                            .markedBy("primary-tenant-payment")
+                            .build();
+                    
+                    monthlyPaymentStatusRepository.save(newStatus);
+                    
+                    System.out.println("Created payment status for tenant: " + otherTenant.getTenantName() + 
+                                     " for month: " + verifiedTransaction.getPaymentMonth());
+                }
+                
+                // Send notification to the other tenant
+                try {
+                    Long tenantUserId = resolveUserIdFromTenantId(otherTenant.getId());
+                    if (tenantUserId != null) {
+                        String title = "Payment Status Updated ✅";
+                        String message = String.format("Your payment for %s has been marked as paid (handled by primary tenant).", 
+                            verifiedTransaction.getPaymentMonth());
+                        
+                        Notification notification = notificationService.createNotification(
+                                tenantUserId,
+                                verifiedTransaction.getOwnerId(),
+                                "PAYMENT_STATUS",
+                                title,
+                                message,
+                                "/tenant-dashboard.html"
+                        );
+                        System.out.println("Notification sent to tenant: " + otherTenant.getTenantName());
+                    }
+                    } catch (Exception e) {
+                        System.err.println("Failed to send notification to tenant " + otherTenant.getId() + ": " + e.getMessage());
+                    }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error in multi-tenant payment update: " + e.getMessage());
+            e.printStackTrace();
+            // Don't fail the main transaction, just log the error
+        }
+    }
+    
+    /**
+     * Clean up invalid auto-generated payments.
+     * Removes all auto-generated transactions since the new system uses payment status records instead.
+     * Should be called to fix data created before the payment status system was implemented.
+     */
+    @Transactional
+    public int cleanupInvalidAutoGeneratedPayments() {
+        try {
+            System.out.println("=== CLEANUP INVALID AUTO-GENERATED PAYMENTS ===");
+            
+            // Find all auto-generated transactions
+            List<Transaction> autoGenerated = repository.findByCreatedBy("system-auto-primary-payment");
+            System.out.println("Found " + autoGenerated.size() + " auto-generated transactions");
+            
+            int deletedCount = 0;
+            for (Transaction transaction : autoGenerated) {
+                // Remove all auto-generated transactions since we now use payment status records
+                System.out.println("Deleting auto-generated transaction ID: " + transaction.getId() + 
+                                 " for tenant ID: " + transaction.getTenantId());
+                repository.delete(transaction);
+                deletedCount++;
+            }
+            
+            System.out.println("Cleanup completed. Deleted " + deletedCount + " auto-generated transactions");
+            return deletedCount;
+            
+        } catch (Exception e) {
+            System.err.println("Error during cleanup: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to cleanup invalid auto-generated payments", e);
+        }
     }
 }

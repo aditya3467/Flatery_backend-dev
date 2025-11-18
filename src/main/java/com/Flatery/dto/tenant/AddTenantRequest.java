@@ -51,4 +51,7 @@ public class AddTenantRequest {
     // PG unit assignment (optional)
     private Long unitId;      // if provided, must belong to the selected property
     private Integer bedIndex; // 1..capacity, optional -> auto-assign next free
+    
+    // Primary tenant indicator (true = primary, false = secondary)
+    private Boolean primary = false;
 }
