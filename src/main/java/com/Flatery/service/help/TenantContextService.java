@@ -91,11 +91,11 @@ public class TenantContextService {
      * Extract role from authentication
      */
     public String getRoleFromAuth(Authentication authentication) {
-        if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("USER"))) {
+        if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_USER"))) {
             return "USER";
-        } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ADMIN"))) {
+        } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
             return "ADMIN";
-        } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("SUPERADMIN"))) {
+        } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SUPERADMIN"))) {
             return "SUPERADMIN";
         }
         return "UNKNOWN";
@@ -118,7 +118,7 @@ public class TenantContextService {
      */
     public boolean isTenant(Authentication authentication) {
         return authentication.getAuthorities()
-                .contains(new SimpleGrantedAuthority("USER"));
+                .contains(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     /**
@@ -126,6 +126,6 @@ public class TenantContextService {
      */
     public boolean isOwner(Authentication authentication) {
         return authentication.getAuthorities()
-                .contains(new SimpleGrantedAuthority("ADMIN"));
+                .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 }

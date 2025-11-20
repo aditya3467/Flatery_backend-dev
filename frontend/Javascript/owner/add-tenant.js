@@ -340,9 +340,19 @@ async function handleSingleTenantSubmit(fd) {
     console.log(`  ${key}: ${value}`);
   }
   
+  // Clean phone number: remove country code and non-digits
+  const rawPhoneNumber = (fd.get('phoneNumber_0') || '').trim();
+  const cleanPhoneNumber = rawPhoneNumber.replace(/^\+91/, '').replace(/\D/g, '');
+  
+  console.log('[Debug] Phone number cleaning:', {
+    raw: rawPhoneNumber,
+    cleaned: cleanPhoneNumber,
+    length: cleanPhoneNumber.length
+  });
+  
   const data = {
     tenantName: (fd.get('tenantName_0') || '').trim(),
-    phoneNumber: (fd.get('phoneNumber_0') || '').trim(),
+    phoneNumber: cleanPhoneNumber,
     emailAddress: (fd.get('emailAddress_0') || '').trim() || null,
     propertyId: parseInt(document.getElementById('propertyId').value),
     flatRoomNumber: (fd.get('flatRoomNumber_0') || fd.get('flatRoomNumber') || '').trim(),
@@ -426,9 +436,14 @@ async function handleMultipleTenantSubmit(fd) {
   // Collect data for all tenants
   for (let i = 0; i < currentTenantCount; i++) {
     const isExisting = (fd.get(`tenantType_${i}`) || 'NEW') === 'EXISTING';
+    
+    // Clean phone number: remove country code and non-digits
+    const rawPhoneNumber = (fd.get(`phoneNumber_${i}`) || '').trim();
+    const cleanPhoneNumber = rawPhoneNumber.replace(/^\+91/, '').replace(/\D/g, '');
+    
     const tenantData = {
       tenantName: (fd.get(`tenantName_${i}`) || '').trim(),
-      phoneNumber: (fd.get(`phoneNumber_${i}`) || '').trim(),
+      phoneNumber: cleanPhoneNumber,
       emailAddress: (fd.get(`emailAddress_${i}`) || '').trim() || null,
       propertyId: parseInt(document.getElementById('propertyId').value),
       flatRoomNumber: (fd.get(`flatRoomNumber_${i}`) || '').trim(),

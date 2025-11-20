@@ -9,6 +9,7 @@ import com.Flatery.model.User;
 import com.Flatery.model.property.Property;
 import com.Flatery.model.property.Floor;
 import com.Flatery.model.tenant.Tenant;
+import com.Flatery.model.tenant.TenancyHistory;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.model.property.Unit;
 import com.Flatery.repository.property.UnitRepository;
@@ -28,7 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -49,6 +52,7 @@ public class TenantService {
     private final UnitRepository unitRepository;
     private final FloorRepository floorRepository;
     private final UnitService unitService;
+    private final TenancyHistoryService tenancyHistoryService;
 
     private static final String TENANT_PREFIX = "TEN";
     private final Random random = new SecureRandom();
@@ -72,7 +76,7 @@ public class TenantService {
     }
 
     // ENFORCE SINGLE ACTIVE TENANCY RULE: Check for existing active tenancy
-    // A tenant with an active tenancy cannot be added to a new property
+    // A tenant with an active tenancy cannot be added to a new property until vacated
     if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
         List<Tenant> activeTenancies = tenantRepository.findAllByPhoneNumber(req.getPhoneNumber().trim())
                 .stream()
@@ -114,7 +118,7 @@ public class TenantService {
             
             throw new IllegalArgumentException(
                 firstName + " is already added to a property (" + propertyName + "). " +
-                "Please ask them to leave that property first before adding to a new one."
+                "Please vacate them from that property first before adding to a new one."
             );
         }
     }
@@ -161,7 +165,7 @@ public class TenantService {
             
             throw new IllegalArgumentException(
                 firstName + " is already added to a property (" + propertyName + "). " +
-                "Please ask them to leave that property first before adding to a new one."
+                "Please vacate them from that property first before adding to a new one."
             );
         }
     }
@@ -605,14 +609,20 @@ public class TenantService {
     /**
      * Deactivate a tenant by external tenantId (TENxxxxx):
      * - Validate ownership
-     * - Mark status VACATED
-     * - Set leaseEndDate to today (ensures not counted as active)
-     * - Clear bedIndex to free the bed
-     * - Recompute unit occupancy if assigned
-     * Returns updated TenantSummary
+     * - Move tenant from tenancy table to tenancy_history
+     * - Free bed assignment and recompute unit occupancy
+     * Returns summary with vacation details
      */
     @Transactional
-    public TenantSummary deactivateTenant(Long ownerId, String externalTenantId) {
+    public Map<String, Object> deactivateTenant(Long ownerId, String externalTenantId) {
+        return deactivateTenant(ownerId, externalTenantId, "Owner initiated deactivation");
+    }
+
+    /**
+     * Deactivate a tenant with custom reason
+     */
+    @Transactional
+    public Map<String, Object> deactivateTenant(Long ownerId, String externalTenantId, String reason) {
         Tenant tenant = tenantRepository.findByTenantId(externalTenantId)
                 .orElseGet(() -> {
                     try {
@@ -630,37 +640,25 @@ public class TenantService {
             throw new RuntimeException("You do not have permission to modify this tenant");
         }
 
-        // Update status and dates; set lease end date to today (ensures not active) and clear bed assignment
-        tenant.setStatus(Tenant.TenantStatus.VACATED);
-        tenant.setLeaseEndDate(java.time.LocalDate.now()); // even if already set, override to today to guarantee vacancy
-        tenant.setBedIndex(null); // free the bed explicitly
-
-        tenantRepository.save(tenant);
-
-        // Update unit occupancy if applicable
+        // Update unit occupancy before moving to history (frees bed)
         if (tenant.getUnitId() != null) {
             unitService.recomputeUnitStatus(tenant.getUnitId());
         }
 
-        return new TenantSummary(
-                tenant.getId(),
-                tenant.getTenantId(),
-                tenant.getTenantName(),
-                tenant.getStatus().name(),
-                tenant.getRentAmount(),
-                tenant.getSecurityDeposit(),
-                tenant.getRentDueDate(),
-                tenant.getPropertyId(),
-                tenant.getPhoneNumber(),
-                tenant.getFloorId(),
-                tenant.getUnitId(),
-                tenant.getBedIndex(),
-                tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null,
-                tenant.getEmailAddress(),
-                tenant.getFlatRoomNumber(),
-        null, null, null, null,
-        tenant.isPrimary()
-        );
+        // Move tenant to tenancy history (this will delete from tenancy table)
+        TenancyHistory tenancyHistory = tenancyHistoryService.vacateTenant(tenant.getId(), reason);
+
+        // Return response with vacation details
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Tenant " + tenant.getTenantName() + " has been deactivated and moved to history");
+        response.put("tenantName", tenant.getTenantName());
+        response.put("phoneNumber", tenant.getPhoneNumber());
+        response.put("vacateReason", reason);
+        response.put("vacatedOn", tenancyHistory.getTenancyEndDate());
+        response.put("tenancyHistoryId", tenancyHistory.getId());
+        
+        return response;
     }
 
     /**
@@ -720,6 +718,47 @@ public class TenantService {
         }
         
         return null; // No active tenancy found
+    }
+
+    // TEMPORARILY COMMENTED OUT - INCOMPLETE FEATURE WITH NON-EXISTENT METHODS
+    /*
+    public Map<String, Object> checkTenantExists(String phoneNumber, String email) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // Check for existing user
+        Optional<User> existingUser = userRepository.findByUsername(email);
+        if (existingUser.isPresent()) {
+            result.put("userExists", true);
+            result.put("userId", existingUser.get().getId());
+        } else {
+            result.put("userExists", false);
+        }
+        
+        // Check for existing tenant
+        Optional<Tenant> existingTenant = tenantRepository.findByPhoneNumberOrEmail(phoneNumber, email);
+        if (existingTenant.isPresent()) {
+            result.put("tenantExists", true);
+            result.put("tenantId", existingTenant.get().getId());
+            result.put("isActive", existingTenant.get().isActive());
+            if (existingTenant.get().getUnit() != null) {
+                result.put("currentUnitId", existingTenant.get().getUnit().getId());
+                result.put("currentPropertyId", existingTenant.get().getUnit().getProperty().getId());
+            }
+        } else {
+            result.put("tenantExists", false);
+        }
+        
+        return result;
+    }
+    */
+
+    /**
+     * Get tenant by ID and verify ownership
+     */
+    public Tenant getTenantByIdAndOwner(Long tenantId, Long ownerId) {
+        return tenantRepository.findById(tenantId)
+                .filter(tenant -> tenant.getOwnerId().equals(ownerId))
+                .orElse(null);
     }
 
     // ...existing code...

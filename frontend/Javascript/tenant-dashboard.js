@@ -1814,7 +1814,7 @@ function initializePaymentFilters() {
 // Filter payment history
 function filterPaymentHistory() {
     const monthFilter = document.getElementById('monthFilter').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilterPayment').value.toLowerCase();
+       const statusFilter = document.getElementById('statusFilterPayment').value.toLowerCase();
     const searchTerm = document.getElementById('paymentSearch').value.toLowerCase();
     
     const tableRows = document.querySelectorAll('#paymentHistoryTableBody tr');
@@ -2200,32 +2200,40 @@ function closeRaiseComplaintModal() {
 }
 
 // Handle raise complaint form submission
-document.getElementById('raiseComplaintForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const complaintData = {
-        category: formData.get('category'),
-        title: formData.get('title'),
-        description: formData.get('description'),
-        attachment: formData.get('attachment'),
-        preferredResolutionTime: formData.get('preferredResolutionTime')
-    };
-    
-    console.log('Complaint submitted:', complaintData);
-    
-    // Here you would make an API call to submit the complaint
-    // For now, we'll just show a success message
-    showSuccess('Complaint submitted successfully! You will be notified when there are updates.');
-    
-    // Close modal
-    closeRaiseComplaintModal();
-    
-    // Reload complaints (in a real app, you'd add the new complaint to the list)
-    setTimeout(() => {
-        loadComplaints();
-    }, 1000);
-});
+// Ensure the real submitComplaint function is used for the form
+document.getElementById('raiseComplaintForm').addEventListener('submit', submitComplaint);
+
+// Make complaintManager globally available if not already
+if (typeof window.complaintManager === 'undefined' && typeof ComplaintManager !== 'undefined') {
+    window.complaintManager = new ComplaintManager();
+}
+
+// Handle complaint form submission
+async function submitComplaint(event) {
+    event.preventDefault();
+    const form = document.getElementById('raiseComplaintForm');
+    const formData = new FormData(form);
+
+    // Optionally add extra fields if needed
+    // formData.append('propertyId', ...);
+
+    try {
+        // Use the global complaintManager if available, else fallback to ApiService
+        if (window.complaintManager && typeof complaintManager.createComplaint === 'function') {
+            await complaintManager.createComplaint(formData);
+        } else if (window.apiService && typeof apiService.createComplaint === 'function') {
+            await apiService.createComplaint(formData);
+        } else {
+            alert('Complaint service not available.');
+            return;
+        }
+        alert('Complaint submitted successfully!');
+        closeRaiseComplaintModal();
+        // Optionally refresh complaints list here
+    } catch (error) {
+        alert('Failed to submit complaint: ' + (error.message || error));
+    }
+}
 
 // View complaint details
 function viewComplaintDetails(complaintId) {

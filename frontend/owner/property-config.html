@@ -7,10 +7,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css" />
   <link rel="stylesheet" href="../css/owner/property-config.css" />
+  <link rel="stylesheet" href="../css/maintenance-unified.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="../Javascript/api.js"></script>
   <script src="../Javascript/component-loader.js" defer></script>
   <script src="../Javascript/notifications.js" defer></script>
+  <script src="../Javascript/complaints.js" defer></script>
   <script src="../Javascript/main.js" defer></script>
   <script src="../Javascript/owner/property-config.js" defer></script>
 </head>
@@ -1615,6 +1617,204 @@
         </div>
       </div>
 
+      <!-- Maintenance Section -->
+      <div class="maintenance-section" style="display: none;">
+        <div class="section-header">
+          <div class="header-left">
+            <h2><i class="fas fa-tools"></i> Maintenance & Complaints</h2>
+            <p>Manage property maintenance requests and tenant complaints</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary" id="exportComplaintsBtn">
+              <i class="fas fa-download"></i> Export
+            </button>
+            <button class="btn btn-success" id="newComplaintBtn">
+              <i class="fas fa-plus"></i> New Issue
+            </button>
+          </div>
+        </div>
+
+        <!-- Top Filters -->
+        <div class="filters-container">
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="propertyFilter">Property</label>
+              <select id="propertyFilter" class="form-control">
+                <option value="">All Properties</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="unitFilter">Room / Bed</label>
+              <select id="unitFilter" class="form-control">
+                <option value="">All Units</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="statusFilter">Status</label>
+              <select id="statusFilter" class="form-control">
+                <option value="">All Status</option>
+                <option value="OPEN">New</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
+                <option value="REOPENED">Reopened</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="priorityFilter">Priority</label>
+              <select id="priorityFilter" class="form-control">
+                <option value="">All Priority</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="categoryFilter">Category</label>
+              <select id="categoryFilter" class="form-control">
+                <option value="">All Categories</option>
+                <option value="WATER">Water</option>
+                <option value="ELECTRICITY">Electricity</option>
+                <option value="CLEANING">Cleaning</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="PEST_CONTROL">Pest Control</option>
+                <option value="SECURITY">Security</option>
+                <option value="OTHERS">Others</option>
+              </select>
+            </div>
+          </div>
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="tenantFilter">Tenant Name</label>
+              <input type="text" id="tenantFilter" class="form-control" placeholder="Search by tenant name...">
+            </div>
+            <div class="filter-group">
+              <label for="dateFromFilter">From Date</label>
+              <input type="date" id="dateFromFilter" class="form-control">
+            </div>
+            <div class="filter-group">
+              <label for="dateToFilter">To Date</label>
+              <input type="date" id="dateToFilter" class="form-control">
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-primary" id="applyFiltersBtn">
+                <i class="fas fa-filter"></i> Apply Filters
+              </button>
+              <button class="btn btn-secondary" id="clearFiltersBtn">
+                <i class="fas fa-times"></i> Clear
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon total">
+              <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="totalComplaints">0</h3>
+              <p>Total Issues</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon open">
+              <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="openComplaints">0</h3>
+              <p>Open Issues</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon progress">
+              <i class="fas fa-cog"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="inProgressComplaints">0</h3>
+              <p>In Progress</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon resolved">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="resolvedComplaints">0</h3>
+              <p>Resolved</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Complaints Table -->
+        <div class="table-container">
+          <div class="table-header">
+            <div class="table-title">
+              <h3>Maintenance Issues</h3>
+              <span class="results-count" id="resultsCount">0 issues found</span>
+            </div>
+            <div class="table-actions">
+              <div class="view-toggle">
+                <button class="btn btn-sm active" id="tableViewBtn">
+                  <i class="fas fa-table"></i> Table
+                </button>
+                <button class="btn btn-sm" id="gridViewBtn">
+                  <i class="fas fa-th"></i> Grid
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="complaints-table">
+              <thead>
+                <tr>
+                  <th>Property</th>
+                  <th>Unit</th>
+                  <th>Tenant</th>
+                  <th>Issue</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Updated On</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="complaintsTableBody">
+                <tr class="loading-row">
+                  <td colspan="9" class="text-center">
+                    <div class="loading-spinner">
+                      <i class="fas fa-spinner fa-spin"></i>
+                      Loading maintenance issues...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notices Section -->
+      <div class="notices-section" style="display: none;">
+        <div class="section-header">
+          <h2><i class="fas fa-bell"></i> Notices & Announcements</h2>
+          <div class="section-actions">
+            <button class="btn-action primary" onclick="openCreateNoticeModal()">
+              <i class="fas fa-plus"></i> Create Notice
+            </button>
+          </div>
+        </div>
+
+        <!-- Notice Placeholder -->
+        <div class="notice-placeholder">
+          <i class="fas fa-bell-slash"></i>
+          <h3>Coming Soon</h3>
+          <p>Notice and announcement functionality will be available soon.</p>
+        </div>
+      </div>
+
       <!-- Floors Section -->
     </main>
   </div>
@@ -1722,6 +1922,303 @@
         </div>
         <button type="submit" class="btn-primary">Add Expense</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Complaint Detail Modal -->
+  <div id="complaintDetailModal" class="modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h2><i class="fas fa-tools"></i> Complaint Details</h2>
+        <span class="close" onclick="closeComplaintDetailModal()">&times;</span>
+      </div>
+
+      <div class="complaint-detail-content">
+        <div class="complaint-info">
+          <div class="info-row">
+            <div class="info-item">
+              <label>Complaint ID:</label>
+              <span id="detailComplaintId">-</span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span id="detailComplaintStatus" class="status-badge">-</span>
+            </div>
+            <div class="info-item">
+              <label>Priority:</label>
+              <span id="detailComplaintPriority" class="priority-badge">-</span>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-item">
+              <label>Category:</label>
+              <span id="detailComplaintCategory">-</span>
+            </div>
+            <div class="info-item">
+              <label>Submitted:</label>
+              <span id="detailComplaintSubmitted">-</span>
+            </div>
+            <div class="info-item">
+              <label>SLA Deadline:</label>
+              <span id="detailComplaintSLA">-</span>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-item full-width">
+              <label>Title:</label>
+              <span id="detailComplaintTitle">-</span>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-item full-width">
+              <label>Description:</label>
+              <p id="detailComplaintDescription">-</p>
+            </div>
+          </div>
+
+          <div id="complaintAttachment" class="info-row" style="display: none;">
+            <div class="info-item full-width">
+              <label>Attachment:</label>
+              <div class="attachment-preview">
+                <img id="complaintAttachmentImage" style="max-width: 200px; max-height: 200px;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Update Section -->
+        <div class="status-update-section">
+          <h3>Update Status</h3>
+          <form id="statusUpdateForm" onsubmit="updateComplaintStatus(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="newStatus">Status:</label>
+                <select id="newStatus" name="status" required>
+                  <option value="">Select Status</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="statusComment">Comment:</label>
+                <textarea id="statusComment" name="comment" placeholder="Add a comment about this status change..." rows="3"></textarea>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-save"></i> Update Status
+            </button>
+          </form>
+        </div>
+
+        <!-- Response Section -->
+        <div class="response-section">
+          <h3>Communication</h3>
+          <div class="responses-list" id="responsesList">
+            <!-- Responses will be loaded here -->
+          </div>
+
+          <form id="addResponseForm" onsubmit="addComplaintResponse(event)">
+            <div class="form-group">
+              <label for="responseMessage">Your Response:</label>
+              <textarea id="responseMessage" name="message" placeholder="Type your response..." rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn-secondary">
+              <i class="fas fa-reply"></i> Send Response
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel Drawer for Complaint Details -->
+  <div id="complaintDrawer" class="right-drawer">
+    <div class="drawer-overlay" onclick="closeComplaintDrawer()"></div>
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h2><i class="fas fa-tools"></i> Issue Details</h2>
+        <button class="close-drawer" onclick="closeComplaintDrawer()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="drawer-body">
+        <!-- A. Issue Overview -->
+        <div class="drawer-section">
+          <div class="section-title">
+            <i class="fas fa-info-circle"></i>
+            Issue Overview
+          </div>
+          <div class="issue-overview">
+            <div class="issue-header">
+              <h3 id="drawerIssueTitle">Loading...</h3>
+              <div class="issue-meta">
+                <span class="issue-id" id="drawerIssueId">#0000</span>
+                <span class="issue-status" id="drawerIssueStatus">New</span>
+              </div>
+            </div>
+            <div class="issue-details-grid">
+              <div class="detail-item">
+                <label>Category:</label>
+                <span id="drawerIssueCategory" class="category-badge">-</span>
+              </div>
+              <div class="detail-item">
+                <label>Priority:</label>
+                <span id="drawerIssuePriority" class="priority-badge">-</span>
+              </div>
+              <div class="detail-item">
+                <label>Created On:</label>
+                <span id="drawerIssueCreated">-</span>
+              </div>
+              <div class="detail-item">
+                <label>Last Updated:</label>
+                <span id="drawerIssueUpdated">-</span>
+              </div>
+            </div>
+            <div class="issue-description">
+              <label>Description:</label>
+              <p id="drawerIssueDescription">Loading description...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. Property & Unit Details -->
+        <div class="drawer-section">
+          <div class="section-title">
+            <i class="fas fa-building"></i>
+            Property & Unit Details
+          </div>
+          <div class="property-details">
+            <div class="property-info">
+              <div class="detail-item">
+                <label>Property:</label>
+                <span id="drawerPropertyName">-</span>
+              </div>
+              <div class="detail-item">
+                <label>Unit:</label>
+                <span id="drawerUnitName">-</span>
+              </div>
+              <div class="detail-item">
+                <label>Property Type:</label>
+                <span id="drawerPropertyType">PG</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. Tenant Details -->
+        <div class="drawer-section">
+          <div class="section-title">
+            <i class="fas fa-user"></i>
+            Tenant Details
+          </div>
+          <div class="tenant-details">
+            <div class="tenant-info">
+              <div class="tenant-avatar">
+                <i class="fas fa-user-circle"></i>
+              </div>
+              <div class="tenant-data">
+                <h4 id="drawerTenantName">Loading...</h4>
+                <div class="contact-info">
+                  <div class="contact-item">
+                    <i class="fas fa-phone"></i>
+                    <span id="drawerTenantPhone">-</span>
+                  </div>
+                  <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <span id="drawerTenantEmail">-</span>
+                  </div>
+                  <div class="contact-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Move-in: <span id="drawerTenantMoveIn">-</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- D. Attachments -->
+        <div class="drawer-section">
+          <div class="section-title">
+            <i class="fas fa-paperclip"></i>
+            Attachments
+          </div>
+          <div class="attachments-container" id="drawerAttachments">
+            <div class="no-attachments">
+              <i class="fas fa-image"></i>
+              <p>No attachments</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- E. Owner Actions -->
+        <div class="drawer-section">
+          <div class="section-title">
+            <i class="fas fa-tools"></i>
+            Owner Actions
+          </div>
+          <div class="owner-actions">
+            <div class="action-group">
+              <label>Change Status:</label>
+              <div class="status-actions">
+                <button class="action-btn status-new" onclick="updateIssueStatus('OPEN')">
+                  <i class="fas fa-plus"></i> New
+                </button>
+                <button class="action-btn status-progress" onclick="updateIssueStatus('IN_PROGRESS')">
+                  <i class="fas fa-cog"></i> In Progress
+                </button>
+                <button class="action-btn status-resolved" onclick="updateIssueStatus('RESOLVED')">
+                  <i class="fas fa-check"></i> Resolved
+                </button>
+              </div>
+            </div>
+            
+            <div class="action-group">
+              <label>Add Remark:</label>
+              <div class="remark-form">
+                <textarea id="ownerRemark" placeholder="Add your remark or update..." rows="3"></textarea>
+                <button class="action-btn primary" onclick="addOwnerRemark()">
+                  <i class="fas fa-comment"></i> Add Remark
+                </button>
+              </div>
+            </div>
+
+            <div class="action-group">
+              <button class="action-btn resolve" onclick="resolveIssue()">
+                <i class="fas fa-check-circle"></i> Mark as Resolved
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- F. Timeline -->
+        <div class="drawer-section">
+          <div class="section-title">
+            <i class="fas fa-history"></i>
+            Timeline
+          </div>
+          <div class="timeline-container" id="drawerTimeline">
+            <div class="timeline-item">
+              <div class="timeline-icon created">
+                <i class="fas fa-plus"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="timeline-title">Issue Created</span>
+                  <span class="timeline-time">Loading...</span>
+                </div>
+                <p class="timeline-description">Issue was created by tenant</p>
+              </div>
+            </div>
+            <!-- More timeline items will be loaded here -->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

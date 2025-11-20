@@ -42,6 +42,7 @@ public class SecurityConfig {
             .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Allow CORS preflight
                         .requestMatchers("/api/auth/**").permitAll() // Allow all auth endpoints
                         .requestMatchers("/api/properties/**").permitAll() // Allow public property listing
+                        .requestMatchers("/api/tenants/check-active-tenancy").permitAll() // Allow active tenancy check for frontend validation
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
             .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
             .requestMatchers("/css/**", "/Javascript/**", "/img/**").permitAll() // static assets

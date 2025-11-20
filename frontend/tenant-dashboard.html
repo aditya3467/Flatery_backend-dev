@@ -13,6 +13,7 @@
   <script src="Javascript/component-loader.js" defer></script>
   <script src="Javascript/api.js" defer></script>
   <script src="Javascript/notifications.js" defer></script>
+  <script src="Javascript/complaints.js" defer></script>
   <script src="Javascript/tenant-dashboard.js" defer></script>
   <script src="Javascript/main.js" defer></script>
 </head>
@@ -608,37 +609,42 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <form id="raiseComplaintForm" class="modal-body">
+          <form id="raiseComplaintForm" class="modal-body" onsubmit="submitComplaint(event)">
             <div class="form-group">
               <label for="complaintCategory">Category <span class="required">*</span></label>
               <select id="complaintCategory" name="category" required>
                 <option value="">Select category...</option>
-                <option value="Cleaning">Cleaning</option>
-                <option value="Water">Water</option>
-                <option value="Electricity">Electricity</option>
-                <option value="Others">Others</option>
+                <option value="WATER">Water</option>
+                <option value="ELECTRICITY">Electricity</option>
+                <option value="CLEANING">Cleaning</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="PEST_CONTROL">Pest Control</option>
+                <option value="SECURITY">Security</option>
+                <option value="OTHERS">Others</option>
               </select>
             </div>
             
             <div class="form-group">
               <label for="complaintTitle">Title <span class="required">*</span></label>
-              <input type="text" id="complaintTitle" name="title" placeholder="Brief description of the issue" required>
+              <input type="text" id="complaintTitle" name="title" placeholder="Brief description of the issue" required minlength="5" maxlength="150">
+              <small class="form-help">5-150 characters</small>
             </div>
             
             <div class="form-group">
               <label for="complaintDescription">Description <span class="required">*</span></label>
-              <textarea id="complaintDescription" name="description" placeholder="Provide detailed information about the issue..." rows="4" required></textarea>
+              <textarea id="complaintDescription" name="description" placeholder="Provide detailed information about the issue..." rows="4" required minlength="10" maxlength="1000"></textarea>
+              <small class="form-help">10-1000 characters - Please be specific</small>
             </div>
             
             <div class="form-group">
-              <label for="complaintAttachment">Attach Photo/Video</label>
-              <input type="file" id="complaintAttachment" name="attachment" accept="image/*,video/*">
-              <small class="form-help">Optional: Upload photo or video evidence</small>
+              <label for="complaintAttachment">Attach Photo</label>
+              <input type="file" id="complaintAttachment" name="file" accept="image/*">
+              <small class="form-help">Optional: Upload photo evidence (max 5MB)</small>
             </div>
             
             <div class="form-group">
-              <label for="preferredResolutionTime">Preferred Resolution Date</label>
-              <input type="date" id="preferredResolutionTime" name="preferredResolutionTime">
+              <label for="preferredResolutionDate">Preferred Resolution Date</label>
+              <input type="date" id="preferredResolutionDate" name="preferredResolutionDate">
               <small class="form-help">Optional: When would you like this resolved?</small>
             </div>
           </form>
@@ -999,6 +1005,96 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- Complaint Detail Modal -->
+  <div id="complaintDetailModal" class="modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h2><i class="fas fa-tools"></i> Complaint Details</h2>
+        <button class="modal-close" onclick="closeComplaintDetailModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="complaint-detail-content">
+          <div class="complaint-info">
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Complaint ID:</label>
+                <span id="tenantDetailComplaintId">-</span>
+              </div>
+              <div class="info-item">
+                <label>Status:</label>
+                <span id="tenantDetailComplaintStatus" class="status-badge">-</span>
+              </div>
+              <div class="info-item">
+                <label>Priority:</label>
+                <span id="tenantDetailComplaintPriority" class="priority-badge">-</span>
+              </div>
+              <div class="info-item">
+                <label>Category:</label>
+                <span id="tenantDetailComplaintCategory">-</span>
+              </div>
+              <div class="info-item">
+                <label>Submitted:</label>
+                <span id="tenantDetailComplaintSubmitted">-</span>
+              </div>
+              <div class="info-item">
+                <label>SLA Deadline:</label>
+                <span id="tenantDetailComplaintSLA">-</span>
+              </div>
+            </div>
+
+            <div class="full-width-info">
+              <label>Title:</label>
+              <span id="tenantDetailComplaintTitle">-</span>
+            </div>
+
+            <div class="full-width-info">
+              <label>Description:</label>
+              <p id="tenantDetailComplaintDescription">-</p>
+            </div>
+
+            <div id="tenantComplaintAttachment" class="attachment-section" style="display: none;">
+              <label>Attachment:</label>
+              <div class="attachment-preview">
+                <img id="tenantComplaintAttachmentImage" style="max-width: 300px; max-height: 300px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Response/Communication Section -->
+          <div class="response-section">
+            <h3>Communication</h3>
+            <div class="responses-list" id="tenantResponsesList">
+              <!-- Responses will be loaded here -->
+            </div>
+
+            <!-- Add response form only for open complaints -->
+            <div id="tenantResponseForm" style="display: none;">
+              <form onsubmit="addTenantComplaintResponse(event)">
+                <div class="form-group">
+                  <label for="tenantResponseMessage">Your Message:</label>
+                  <textarea id="tenantResponseMessage" name="message" placeholder="Type your message..." rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">
+                  <i class="fas fa-reply"></i> Send Message
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="complaint-actions">
+            <div id="complaintActionButtons">
+              <!-- Action buttons will be populated based on status -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modals Container -->

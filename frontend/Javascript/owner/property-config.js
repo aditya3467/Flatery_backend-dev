@@ -54,6 +54,10 @@ function setupNavigationHandlers() {
         showPaymentsSection();
       } else if (href === '#manage-payments') {
         showManagePaymentsSection();
+      } else if (href === '#maintenance') {
+        showMaintenanceSection();
+      } else if (href === '#notices') {
+        showNoticesSection();
       }
     });
   });
@@ -67,18 +71,16 @@ function showDashboardSection() {
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
   document.querySelector('.manage-payments-section').style.display = 'none';
+  document.querySelector('.maintenance-section').style.display = 'none';
+  document.querySelector('.notices-section').style.display = 'none';
   toggleTopMeta(false);
   loadDashboardData();
 }
 
 function showFinancialSection() {
   currentView = 'financial';
-  document.querySelector('.dashboard-section').style.display = 'none';
+  hideAllSections();
   document.querySelector('.financial-section').style.display = 'block';
-  document.querySelector('.floors-section').style.display = 'none';
-  document.querySelector('.tenants-section').style.display = 'none';
-  document.querySelector('.payments-section').style.display = 'none';
-  document.querySelector('.manage-payments-section').style.display = 'none';
   toggleTopMeta(false);
   loadFinancialData();
 }
@@ -3091,6 +3093,163 @@ function getMonthName(monthNum) {
 }
 
 
+// ===================== MAINTENANCE SECTION =====================
+
+function showMaintenanceSection() {
+  currentView = 'maintenance';
+  hideAllSections();
+  document.querySelector('.maintenance-section').style.display = 'block';
+  toggleTopMeta(false);
+  loadMaintenanceData();
+}
+
+function showNoticesSection() {
+  currentView = 'notices';
+  hideAllSections();
+  document.querySelector('.notices-section').style.display = 'block';
+  toggleTopMeta(false);
+  // Notice functionality to be implemented
+}
+
+function hideAllSections() {
+  const sections = [
+    '.dashboard-section',
+    '.financial-section',
+    '.floors-section',
+    '.tenants-section',
+    '.payments-section',
+    '.manage-payments-section',
+    '.maintenance-section',
+    '.notices-section'
+  ];
+  
+  sections.forEach(selector => {
+    const element = document.querySelector(selector);
+    if (element) element.style.display = 'none';
+  });
+}
+
+async function loadMaintenanceData() {
+  try {
+    // Load complaint statistics
+    const stats = await complaintManager.getComplaintStats();
+    complaintManager.renderComplaintStats(stats, '');
+    
+    // Load complaints list
+    await loadOwnerComplaints();
+    
+  } catch (error) {
+    console.error('Error loading maintenance data:', error);
+    showAlert('error', 'Failed to load maintenance data');
+  }
+}
+
+async function loadOwnerComplaints() {
+  try {
+    const complaints = await complaintManager.getComplaints();
+    complaintManager.renderComplaintsTable(complaints, 'complaintsTableBody');
+    
+    // Update complaint counts
+    updateComplaintCounts(complaints);
+    
+  } catch (error) {
+    console.error('Error loading complaints:', error);
+    showAlert('error', 'Failed to load complaints');
+  }
+}
+
+function updateComplaintCounts(complaints) {
+  const openCount = complaints.filter(c => c.status === 'OPEN').length;
+  const inProgressCount = complaints.filter(c => c.status === 'IN_PROGRESS').length;
+  const resolvedCount = complaints.filter(c => c.status === 'RESOLVED').length;
+  
+  const openElement = document.getElementById('openComplaintsCount');
+  const progressElement = document.getElementById('inProgressComplaintsCount');
+  const resolvedElement = document.getElementById('resolvedComplaintsCount');
+  
+  if (openElement) openElement.textContent = openCount;
+  if (progressElement) progressElement.textContent = inProgressCount;
+  if (resolvedElement) resolvedElement.textContent = resolvedCount;
+}
+
+function filterComplaints() {
+  const statusFilter = document.getElementById('complaintStatusFilter').value;
+  const categoryFilter = document.getElementById('complaintCategoryFilter').value;
+  
+  const filters = {};
+  if (statusFilter) filters.status = statusFilter;
+  if (categoryFilter) filters.category = categoryFilter;
+  
+  loadComplaintsWithFilters(filters);
+}
+
+async function loadComplaintsWithFilters(filters = {}) {
+  try {
+    const complaints = await complaintManager.getComplaints(filters);
+    complaintManager.renderComplaintsTable(complaints, 'complaintsTableBody');
+  } catch (error) {
+    console.error('Error filtering complaints:', error);
+  }
+}
+
+function loadComplaintStats() {
+  loadMaintenanceData();
+}
+
+// Modal functions for complaint detail
+function closeComplaintDetailModal() {
+  const modal = document.getElementById('complaintDetailModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function updateComplaintStatus(event) {
+  event.preventDefault();
+  
+  const form = event.target;
+  const formData = new FormData(form);
+  const status = formData.get('status');
+  const comment = formData.get('comment');
+  
+  if (!complaintManager.currentComplaint) return;
+  
+  try {
+    await complaintManager.updateComplaintStatus(complaintManager.currentComplaint.id, status, comment);
+    closeComplaintDetailModal();
+    await loadOwnerComplaints(); // Reload complaints
+    showAlert('success', 'Status updated successfully');
+  } catch (error) {
+    console.error('Failed to update status:', error);
+    showAlert('error', 'Failed to update status');
+  }
+}
+
+async function addComplaintResponse(event) {
+  event.preventDefault();
+  
+  const form = event.target;
+  const formData = new FormData(form);
+  const message = formData.get('message');
+  
+  if (!complaintManager.currentComplaint || !message.trim()) return;
+  
+  try {
+    await complaintManager.addComplaintResponse(complaintManager.currentComplaint.id, message.trim());
+    
+    // Reload complaint details to show new response
+    const updatedComplaint = await complaintManager.getComplaintDetails(complaintManager.currentComplaint.id);
+    if (updatedComplaint) {
+      complaintManager.populateOwnerComplaintModal(updatedComplaint);
+    }
+    
+    // Clear form
+    form.reset();
+    showAlert('success', 'Response sent successfully');
+  } catch (error) {
+    console.error('Failed to add response:', error);
+    showAlert('error', 'Failed to send response');
+  }
+}
+
 // Export functions
 window.loadPayments = loadPayments;
 window.filterPayments = filterPayments;
@@ -3100,6 +3259,16 @@ window.closeAddPaymentModal = closeAddPaymentModal;
 window.handleAddPayment = handleAddPayment;
 window.markAsPaid = markAsPaid;
 window.viewReceipt = viewReceipt;
+
+// Export maintenance functions
+window.showMaintenanceSection = showMaintenanceSection;
+window.showNoticesSection = showNoticesSection;
+window.loadOwnerComplaints = loadOwnerComplaints;
+window.filterComplaints = filterComplaints;
+window.loadComplaintStats = loadComplaintStats;
+window.updateComplaintStatus = updateComplaintStatus;
+window.addComplaintResponse = addComplaintResponse;
+window.closeComplaintDetailModal = closeComplaintDetailModal;
 window.closeReceiptModal = closeReceiptModal;
 window.printReceipt = printReceipt;
 window.downloadReceiptPDF = downloadReceiptPDF;

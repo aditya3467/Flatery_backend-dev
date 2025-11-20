@@ -29,7 +29,7 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + key));
 
         Set<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(r -> new SimpleGrantedAuthority(r.name()))
+                .map(r -> new SimpleGrantedAuthority("ROLE_" + r.name()))
                 .collect(Collectors.toSet());
 
         return new org.springframework.security.core.userdetails.User(

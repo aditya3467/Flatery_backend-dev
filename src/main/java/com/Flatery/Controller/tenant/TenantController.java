@@ -5,19 +5,24 @@ import com.Flatery.dto.tenant.AddMultipleTenantsRequest;
 import com.Flatery.dto.tenant.TenantResponse;
 import com.Flatery.dto.tenant.TenantSummary;
 import com.Flatery.dto.tenant.TenantPropertyDetails;
+import com.Flatery.model.tenant.Tenant;
+import com.Flatery.model.tenant.TenancyHistory;
 import com.Flatery.model.User;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.service.tenant.TenantService;
+import com.Flatery.service.tenant.TenancyHistoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/tenants")
@@ -26,6 +31,7 @@ public class TenantController {
 
     private final TenantService tenantService;
     private final UserRepository userRepository;
+    private final TenancyHistoryService tenancyHistoryService;
 
     @PostMapping
     public ResponseEntity<?> addTenant(@Valid @RequestBody AddTenantRequest request,
@@ -35,9 +41,15 @@ public class TenantController {
             TenantResponse response = tenantService.addTenant(ownerId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException ex) {
+            // Log the error for debugging
+            System.err.println("Add Tenant Validation Error: " + ex.getMessage());
+            ex.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to add tenant"));
+            // Log unexpected errors
+            System.err.println("Add Tenant Unexpected Error: " + ex.getMessage());
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to add tenant: " + ex.getMessage()));
         }
     }
 
@@ -144,12 +156,17 @@ public class TenantController {
     @PostMapping("/{tenantId}/deactivate")
     public ResponseEntity<?> deactivateTenant(
             @PathVariable String tenantId,
+            @RequestBody(required = false) VacateTenantRequest request,
             Authentication authentication
     ) {
         try {
             Long ownerId = getAuthenticatedUserId(authentication);
-            TenantSummary updated = tenantService.deactivateTenant(ownerId, tenantId);
-            return ResponseEntity.ok(updated);
+            String reason = (request != null && request.vacateReason() != null) 
+                    ? request.vacateReason() 
+                    : "Owner initiated deactivation";
+            
+            Map<String, Object> response = tenantService.deactivateTenant(ownerId, tenantId, reason);
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
         } catch (RuntimeException ex) {
@@ -157,7 +174,58 @@ public class TenantController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Failed to deactivate tenant"));
+                    .body(new ErrorResponse("Failed to deactivate tenant: " + ex.getMessage()));
+        }
+    }
+
+    // TEMPORARILY COMMENTED OUT - REFERENCES NON-EXISTENT SERVICE METHOD
+    /*
+    @GetMapping("/check-exists")
+    public ResponseEntity<?> checkTenantExists(
+            @RequestParam String phoneNumber,
+            Authentication authentication) {
+        try {
+            getAuthenticatedUserId(authentication); // Ensure authenticated
+            
+            List<TenantSummary> existingTenants = tenantService.findTenantsByPhone(phoneNumber);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("exists", !existingTenants.isEmpty());
+            response.put("tenants", existingTenants);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to check tenant existence"));
+        }
+    }
+    */
+
+
+
+    /**
+     * Get tenancy history for a tenant by phone number
+     */
+    @GetMapping("/history/phone/{phoneNumber}")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<?> getTenantHistory(
+            @PathVariable String phoneNumber,
+            Authentication authentication) {
+        try {
+            getAuthenticatedUserId(authentication); // Ensure authenticated
+            
+            List<TenancyHistory> history = tenancyHistoryService.getTenantHistory(phoneNumber);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("phoneNumber", phoneNumber);
+            response.put("totalTenancies", history.size());
+            response.put("history", history);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to get tenant history: " + ex.getMessage()));
         }
     }
 
@@ -169,4 +237,8 @@ public class TenantController {
     }
 
     public record ErrorResponse(String error) {}
+    
+    public record VacateTenantRequest(
+            String vacateReason
+    ) {}
 }
