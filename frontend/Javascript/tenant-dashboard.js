@@ -758,7 +758,6 @@ async function loadStayDuration(propertyDetails) {
         // Set deposit status
         const depositStatus = document.getElementById('depositStatus');
         depositStatus.textContent = 'Paid'; // Assuming paid for now
-        depositStatus.className = 'deposit-status paid';
         
         // Calculate stay progress if checkout date is available
         if (checkoutDate) {
@@ -1933,89 +1932,27 @@ function closeMobileNav() {
 // =============================================
 
 // Mock complaints data (to be replaced with API calls later)
-const mockComplaints = [
-    {
-        id: 112,
-        category: 'Electricity',
-        title: 'Fan not working',
-        description: 'The ceiling fan in my room has stopped working since yesterday. It makes a strange noise when switched on.',
-        status: 'In Progress',
-        date: '2025-11-05',
-        lastUpdated: '2025-11-08',
-        attachmentUrl: null,
-        ownerResponse: 'Electrician scheduled for tomorrow morning. We will have it fixed by 12 PM.',
-        preferredResolutionTime: '2025-11-10'
-    },
-    {
-        id: 113,
-        category: 'Cleaning',
-        title: 'Bathroom not cleaned',
-        description: 'The shared bathroom on the 2nd floor hasn\'t been cleaned for 3 days. Please arrange for cleaning service.',
-        status: 'Resolved',
-        date: '2025-11-06',
-        lastUpdated: '2025-11-07',
-        attachmentUrl: 'https://example.com/bathroom-photo.jpg',
-        ownerResponse: 'Cleaning done. We have scheduled daily cleaning for this area.',
-        preferredResolutionTime: '2025-11-07'
-    },
-    {
-        id: 114,
-        category: 'Water',
-        title: 'No supply since 7 AM',
-        description: 'There has been no water supply in Room 102 since 7 AM this morning. This is affecting our daily routine.',
-        status: 'Open',
-        date: '2025-11-07',
-        lastUpdated: '2025-11-07',
-        attachmentUrl: null,
-        ownerResponse: null,
-        preferredResolutionTime: '2025-11-08'
-    },
-    {
-        id: 115,
-        category: 'Others',
-        title: 'WiFi connection issues',
-        description: 'Internet connectivity has been very poor in the common area. Speed is extremely slow.',
-        status: 'Resolved',
-        date: '2025-11-03',
-        lastUpdated: '2025-11-06',
-        attachmentUrl: null,
-        ownerResponse: 'Router has been replaced with a higher capacity one. Internet should work fine now.',
-        preferredResolutionTime: '2025-11-05'
-    },
-    {
-        id: 111,
-        category: 'Cleaning',
-        title: 'Kitchen area maintenance',
-        description: 'Kitchen exhaust fan needs cleaning and the sink tap is leaking.',
-        status: 'Resolved',
-        date: '2025-11-01',
-        lastUpdated: '2025-11-04',
-        attachmentUrl: 'https://example.com/kitchen-photo.jpg',
-        ownerResponse: 'Both issues have been fixed. Exhaust cleaned and tap replaced.',
-        preferredResolutionTime: '2025-11-03'
-    }
-];
+
 
 // Load complaints section
 async function loadComplaints() {
     try {
-        console.log('Loading complaints...');
-        
-        // For now, use mock data. Later this will be replaced with API call
-        const complaints = mockComplaints;
-        
-        // Update analytics cards
+        console.log('Loading complaints from API...');
+        let complaints = [];
+        if (window.complaintManager && typeof complaintManager.getComplaints === 'function') {
+            complaints = await complaintManager.getComplaints();
+        }
+        // Normalize status and date fields for analytics and table
+        complaints = complaints.map(c => ({
+            ...c,
+            status: c.status ? (typeof c.status === 'string' ? c.status.charAt(0).toUpperCase() + c.status.slice(1).toLowerCase() : c.status) : 'Open',
+            date: c.submittedAt || c.date || c.createdAt,
+            lastUpdated: c.lastUpdated || c.updatedAt || c.resolvedAt || c.date
+        }));
         updateComplaintsAnalytics(complaints);
-        
-        // Display complaints table
         displayComplaintsTable(complaints);
-        
-        // Display resolved complaints
         displayResolvedComplaints(complaints);
-        
-        // Initialize filter functionality
         initializeComplaintFilters(complaints);
-        
         console.log('Complaints loaded successfully');
     } catch (error) {
         console.error('Error loading complaints:', error);
@@ -2051,23 +1988,29 @@ function updateComplaintsAnalytics(complaints) {
 
 // Display complaints in table
 function displayComplaintsTable(complaints, statusFilter = 'all') {
+    // Robust cleanup: Remove all mobile-table-cards containers before any rendering
+    document.querySelectorAll('.mobile-table-cards').forEach(el => el.remove());
+    console.log('[displayComplaintsTable] Called. Complaints:', complaints.length, 'Status filter:', statusFilter);
+
     const tableBody = document.getElementById('complaintsTableBody');
-    
+
     // Filter complaints based on status
     let filteredComplaints = complaints;
     if (statusFilter !== 'all') {
         filteredComplaints = complaints.filter(c => c.status === statusFilter);
     }
-    
+
     if (filteredComplaints.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center">No complaints found</td>
             </tr>
         `;
+        // Still call mobile card generator for empty state
+        generateMobileComplaintCards([]);
         return;
     }
-    
+
     // Generate table rows
     tableBody.innerHTML = filteredComplaints.map(complaint => `
         <tr>
@@ -2087,30 +2030,29 @@ function displayComplaintsTable(complaints, statusFilter = 'all') {
             </td>
         </tr>
     `).join('');
-    
+
     // Generate mobile cards for very small screens
     generateMobileComplaintCards(filteredComplaints);
 }
 
 // Generate mobile-friendly complaint cards
 function generateMobileComplaintCards(complaints) {
-    let mobileCardsContainer = document.querySelector('.mobile-table-cards');
-    
-    // Create mobile cards container if it doesn't exist
-    if (!mobileCardsContainer) {
-        mobileCardsContainer = document.createElement('div');
-        mobileCardsContainer.className = 'mobile-table-cards';
-        document.querySelector('.table-wrapper').parentNode.insertBefore(
-            mobileCardsContainer, 
-            document.querySelector('.table-wrapper').nextSibling
-        );
-    }
-    
+    // Robust cleanup: Remove all mobile-table-cards containers before rendering
+    document.querySelectorAll('.mobile-table-cards').forEach(el => el.remove());
+    console.log('[generateMobileComplaintCards] Called. Complaints:', complaints.length);
+
+    // Create a new mobile cards container
+    const tableWrapper = document.querySelector('.table-wrapper');
+    if (!tableWrapper) return;
+    const mobileCardsContainer = document.createElement('div');
+    mobileCardsContainer.className = 'mobile-table-cards';
+    tableWrapper.parentNode.insertBefore(mobileCardsContainer, tableWrapper.nextSibling);
+
     if (complaints.length === 0) {
         mobileCardsContainer.innerHTML = '<div class="text-center">No complaints found</div>';
         return;
     }
-    
+
     mobileCardsContainer.innerHTML = complaints.map(complaint => `
         <div class="mobile-complaint-card">
             <div class="mobile-complaint-header">
@@ -2214,15 +2156,12 @@ async function submitComplaint(event) {
     const form = document.getElementById('raiseComplaintForm');
     const formData = new FormData(form);
 
-    // Optionally add extra fields if needed
-    // formData.append('propertyId', ...);
-
     try {
-        // Use the global complaintManager if available, else fallback to ApiService
+        let result;
         if (window.complaintManager && typeof complaintManager.createComplaint === 'function') {
-            await complaintManager.createComplaint(formData);
+            result = await complaintManager.createComplaint(formData);
         } else if (window.apiService && typeof apiService.createComplaint === 'function') {
-            await apiService.createComplaint(formData);
+            result = await apiService.createComplaint(formData);
         } else {
             alert('Complaint service not available.');
             return;
@@ -2230,6 +2169,13 @@ async function submitComplaint(event) {
         alert('Complaint submitted successfully!');
         closeRaiseComplaintModal();
         // Optionally refresh complaints list here
+        if (typeof loadComplaints === 'function') {
+            loadComplaints();
+        }
+        // Optionally, show details if complaintId is present
+        if (result && result.id) {
+            // viewComplaintDetails(result.id); // Uncomment if you want to show details
+        }
     } catch (error) {
         alert('Failed to submit complaint: ' + (error.message || error));
     }
@@ -2237,51 +2183,47 @@ async function submitComplaint(event) {
 
 // View complaint details
 function viewComplaintDetails(complaintId) {
-    const complaint = mockComplaints.find(c => c.id === complaintId);
-    
-    if (!complaint) {
-        showError('Complaint not found');
-        return;
+    if (window.complaintManager && typeof complaintManager.getComplaintDetails === 'function') {
+        complaintManager.getComplaintDetails(complaintId).then(complaint => {
+            if (!complaint) {
+                showError('Complaint not found');
+                return;
+            }
+            // Populate modal with complaint details (reuse your modal population logic or update as needed)
+            document.getElementById('complaintDetailsTitle').textContent = `Complaint #${complaint.complaintId || complaint.id} – ${complaint.title}`;
+            document.getElementById('detailCategory').textContent = complaint.category;
+            document.getElementById('detailStatus').textContent = complaint.status;
+            document.getElementById('detailStatus').className = `status-badge ${complaint.status.toLowerCase().replace(' ', '-')}`;
+            document.getElementById('detailDescription').textContent = complaint.description;
+            document.getElementById('detailRaisedDate').textContent = formatDate(complaint.submittedAt || complaint.date);
+            document.getElementById('detailUpdatedDate').textContent = formatDate(complaint.lastUpdated || complaint.updatedAt || complaint.resolvedAt || complaint.date);
+            // Handle attachment
+            const attachmentRow = document.getElementById('attachmentRow');
+            if (complaint.attachmentUrl) {
+                document.getElementById('detailAttachment').href = complaint.attachmentUrl;
+                attachmentRow.style.display = 'flex';
+            } else {
+                attachmentRow.style.display = 'none';
+            }
+            // Handle owner response
+            const ownerResponseRow = document.getElementById('ownerResponseRow');
+            if (complaint.ownerResponse) {
+                document.getElementById('ownerResponseText').textContent = complaint.ownerResponse;
+                ownerResponseRow.style.display = 'flex';
+            } else {
+                ownerResponseRow.style.display = 'none';
+            }
+            // Show/hide "Mark as Resolved" button
+            const markResolvedBtn = document.getElementById('markResolvedBtn');
+            if ((complaint.status === 'In Progress' || complaint.status === 'IN_PROGRESS') && complaint.ownerResponse) {
+                markResolvedBtn.style.display = 'inline-block';
+                markResolvedBtn.onclick = () => markComplaintResolved(complaint.complaintId || complaint.id);
+            } else {
+                markResolvedBtn.style.display = 'none';
+            }
+            document.getElementById('complaintDetailsModal').style.display = 'block';
+        });
     }
-    
-    // Populate modal with complaint details
-    document.getElementById('complaintDetailsTitle').textContent = `Complaint #${complaint.id} – ${complaint.title}`;
-    document.getElementById('detailCategory').textContent = complaint.category;
-    document.getElementById('detailStatus').textContent = complaint.status;
-    document.getElementById('detailStatus').className = `status-badge ${complaint.status.toLowerCase().replace(' ', '-')}`;
-    document.getElementById('detailDescription').textContent = complaint.description;
-    document.getElementById('detailRaisedDate').textContent = formatDate(complaint.date);
-    document.getElementById('detailUpdatedDate').textContent = formatDate(complaint.lastUpdated);
-    
-    // Handle attachment
-    const attachmentRow = document.getElementById('attachmentRow');
-    if (complaint.attachmentUrl) {
-        document.getElementById('detailAttachment').href = complaint.attachmentUrl;
-        attachmentRow.style.display = 'flex';
-    } else {
-        attachmentRow.style.display = 'none';
-    }
-    
-    // Handle owner response
-    const ownerResponseRow = document.getElementById('ownerResponseRow');
-    if (complaint.ownerResponse) {
-        document.getElementById('ownerResponseText').textContent = complaint.ownerResponse;
-        ownerResponseRow.style.display = 'flex';
-    } else {
-        ownerResponseRow.style.display = 'none';
-    }
-    
-    // Show/hide "Mark as Resolved" button
-    const markResolvedBtn = document.getElementById('markResolvedBtn');
-    if (complaint.status === 'In Progress' && complaint.ownerResponse) {
-        markResolvedBtn.style.display = 'inline-block';
-        markResolvedBtn.onclick = () => markComplaintResolved(complaintId);
-    } else {
-        markResolvedBtn.style.display = 'none';
-    }
-    
-    // Show modal
-    document.getElementById('complaintDetailsModal').style.display = 'block';
 }
 
 // Close complaint details modal
@@ -2379,55 +2321,6 @@ function closeRaiseComplaintModal() {
     handleMobileModalClose();
 }
 
-function viewComplaintDetails(complaintId) {
-    const complaint = mockComplaints.find(c => c.id === complaintId);
-    
-    if (!complaint) {
-        showError('Complaint not found');
-        return;
-    }
-    
-    // Populate modal with complaint details
-    document.getElementById('complaintDetailsTitle').textContent = `Complaint #${complaint.id} – ${complaint.title}`;
-    document.getElementById('detailCategory').textContent = complaint.category;
-    document.getElementById('detailStatus').textContent = complaint.status;
-    document.getElementById('detailStatus').className = `status-badge ${complaint.status.toLowerCase().replace(' ', '-')}`;
-    document.getElementById('detailDescription').textContent = complaint.description;
-    document.getElementById('detailRaisedDate').textContent = formatDate(complaint.date);
-    document.getElementById('detailUpdatedDate').textContent = formatDate(complaint.lastUpdated);
-    
-    // Handle attachment
-    const attachmentRow = document.getElementById('attachmentRow');
-    if (complaint.attachmentUrl) {
-        document.getElementById('detailAttachment').href = complaint.attachmentUrl;
-        attachmentRow.style.display = 'flex';
-    } else {
-        attachmentRow.style.display = 'none';
-    }
-    
-    // Handle owner response
-    const ownerResponseRow = document.getElementById('ownerResponseRow');
-    if (complaint.ownerResponse) {
-        document.getElementById('ownerResponseText').textContent = complaint.ownerResponse;
-        ownerResponseRow.style.display = 'flex';
-    } else {
-        ownerResponseRow.style.display = 'none';
-    }
-    
-    // Show/hide "Mark as Resolved" button
-    const markResolvedBtn = document.getElementById('markResolvedBtn');
-    if (complaint.status === 'In Progress' && complaint.ownerResponse) {
-        markResolvedBtn.style.display = 'inline-block';
-        markResolvedBtn.onclick = () => markComplaintResolved(complaintId);
-    } else {
-        markResolvedBtn.style.display = 'none';
-    }
-    
-    // Show modal with mobile support
-    const modal = document.getElementById('complaintDetailsModal');
-    modal.style.display = 'block';
-    handleMobileModalOpen(modal);
-}
 
 function closeComplaintDetailsModal() {
     const modal = document.getElementById('complaintDetailsModal');

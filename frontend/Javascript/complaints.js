@@ -114,7 +114,7 @@ class ComplaintManager {
      */
     async createComplaint(formData) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/responses`, {
+            const response = await fetch('http://localhost:8081/api/complaints', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -207,8 +207,8 @@ class ComplaintManager {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    status: status,
-                    comment: comment || undefined
+                    newStatus: status,
+                    message: comment || undefined
                 })
             });
 
