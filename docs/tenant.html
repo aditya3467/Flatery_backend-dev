@@ -434,7 +434,8 @@
             // Mark as acknowledged
             closeProfileCompletionModal();
             // Redirect to profile completion page
-            window.location.href = '/frontend/tenant-profile.html';
+            const basePath = window.BASE_PATH || '';
+            window.location.href = `${basePath}/docs/tenant-profile.html`;
         }
 
         function closeProfileCompletionModal() {
