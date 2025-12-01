@@ -1,5 +1,10 @@
 // tenant-profile.js
 
+// Dynamic API base URL
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8081/api'
+    : 'https://flatery-backend-dev.onrender.com/api';
+
 let currentSection = 0;
 const sections = ['personal', 'kyc', 'family', 'emergency', 'payment'];
 const completedSections = new Set();
@@ -134,7 +139,7 @@ async function loadTenantData() {
         }
 
         // Load user basic info
-        const userResponse = await fetch('http://localhost:8081/api/auth/me', {
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -149,7 +154,7 @@ async function loadTenantData() {
         }
 
         // Load tenant tenancy info (rent, security deposit, due date)
-        const tenancyResponse = await fetch('http://localhost:8081/api/tenants/me', {
+        const tenancyResponse = await fetch(`${API_BASE_URL}/tenants/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -400,7 +405,7 @@ document.getElementById('profileForm').addEventListener('submit', async function
     let success = false;
     if (token) {
         try {
-            const resp = await fetch('http://localhost:8081/api/tenants/me/profile', {
+            const resp = await fetch(`${API_BASE_URL}/tenants/me/profile`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
