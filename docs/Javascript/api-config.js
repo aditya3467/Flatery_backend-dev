@@ -5,7 +5,7 @@ const API_CONFIG = {
     // Automatically detect environment and use appropriate backend URL
     BASE_URL: window.location.hostname === 'localhost' 
         ? 'http://localhost:8081/api'  // Local development
-        : 'https://flatery-backend-dev.onrender.com/api',  // Production backend
+        : 'https://flatery-backend-dev.onrender.com/',  // Production backend
     
     ENDPOINTS: {
         AUTH: {
