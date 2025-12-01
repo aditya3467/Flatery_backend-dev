@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: flatery-backend
+    env: java
+    plan: free
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/*.jar --server.port=$PORT
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_EXPIRATION_TIME
+        value: "36000000"
+      - key: FRONTEND_URL
+        sync: false
+    healthCheckPath: /  # or /actuator/health if you use actuator
