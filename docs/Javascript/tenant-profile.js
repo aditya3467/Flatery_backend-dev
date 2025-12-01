@@ -3,7 +3,7 @@
 // Dynamic API base URL
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8081/api'
-    : 'https://flatery-backend-dev.onrender.com/';
+    : 'https://flatery-backend-dev.onrender.com/api';
 
 let currentSection = 0;
 const sections = ['personal', 'kyc', 'family', 'emergency', 'payment'];
