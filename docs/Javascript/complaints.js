@@ -114,7 +114,8 @@ class ComplaintManager {
      */
     async createComplaint(formData) {
         try {
-            const response = await fetch('http://localhost:8081/api/complaints', {
+            const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+            const response = await fetch(`${API_BASE_URL}/complaints`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -175,7 +176,8 @@ class ComplaintManager {
      */
     async getComplaintDetails(complaintId) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}`, {
+            const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
                     'Content-Type': 'application/json'
@@ -200,7 +202,8 @@ class ComplaintManager {
      */
     async updateComplaintStatus(complaintId, status, comment = '') {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/status`, {
+            const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/status`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -232,7 +235,8 @@ class ComplaintManager {
      */
     async addComplaintResponse(complaintId, message) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/responses`, {
+            const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/responses`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -263,7 +267,8 @@ class ComplaintManager {
      */
     async verifyComplaint(complaintId) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/verify`, {
+            const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/verify`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -290,7 +295,8 @@ class ComplaintManager {
      */
     async reopenComplaint(complaintId, reason) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/reopen`, {
+            const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/reopen`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,

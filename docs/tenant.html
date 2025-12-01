@@ -25,7 +25,8 @@
                 const token = localStorage.getItem('authToken');
                 if (!token) return;
 
-                const response = await fetch('http://localhost:8081/api/auth/me', {
+                const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -409,7 +410,8 @@
                 // Only show for USER role (tenants) who haven't completed profile
                 if (roles.includes('USER') && !profileCompleted) {
                     // Get user info to check if password was changed
-                    const response = await fetch('http://localhost:8081/api/auth/me', {
+                    const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+                    const response = await fetch(`${API_BASE_URL}/auth/me`, {
                         headers: {
                             'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
