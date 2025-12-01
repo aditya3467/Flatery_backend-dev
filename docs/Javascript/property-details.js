@@ -89,10 +89,10 @@ async function loadPropertyDetails(propertyId) {
             if (Array.isArray(images)) {
                 serverList = images.map((img, idx) => {
                     if (typeof img === 'string') {
-                        return { url: img, primary: false, position: idx, order: 1 };
+                        return { url: window.getImageUrl(img), primary: false, position: idx, order: 1 };
                     } else if (img && typeof img === 'object') {
                         return {
-                            url: img.url || img.imageUrl || img.path || img.fullPath || '',
+                            url: window.getImageUrl(img.url || img.imageUrl || img.path || img.fullPath || ''),
                             primary: !!(img.primary || img.primaryImage),
                             position: (img.position !== undefined && img.position !== null) ? img.position : idx,
                             order: 1
@@ -136,7 +136,7 @@ async function loadPropertyDetails(propertyId) {
         } catch (imageError) {
             console.warn('Failed to fetch images, falling back to payload/default:', imageError);
             if (!Array.isArray(property.images) || property.images.length === 0) {
-                property.images = property.primaryImageUrl ? [property.primaryImageUrl] : ['/img/properties/default.jpg'];
+                property.images = property.primaryImageUrl ? [window.getImageUrl(property.primaryImageUrl)] : ['/img/properties/default.jpg'];
             }
         }
         

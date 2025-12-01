@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('User not authenticated'); // Debug log
             // If on protected page, redirect to login
             if (window.location.pathname.includes('superadmin-dashboard.html')) {
-                window.location.href = '/frontend/index.html';
+                const basePath = window.BASE_PATH || '';
+                window.location.href = `${basePath}/docs/index.html`;
             }
             return;
         }
@@ -38,7 +39,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentPath.includes('superadmin-dashboard.html')) {
                 if (!storedRoles.includes('SUPERADMIN')) {
                     console.log('Non-superadmin trying to access dashboard, redirecting...'); // Debug log
-                    window.location.href = '/frontend/index.html';
+                    const basePath = window.BASE_PATH || '';
+                    window.location.href = `${basePath}/docs/index.html`;
                     return;
                 }
             }

@@ -102,7 +102,7 @@ function createPropertyCard(property) {
     const seater = property.pgSeater || property.seater;
     const title = property.name || 
                   `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
-    const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
+    const imageUrl = window.getImageUrl(property.primaryImageUrl) || 'img/properties/default.jpg';
     
     return `
         <div class="property-card" onclick="viewProperty(${property.id})">

@@ -443,19 +443,20 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     console.log('Full auth response:', authResponse); // Debug log
     
     // Immediate redirect based on role
+    const basePath = window.BASE_PATH || '';
     if (roles.includes('SUPERADMIN')) {
         setTimeout(() => {
-            window.location.href = '/frontend/superadmin-dashboard.html';
+            window.location.href = `${basePath}/docs/superadmin-dashboard.html`;
         }, 100);
         return; // Stop further execution
     } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
         setTimeout(() => {
-            window.location.href = '/frontend/owner/Owner.html';
+            window.location.href = `${basePath}/docs/owner/Owner.html`;
         }, 100);
         return;
   } else if (roles.includes('USER')) {
     setTimeout(() => {
-      window.location.href = '/frontend/index.html';
+      window.location.href = `${basePath}/docs/index.html`;
     }, 100);
     return;
     }
@@ -512,7 +513,8 @@ async function handleLogout() {
     setupLoginButtonListeners();
 
   // Redirect to home page after logout (use absolute path to avoid folder-relative issues)
-  window.location.href = '/frontend/index.html';
+  const basePath = window.BASE_PATH || '';
+  window.location.href = `${basePath}/docs/index.html`;
 
   } catch (error) {
     showError('Logout failed: ' + error.message);
@@ -701,15 +703,16 @@ async function handleChangePassword(e) {
     
     // Redirect to appropriate dashboard after password change
     const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+    const basePath = window.BASE_PATH || '';
     setTimeout(() => {
       if (roles.includes('USER')) {
-        window.location.href = '/frontend/tenant.html';
+        window.location.href = `${basePath}/docs/tenant.html`;
       } else if (roles.includes('ADMIN')) {
-        window.location.href = '/frontend/owner/Owner.html';
+        window.location.href = `${basePath}/docs/owner/Owner.html`;
       } else if (roles.includes('SUPERADMIN')) {
-        window.location.href = '/frontend/superadmin-dashboard.html';
+        window.location.href = `${basePath}/docs/superadmin-dashboard.html`;
       } else {
-        window.location.href = '/frontend/index.html';
+        window.location.href = `${basePath}/docs/index.html`;
       }
     }, 1500);
   } catch (error) {

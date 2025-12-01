@@ -134,7 +134,8 @@ async function loadTenantData() {
         if (!token) {
             console.error('No auth token found, redirecting to login');
             alert('Please login first to access your profile');
-            window.location.href = '/frontend/index.html';
+            const basePath = window.BASE_PATH || '';
+            window.location.href = `${basePath}/docs/index.html`;
             return;
         }
 
@@ -437,6 +438,7 @@ document.getElementById('profileForm').addEventListener('submit', async function
 
     setTimeout(() => {
         alert('Profile completed successfully!');
-        window.location.href = '/frontend/tenant.html';
+        const basePath = window.BASE_PATH || '';
+        window.location.href = `${basePath}/docs/tenant.html`;
     }, 1000);
 });

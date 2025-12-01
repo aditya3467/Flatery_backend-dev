@@ -570,8 +570,8 @@ function createPropertyCard(property) {
     });
     
     const images = Array.isArray(property.images) && property.images.length > 0
-        ? property.images
-        : [property.primaryImageUrl || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'];
+        ? property.images.map(img => window.getImageUrl(img))
+        : [window.getImageUrl(property.primaryImageUrl) || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'];
         
     console.log(`Property ${property.id} final images for card:`, images);
     
