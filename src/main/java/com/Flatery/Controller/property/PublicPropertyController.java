@@ -34,7 +34,18 @@ public class PublicPropertyController {
         Map<String, Object> debug = new HashMap<>();
         debug.put("totalProperties", propertyRepository.count());
         debug.put("distinctOwners", propertyRepository.countDistinctOwnerIds());
+        debug.put("demoProperties", propertyRepository.countByNameStartingWith("DEMO_"));
         return ResponseEntity.ok(debug);
+    }
+    
+    // Debug endpoint to delete demo properties (for cleanup)
+    @DeleteMapping("/debug/demo-properties")
+    public ResponseEntity<Map<String, Object>> deleteDemoProperties() {
+        long deletedCount = propertyRepository.deleteByNameStartingWith("DEMO_");
+        Map<String, Object> response = new HashMap<>();
+        response.put("deletedCount", deletedCount);
+        response.put("message", "Deleted " + deletedCount + " demo properties");
+        return ResponseEntity.ok(response);
     }
 
     // Public detail

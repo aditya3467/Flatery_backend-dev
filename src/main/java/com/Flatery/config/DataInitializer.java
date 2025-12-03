@@ -2,7 +2,12 @@ package com.Flatery.config;
 
 import com.Flatery.model.RoleName;
 import com.Flatery.model.User;
+import com.Flatery.model.property.Property;
+import com.Flatery.model.property.enums.BhkType;
+import com.Flatery.model.property.enums.Furnishing;
+import com.Flatery.model.property.enums.PropertyType;
 import com.Flatery.repository.UserRepository;
+import com.Flatery.repository.property.PropertyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -10,10 +15,13 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
- * Initializes default super admin user on application startup
+ * Initializes default data on application startup
  */
 @Component
 @RequiredArgsConstructor
@@ -21,6 +29,7 @@ import java.util.Set;
 public class DataInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
+    private final PropertyRepository propertyRepository;
     private final PasswordEncoder passwordEncoder;
     private boolean initialized = false;  // flag to run only once per application run
 
@@ -28,6 +37,7 @@ public class DataInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         if (!initialized) {
             initializeSuperAdmin();
+            initializeDemoProperties();
             initialized = true;
         }
     }
@@ -51,6 +61,84 @@ public class DataInitializer implements ApplicationRunner {
 
         userRepository.save(superAdmin);
         log.info("Super admin user created successfully with username: {}", superAdminUsername);
+    }
+
+    private void initializeDemoProperties() {
+        // Check if demo properties already exist (properties with name starting with "DEMO_")
+        if (propertyRepository.count() > 0) {
+            log.debug("Properties already exist in database, skipping demo property creation");
+            return;
+        }
+
+        log.info("Creating demo properties for Mohali, Chandigarh, and Noida...");
+        
+        List<Property> demoProperties = new ArrayList<>();
+        
+        // MOHALI Properties (10)
+        demoProperties.addAll(createCityDemoProperties("Mohali", 1));
+        
+        // CHANDIGARH Properties (10) 
+        demoProperties.addAll(createCityDemoProperties("Chandigarh", 11));
+        
+        // NOIDA Properties (10)
+        demoProperties.addAll(createCityDemoProperties("Noida", 21));
+        
+        propertyRepository.saveAll(demoProperties);
+        log.info("Created {} demo properties (DEMO_ prefixed for easy deletion)", demoProperties.size());
+    }
+    
+    private List<Property> createCityDemoProperties(String city, int startIndex) {
+        List<Property> properties = new ArrayList<>();
+        
+        String[] locations = getLocationsForCity(city);
+        PropertyType[] types = {PropertyType.PG, PropertyType.FLAT, PropertyType.APARTMENT};
+        BhkType[] bhkTypes = {BhkType.BHK_1, BhkType.BHK_2, BhkType.BHK_3, BhkType.BHK_4};
+        Furnishing[] furnishings = {Furnishing.FULLY_FURNISHED, Furnishing.SEMI_FURNISHED, Furnishing.UNFURNISHED};
+        
+        for (int i = 0; i < 10; i++) {
+            PropertyType type = types[i % types.length];
+            String location = locations[i % locations.length];
+            BhkType bhkType = type == PropertyType.FLAT ? bhkTypes[i % bhkTypes.length] : null;
+            Furnishing furnishing = furnishings[i % furnishings.length];
+            
+            Property property = Property.builder()
+                    .name("DEMO_" + city + "_Property_" + (startIndex + i))
+                    .type(type)
+                    .bhkType(bhkType)
+                    .city(city)
+                    .location(location)
+                    .landmark("Near " + (i % 2 == 0 ? "Metro Station" : "Shopping Mall"))
+                    .address((startIndex + i) + " Demo Street, " + location + ", " + city)
+                    .expectedRent(5000 + (i * 2000) + (city.hashCode() % 5000))
+                    .expectedDeposit((5000 + (i * 2000) + (city.hashCode() % 5000)) * 2)
+                    .builtUpArea(400 + (i * 100))
+                    .currentFloor(1 + (i % 5))
+                    .totalFloors(3 + (i % 7))
+                    .bathrooms(1 + (i % 3))
+                    .furnishing(furnishing)
+                    .propertyDescription("Demo " + type.name().toLowerCase() + " property in " + city + " with modern amenities. This is a test property and will be removed later.")
+                    .parking(i % 3 != 0)
+                    .availableFrom(LocalDateTime.now().plusDays(i))
+                    .createdAt(LocalDateTime.now())
+                    .build();
+                    
+            properties.add(property);
+        }
+        
+        return properties;
+    }
+    
+    private String[] getLocationsForCity(String city) {
+        switch (city) {
+            case "Mohali":
+                return new String[]{"Phase 3B2", "Phase 7", "Phase 8", "Phase 9", "Phase 11", "Sector 68", "Sector 70", "Sector 71", "Sector 78", "Sector 82"};
+            case "Chandigarh":
+                return new String[]{"Sector 17", "Sector 22", "Sector 26", "Sector 34", "Sector 35", "Sector 43", "Sector 46", "Sector 47", "Sector 56", "Sector 62"};
+            case "Noida":
+                return new String[]{"Sector 18", "Sector 25", "Sector 37", "Sector 44", "Sector 50", "Sector 62", "Sector 76", "Sector 104", "Sector 128", "Sector 137"};
+            default:
+                return new String[]{"Central Area", "East Zone", "West Zone", "North Area", "South Area"};
+        }
     }
 }
 
