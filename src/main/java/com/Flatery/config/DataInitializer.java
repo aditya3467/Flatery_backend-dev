@@ -6,6 +6,8 @@ import com.Flatery.model.property.Property;
 import com.Flatery.model.property.enums.BhkType;
 import com.Flatery.model.property.enums.Furnishing;
 import com.Flatery.model.property.enums.PropertyType;
+import com.Flatery.model.property.enums.PropertyAge;
+import com.Flatery.model.property.enums.Parking;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.repository.property.PropertyRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +17,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -92,8 +94,8 @@ public class DataInitializer implements ApplicationRunner {
         
         String[] locations = getLocationsForCity(city);
         PropertyType[] types = {PropertyType.PG, PropertyType.FLAT, PropertyType.APARTMENT};
-        BhkType[] bhkTypes = {BhkType.BHK_1, BhkType.BHK_2, BhkType.BHK_3, BhkType.BHK_4};
-        Furnishing[] furnishings = {Furnishing.FULLY_FURNISHED, Furnishing.SEMI_FURNISHED, Furnishing.UNFURNISHED};
+        BhkType[] bhkTypes = {BhkType.ONE, BhkType.TWO, BhkType.THREE, BhkType.FOUR};
+        Furnishing[] furnishings = {Furnishing.FURNISHED, Furnishing.SEMI_FURNISHED, Furnishing.UNFURNISHED};
         
         for (int i = 0; i < 10; i++) {
             PropertyType type = types[i % types.length];
@@ -102,24 +104,28 @@ public class DataInitializer implements ApplicationRunner {
             Furnishing furnishing = furnishings[i % furnishings.length];
             
             Property property = Property.builder()
+                    .ownerId(1L) // Default owner ID
                     .name("DEMO_" + city + "_Property_" + (startIndex + i))
                     .type(type)
                     .bhkType(bhkType)
+                    .currentFloor(1 + (i % 5))
+                    .totalFloor(3 + (i % 7))
+                    .age(PropertyAge.Y1_3)
+                    .builtUpAreaSqft(400 + (i * 100))
                     .city(city)
                     .location(location)
                     .landmark("Near " + (i % 2 == 0 ? "Metro Station" : "Shopping Mall"))
-                    .address((startIndex + i) + " Demo Street, " + location + ", " + city)
                     .expectedRent(5000 + (i * 2000) + (city.hashCode() % 5000))
                     .expectedDeposit((5000 + (i * 2000) + (city.hashCode() % 5000)) * 2)
-                    .builtUpArea(400 + (i * 100))
-                    .currentFloor(1 + (i % 5))
-                    .totalFloors(3 + (i % 7))
-                    .bathrooms(1 + (i % 3))
+                    .negotiable(i % 3 == 0)
+                    .monthlyMaintenance(500 + (i * 100))
+                    .availableFrom(LocalDate.now().plusDays(i))
                     .furnishing(furnishing)
-                    .propertyDescription("Demo " + type.name().toLowerCase() + " property in " + city + " with modern amenities. This is a test property and will be removed later.")
-                    .parking(i % 3 != 0)
-                    .availableFrom(LocalDateTime.now().plusDays(i))
-                    .createdAt(LocalDateTime.now())
+                    .parking(i % 3 != 0 ? Parking.BIKE : Parking.NONE)
+                    .description("Demo " + type.name().toLowerCase() + " property in " + city + " with modern amenities. This is a test property and will be removed later.")
+                    .bathrooms(1 + (i % 3))
+                    .balcony(i % 2 == 0)
+                    .allDay(true)
                     .build();
                     
             properties.add(property);
