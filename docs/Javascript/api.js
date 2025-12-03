@@ -164,7 +164,7 @@ class ApiService {
     // Property API methods
     async getProperties() {
         try {
-            return await this.makeRequest('/properties');
+            return await this.makeRequest('/properties', { includeAuth: false });
         } catch (error) {
             throw new Error('Failed to fetch properties: ' + error.message);
         }

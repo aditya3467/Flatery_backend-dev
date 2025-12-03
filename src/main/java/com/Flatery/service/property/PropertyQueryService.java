@@ -40,11 +40,10 @@ public class PropertyQueryService {
             Furnishing furnishing,
             Pageable pageable
     ) {
-        // Simple baseline: fetch all and filter in memory (replace with JPA Specifications later)
+        // Fetch all properties and convert to summaries
         Page<Property> page = propertyRepository.findAll(pageable);
-        Page<Property> filtered = page.map(p -> p) // no-op to keep Page
-                .map(p -> p); // placeholder
-
+        
+        // For now, return all properties (filtering can be added later)
         // Convert to summaries with primary image url
         return page.map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())));
     }

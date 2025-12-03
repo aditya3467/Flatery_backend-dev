@@ -7,6 +7,7 @@ import com.Flatery.model.property.enums.BhkType;
 import com.Flatery.model.property.enums.Furnishing;
 import com.Flatery.model.property.enums.PropertyType;
 import com.Flatery.repository.property.PropertyImageRepository;
+import com.Flatery.repository.property.PropertyRepository;
 import com.Flatery.service.property.PropertyQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,7 +15,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -23,6 +26,16 @@ public class PublicPropertyController {
 
     private final PropertyQueryService queryService;
     private final PropertyImageRepository propertyImageRepository;
+    private final PropertyRepository propertyRepository;
+
+    // Debug endpoint to check property count
+    @GetMapping("/debug/count")
+    public ResponseEntity<Map<String, Object>> getDebugInfo() {
+        Map<String, Object> debug = new HashMap<>();
+        debug.put("totalProperties", propertyRepository.count());
+        debug.put("distinctOwners", propertyRepository.countDistinctOwnerIds());
+        return ResponseEntity.ok(debug);
+    }
 
     // Public detail
     @GetMapping("/{id}")

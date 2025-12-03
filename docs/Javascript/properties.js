@@ -302,14 +302,43 @@ function setFilterValuesFromUrl() {
  * Load properties from API
  */
 async function loadProperties() {
-    const propertiesGrid = document.getElementById('propertiesGrid');
+    const propertiesList = document.getElementById('propertiesList');
+    const resultsCount = document.getElementById('resultsCount');
     
     try {
+        console.log('Loading properties from API...');
+        console.log('API Base URL:', apiService?.baseURL || 'apiService not available');
+        
+        // First check if backend is accessible and has properties
+        try {
+            const debugInfo = await apiService.makeRequest('/properties/debug/count', { includeAuth: false });
+            console.log('Backend debug info:', debugInfo);
+        } catch (debugError) {
+            console.warn('Debug endpoint not accessible:', debugError.message);
+        }
+        
         // Call the public properties API
         const response = await apiService.getProperties();
+        console.log('API Response:', response);
         
         // Response is a Page object with content array
         allProperties = response.content || [];
+        console.log('Properties loaded:', allProperties.length);
+        
+        if (allProperties.length === 0) {
+            console.warn('No properties returned from API');
+            propertiesList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>No Properties Available</h3>
+                    <p>There are currently no properties listed.</p>
+                </div>
+            `;
+            if (resultsCount) {
+                resultsCount.textContent = '0 properties found';
+            }
+            return;
+        }
         
         // Fetch full details for PG and APARTMENT to get names
         await enrichPropertiesWithNames();
@@ -324,13 +353,26 @@ async function loadProperties() {
         
     } catch (error) {
         console.error('Error loading properties:', error);
-        propertiesGrid.innerHTML = `
-            <div class="no-results">
+        console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            stack: error.stack
+        });
+        
+        propertiesList.innerHTML = `
+            <div class="error-state">
                 <i class="fas fa-exclamation-circle"></i>
                 <h3>Error Loading Properties</h3>
-                <p>Please try again later.</p>
+                <p>Failed to load properties: ${error.message}</p>
+                <p>Backend URL: ${apiService?.baseURL || 'Unknown'}</p>
+                <button onclick="loadProperties()" class="btn btn-primary">
+                    <i class="fas fa-retry"></i> Retry
+                </button>
             </div>
         `;
+        if (resultsCount) {
+            resultsCount.textContent = 'Error loading properties';
+        }
     }
 }
 
