@@ -7,38 +7,293 @@
     <title>Flatery - Owner Dashboard</title>
     <!--===== Font Awesome =====-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!--===== Lucide Icons =====-->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!--===== Chart.js =====-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!--===== Main CSS =====-->
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/owner/owner-dashboard.css">
+    <link rel="stylesheet" href="../css/owner/owner-dashboard-new.css">
     <!--===== Scripts =====-->
     <script src="../Javascript/api.js"></script>
     <script src="../Javascript/component-loader.js" defer></script>
     <script src="../Javascript/notifications.js" defer></script>
     <script src="../Javascript/main.js" defer></script>
-    <script src="../Javascript/owner/owner-dashboard.js" defer></script>
+    <script src="../Javascript/owner/owner-dashboard-new.js" defer></script>
 </head>
 
 <body>
     <!--===== Navbar Component =====-->
     <div id="navbar-container" data-component="../components/navbar.html"></div>
 
-    <!-- Mobile Header -->
-    <div class="mobile-header">
-        <button class="mobile-menu-toggle" id="mobileMenuToggle">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="mobile-logo">
-            <h2>Flatery Owner</h2>
-        </div>
+    <!-- Main Dashboard Container -->
+    <div class="owner-dashboard-container">
+        
+        <!-- SECTION 1: Hero Strip (Smart Overview Beam) -->
+        <section class="hero-strip">
+            <div class="metric-beam">
+                <div class="metric-card clickable" data-nav="properties">
+                    <i class="fas fa-home"></i>
+                    <div class="metric-content">
+                        <div class="metric-value" id="totalPropertiesMetric">0</div>
+                        <div class="metric-label">Total Properties</div>
+                    </div>
+                </div>
+                <div class="metric-card clickable" data-nav="tenants">
+                    <i class="fas fa-users"></i>
+                    <div class="metric-content">
+                        <div class="metric-value" id="activeTenantsMetric">0</div>
+                        <div class="metric-label">Active Tenants</div>
+                    </div>
+                </div>
+                <div class="metric-card clickable" data-nav="payments">
+                    <i class="fas fa-file-invoice"></i>
+                    <div class="metric-content">
+                        <div class="metric-value" id="pendingRequestsMetric">0</div>
+                        <div class="metric-label">Pending Requests</div>
+                    </div>
+                </div>
+                <div class="metric-card clickable" data-nav="payments">
+                    <i class="fas fa-credit-card"></i>
+                    <div class="metric-content">
+                        <div class="metric-value" id="pendingPaymentsMetric">₹0</div>
+                        <div class="metric-label">Pending Payments</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <i class="fas fa-chart-pie"></i>
+                    <div class="metric-content">
+                        <div class="metric-value" id="occupancyRateMetric">0%</div>
+                        <div class="metric-label">Occupancy Rate</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Property Galaxy (Visual Property Map) -->
+        <section class="property-galaxy">
+            <div class="galaxy-header">
+                <h2><i class="fas fa-satellite"></i> Property Universe</h2>
+                <p>Your real estate portfolio at a glance</p>
+            </div>
+            <div class="galaxy-container" id="propertyGalaxy">
+                <!-- Property cards will be dynamically loaded -->
+                <div class="galaxy-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading your properties...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Owner Control Deck -->
+        <section class="control-deck">
+            <div class="deck-header">
+                <h2><i class="fas fa-gamepad"></i> Control Center</h2>
+            </div>
+            <div class="deck-grid">
+                <!-- Manage Flats Card -->
+                <div class="deck-card flats-card" onclick="navigateToFlatCRM()">
+                    <div class="deck-card-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3>Manage Flats</h3>
+                    <div class="deck-stats">
+                        <div class="deck-stat">
+                            <span class="stat-value" id="totalFlatsCount">0</span>
+                            <span class="stat-label">Total Flats</span>
+                        </div>
+                        <div class="deck-stat">
+                            <span class="stat-value" id="activeFlatTenantsCount">0</span>
+                            <span class="stat-label">Active Tenants</span>
+                        </div>
+                        <div class="deck-stat">
+                            <span class="stat-value" id="vacantFlatsCount">0</span>
+                            <span class="stat-label">Vacant Units</span>
+                        </div>
+                    </div>
+                    <button class="deck-btn">Open Flat CRM <i class="fas fa-arrow-right"></i></button>
+                </div>
+
+                <!-- Manage PGs Card -->
+                <div class="deck-card pgs-card" onclick="navigateToPGCRM()">
+                    <div class="deck-card-icon">
+                        <i class="fas fa-bed"></i>
+                    </div>
+                    <h3>Manage PGs</h3>
+                    <div class="deck-stats">
+                        <div class="deck-stat">
+                            <span class="stat-value" id="totalBedsCount">0</span>
+                            <span class="stat-label">Total Beds</span>
+                        </div>
+                        <div class="deck-stat">
+                            <span class="stat-value" id="occupiedBedsCount">0</span>
+                            <span class="stat-label">Occupied</span>
+                        </div>
+                        <div class="deck-stat">
+                            <span class="stat-value" id="pgPendingDuesCount">0</span>
+                            <span class="stat-label">Pending Dues</span>
+                        </div>
+                    </div>
+                    <button class="deck-btn">Open PG CRM <i class="fas fa-arrow-right"></i></button>
+                </div>
+
+                <!-- Quick Actions Card -->
+                <div class="deck-card actions-card">
+                    <div class="deck-card-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions-grid">
+                        <button class="quick-action-btn" onclick="window.location.href='add-property.html'">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Add Property</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="window.location.href='add-tenant.html'">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Add Tenant</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="sendBulkReminder()">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Send Reminder</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="generateMonthlyReport()">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Generate Report</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Smart Insights Panel -->
+        <section class="insights-panel">
+            <div class="insights-header">
+                <h2><i class="fas fa-brain"></i> Smart Insights</h2>
+            </div>
+            <div class="insights-grid">
+                <!-- Payment Status Overview -->
+                <div class="insight-card payment-insight">
+                    <h3><i class="fas fa-coins"></i> Payment Status Overview</h3>
+                    <div class="circular-progress">
+                        <canvas id="paymentProgressChart" width="200" height="200"></canvas>
+                        <div class="progress-center">
+                            <div class="progress-value" id="paymentPercentage">0%</div>
+                            <div class="progress-label">Collected</div>
+                        </div>
+                    </div>
+                    <div class="payment-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label"><i class="fas fa-check-circle"></i> Received</span>
+                            <span class="breakdown-value" id="receivedAmount">₹0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label"><i class="fas fa-hourglass-half"></i> Pending</span>
+                            <span class="breakdown-value" id="pendingAmountTotal">₹0</span>
+                        </div>
+                        <div class="breakdown-item highlight">
+                            <span class="breakdown-label"><i class="fas fa-rupee-sign"></i> Total Expected</span>
+                            <span class="breakdown-value" id="totalExpected">₹0</span>
+                        </div>
+                    </div>
+                    <div class="mini-stats">
+                        <div class="mini-stat">
+                            <i class="fas fa-calendar-day"></i>
+                            <div>
+                                <div class="mini-value" id="todayPayments">0</div>
+                                <div class="mini-label">Today's Payments</div>
+                            </div>
+                        </div>
+                        <div class="mini-stat">
+                            <i class="fas fa-calendar-week"></i>
+                            <div>
+                                <div class="mini-value" id="weekPayments">0</div>
+                                <div class="mini-label">This Week</div>
+                            </div>
+                        </div>
+                        <div class="mini-stat alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <div class="mini-value" id="overduePayments">0</div>
+                                <div class="mini-label">Overdue</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tenant Activity Pulse -->
+                <div class="insight-card activity-insight">
+                    <h3><i class="fas fa-heartbeat"></i> Tenant Activity Pulse</h3>
+                    <div class="activity-chart-container">
+                        <canvas id="activityChart" width="400" height="250"></canvas>
+                    </div>
+                    <div class="activity-stats">
+                        <div class="activity-stat-item">
+                            <i class="fas fa-user-plus"></i>
+                            <div>
+                                <div class="activity-value" id="newTenantsCount">0</div>
+                                <div class="activity-label">New Tenants</div>
+                            </div>
+                        </div>
+                        <div class="activity-stat-item">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <div class="activity-value" id="expiringLeasesCount">0</div>
+                                <div class="activity-label">Expiring Leases</div>
+                            </div>
+                        </div>
+                        <div class="activity-stat-item">
+                            <i class="fas fa-tools"></i>
+                            <div>
+                                <div class="activity-value" id="recentComplaintsCount">0</div>
+                                <div class="activity-label">Recent Complaints</div>
+                            </div>
+                        </div>
+                        <div class="activity-stat-item">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <div>
+                                <div class="activity-value" id="duesCount">0</div>
+                                <div class="activity-label">Pending Dues</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: Notifications Snapshot Ribbon -->
+        <section class="notifications-ribbon">
+            <div class="ribbon-header">
+                <i class="fas fa-bell"></i>
+                <span>Latest Updates</span>
+            </div>
+            <div class="ribbon-scroll" id="notificationRibbon">
+                <!-- Notifications will be loaded dynamically -->
+                <div class="ribbon-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading notifications...
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: Property Photo Strip -->
+        <section class="property-photo-strip">
+            <div class="strip-header">
+                <h2><i class="fas fa-images"></i> Property Gallery</h2>
+                <p>Visual overview of all your properties</p>
+            </div>
+            <div class="photo-strip-container" id="propertyPhotoStrip">
+                <!-- Property polaroids will be loaded dynamically -->
+                <div class="strip-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading gallery...</p>
+                </div>
+            </div>
+        </section>
+
     </div>
 
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <!-- Modals and overlays would go here if needed -->
 
-    <!-- Main Layout Container -->
-    <div class="dashboard-layout">
+</body>
+
+</html>
         
         <!-- Sidebar Navigation -->
         <nav class="sidebar" id="sidebar">

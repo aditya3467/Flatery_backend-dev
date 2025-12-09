@@ -4,6 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Home.js loaded - calling loadRecommendedProperties');
     loadRecommendedProperties();
     setupSearchButton();
 });
@@ -50,7 +51,10 @@ function setupSearchButton() {
  * Load recommended properties from API and display on homepage
  */
 async function loadRecommendedProperties() {
-    const container = document.querySelector('.recc-properties .row:last-child');
+    console.log('loadRecommendedProperties called');
+    const container = document.getElementById('recommendedPropertiesGrid');
+    
+    console.log('Container found:', container);
     
     if (!container) {
         console.log('Recommended properties container not found');
@@ -58,6 +62,7 @@ async function loadRecommendedProperties() {
     }
     
     try {
+        console.log('Fetching from:', `${apiService.baseURL}/properties/recommended`);
         // Show loading state
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; width: 100%;">
@@ -66,11 +71,19 @@ async function loadRecommendedProperties() {
             </div>
         `;
         
-        // Fetch first 3 properties from the API
-        const response = await apiService.getProperties();
-        const properties = response.content || [];
+        // Fetch recommended properties (latest 3) from the API
+        const response = await fetch(`${apiService.baseURL}/properties/recommended`);
         
-        if (properties.length === 0) {
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch recommended properties');
+        }
+        
+        const properties = await response.json();
+        console.log('Properties fetched:', properties);
+        
+        if (!properties || properties.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; width: 100%;">
                     <i class="fas fa-home" style="font-size: 2rem; color: #ccc;"></i>

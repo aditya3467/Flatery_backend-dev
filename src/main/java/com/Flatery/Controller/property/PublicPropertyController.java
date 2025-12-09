@@ -52,4 +52,11 @@ public class PublicPropertyController {
         List<PropertyImage> images = propertyImageRepository.findByPropertyIdOrderByPositionAsc(id);
         return ResponseEntity.ok(images);
     }
+
+    // Recommended properties - latest 3 properties
+    @GetMapping("/recommended")
+    public ResponseEntity<List<PropertySummary>> getRecommendedProperties() {
+        List<PropertySummary> properties = queryService.getRecommendedProperties();
+        return ResponseEntity.ok(properties);
+    }
 }

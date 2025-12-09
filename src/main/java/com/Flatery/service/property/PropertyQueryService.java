@@ -13,6 +13,8 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PropertyQueryService {
@@ -47,5 +49,14 @@ public class PropertyQueryService {
 
         // Convert to summaries with primary image url
         return page.map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PropertySummary> getRecommendedProperties() {
+        // Simple: return 3 latest properties
+        List<Property> properties = propertyRepository.findTop3ByOrderByPostedOnDesc();
+        return properties.stream()
+                .map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())))
+                .toList();
     }
 }

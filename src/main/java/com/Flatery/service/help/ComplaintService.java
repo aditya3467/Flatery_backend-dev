@@ -80,19 +80,20 @@ public class ComplaintService {
 
         log.info("Complaint created: {} for tenant: {}", complaintId, tenantId);
 
+        // Notify owner when tenant raises a complaint
+        if (ownerId != null) {
+            notificationService.createNotification(
+                ownerId,
+                tenantId,
+                "COMPLAINT_CREATED",
+                "New Complaint Raised",
+                "A new complaint has been raised by a tenant: " + complaint.getTitle(),
+                "/owner/flat-dashboard.html#complaints"
+            );
+        }
+
         return queryService.buildDetailResponse(complaint);
     }
-            // Notify owner when tenant raises a complaint
-            if (ownerId != null) {
-                notificationService.createNotification(
-                    ownerId,
-                    tenantId,
-                    "COMPLAINT_CREATED",
-                    "New Complaint Raised",
-                    "A new complaint has been raised by a tenant: " + complaint.getTitle(),
-                    "/owner/flat-dashboard.html#complaints"
-                );
-            }
 
     /**
      * Get complaint by ID
@@ -113,17 +114,6 @@ public class ComplaintService {
     }
 
     /**
-            // Notify tenant when owner changes status
-            if (complaint.getTenantId() != null) {
-                notificationService.createNotification(
-                    complaint.getTenantId(),
-                    ownerId,
-                    "COMPLAINT_STATUS_UPDATE",
-                    "Complaint Status Updated",
-                    "Your complaint status was updated to " + request.getNewStatus(),
-                    "/tenant-dashboard.html#complaints"
-                );
-            }
      * Get owner complaints
      */
     @Transactional(readOnly = true)
@@ -135,17 +125,6 @@ public class ComplaintService {
     /**
      * Get owner pending complaints
      */
-            // Notify owner when tenant verifies resolution (status changes to CLOSED)
-            if (complaint.getOwnerId() != null) {
-                notificationService.createNotification(
-                    complaint.getOwnerId(),
-                    tenantId,
-                    "COMPLAINT_STATUS_UPDATE",
-                    "Complaint Closed by Tenant",
-                    "A complaint was closed by the tenant: " + complaint.getTitle(),
-                    "/owner/flat-dashboard.html#complaints"
-                );
-            }
     @Transactional(readOnly = true)
     public List<ComplaintSummaryResponse> getOwnerPendingComplaints(Long ownerId) {
         List<Complaint> complaints = queryService.getOwnerPendingComplaints(ownerId);
@@ -156,17 +135,6 @@ public class ComplaintService {
      * Update complaint status
      */
     @Transactional
-            // Notify owner when tenant reopens complaint
-            if (complaint.getOwnerId() != null) {
-                notificationService.createNotification(
-                    complaint.getOwnerId(),
-                    tenantId,
-                    "COMPLAINT_STATUS_UPDATE",
-                    "Complaint Reopened by Tenant",
-                    "A complaint was reopened by the tenant: " + complaint.getTitle(),
-                    "/owner/flat-dashboard.html#complaints"
-                );
-            }
     public ComplaintDetailResponse updateComplaintStatus(Long id, ComplaintUpdateStatusRequest request, Long ownerId) {
         Complaint complaint = queryService.getComplaintByIdWithAccessCheck(id, ownerId, "ADMIN");
 
@@ -175,6 +143,18 @@ public class ComplaintService {
         // Add response if message provided
         if (request.getMessage() != null && !request.getMessage().trim().isEmpty()) {
             responseService.addOwnerComment(complaint, ownerId, request.getMessage());
+        }
+
+        // Notify tenant when owner changes status
+        if (complaint.getTenantId() != null) {
+            notificationService.createNotification(
+                complaint.getTenantId(),
+                ownerId,
+                "COMPLAINT_STATUS_UPDATE",
+                "Complaint Status Updated",
+                "Your complaint status was updated to " + request.getNewStatus(),
+                "/tenant-dashboard.html#complaints"
+            );
         }
 
         return queryService.buildDetailResponse(complaint);
@@ -187,6 +167,19 @@ public class ComplaintService {
     public ComplaintDetailResponse verifyResolution(Long id, Long tenantId) {
         Complaint complaint = queryService.getComplaintByIdWithAccessCheck(id, tenantId, "USER");
         statusService.verifyResolution(complaint, tenantId);
+
+        // Notify owner when tenant verifies resolution (status changes to CLOSED)
+        if (complaint.getOwnerId() != null) {
+            notificationService.createNotification(
+                complaint.getOwnerId(),
+                tenantId,
+                "COMPLAINT_STATUS_UPDATE",
+                "Complaint Closed by Tenant",
+                "A complaint was closed by the tenant: " + complaint.getTitle(),
+                "/owner/flat-dashboard.html#complaints"
+            );
+        }
+
         return queryService.buildDetailResponse(complaint);
     }
 
@@ -197,6 +190,19 @@ public class ComplaintService {
     public ComplaintDetailResponse reopenComplaint(Long id, ComplaintReopenRequest request, Long tenantId) {
         Complaint complaint = queryService.getComplaintByIdWithAccessCheck(id, tenantId, "USER");
         statusService.reopenComplaint(complaint, tenantId, request.getReason());
+
+        // Notify owner when tenant reopens complaint
+        if (complaint.getOwnerId() != null) {
+            notificationService.createNotification(
+                complaint.getOwnerId(),
+                tenantId,
+                "COMPLAINT_STATUS_UPDATE",
+                "Complaint Reopened by Tenant",
+                "A complaint was reopened by the tenant: " + complaint.getTitle(),
+                "/owner/flat-dashboard.html#complaints"
+            );
+        }
+
         return queryService.buildDetailResponse(complaint);
     }
 

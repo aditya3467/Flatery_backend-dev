@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PropertyRepository extends JpaRepository<Property, Long> {
@@ -18,4 +19,7 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT p.ownerId) FROM com.Flatery.model.property.Property p")
     long countDistinctOwnerIds();
+
+    // Get latest 3 properties for recommended section
+    List<Property> findTop3ByOrderByPostedOnDesc();
 }

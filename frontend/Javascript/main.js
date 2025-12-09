@@ -508,6 +508,12 @@ async function handleLogout() {
     }
     logoutBtns.forEach(btn => btn.style.display = 'none'); // Hide logout buttons
 
+    // Hide dashboard link for non-logged in users
+    const dashboardLinkContainer = document.getElementById('dashboardLinkContainer');
+    if (dashboardLinkContainer) {
+        dashboardLinkContainer.style.display = 'none';
+    }
+
     // Re-setup login button listeners to make them active again
     setupLoginButtonListeners();
 
@@ -574,7 +580,14 @@ function updateUIForLoggedInUser() {
   // Update Dashboard link in hamburger menu based on user role
   const roles = JSON.parse(localStorage.getItem('roles') || '[]');
   const dashboardLink = document.getElementById('dashboardLink'); // Target the dashboard link by ID
+  const dashboardLinkContainer = document.getElementById('dashboardLinkContainer');
+  
   if (dashboardLink) {
+      // Show dashboard link for logged-in users
+      if (dashboardLinkContainer) {
+          dashboardLinkContainer.style.display = 'block';
+      }
+      
       if (roles.includes('SUPERADMIN')) {
           dashboardLink.href = 'superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
@@ -585,7 +598,7 @@ function updateUIForLoggedInUser() {
           dashboardLink.href = 'tenant-dashboard.html';
           dashboardLink.textContent = 'Tenant Dashboard';
       } else {
-          dashboardLink.href = 'index.html'; // Default for non-logged in users
+          dashboardLink.href = 'tenant-dashboard.html';
           dashboardLink.textContent = 'Dashboard';
       }
 
