@@ -80,6 +80,22 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.getOwnerFlatTenants(ownerId));
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updateTenant(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> updates,
+            Authentication authentication) {
+        try {
+            Long ownerId = getAuthenticatedUserId(authentication);
+            TenantSummary updatedTenant = tenantService.updateTenant(id, ownerId, updates);
+            return ResponseEntity.ok(updatedTenant);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to update tenant"));
+        }
+    }
+
     @GetMapping("/me")
     public ResponseEntity<TenantSummary> getCurrentTenantInfo(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -226,6 +242,43 @@ public class TenantController {
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Failed to get tenant history: " + ex.getMessage()));
+        }
+    }
+
+    /**
+     * Get payment status for a specific tenant
+     */
+    @GetMapping("/{tenantId}/payment-status")
+    @PreAuthorize("hasAnyRole('OWNER', 'TENANT')")
+    public ResponseEntity<?> getTenantPaymentStatus(
+            @PathVariable Long tenantId,
+            Authentication authentication) {
+        try {
+            // TODO: Add authorization check - owner owns tenant or tenant is self
+            Map<String, Object> status = tenantService.getTenantPaymentStatus(tenantId);
+            return ResponseEntity.ok(status);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to get payment status: " + ex.getMessage()));
+        }
+    }
+
+    /**
+     * Get payment history for a tenant
+     */
+    @GetMapping("/{tenantId}/payment-history")
+    @PreAuthorize("hasAnyRole('OWNER', 'TENANT')")
+    public ResponseEntity<?> getTenantPaymentHistory(
+            @PathVariable Long tenantId,
+            @RequestParam(defaultValue = "12") int months,
+            Authentication authentication) {
+        try {
+            // TODO: Add authorization check - owner owns tenant or tenant is self
+            List<Map<String, Object>> history = tenantService.getTenantPaymentHistory(tenantId, months);
+            return ResponseEntity.ok(history);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to get payment history: " + ex.getMessage()));
         }
     }
 

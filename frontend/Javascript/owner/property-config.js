@@ -130,7 +130,14 @@ function showPaymentsSection() {
   document.querySelector('.manage-payments-section').style.display = 'none';
   // Hide top meta (title/filters/stats) in payments view
   toggleTopMeta(false);
-  loadPayments();
+  // Load tenants first if not loaded, then load payments
+  if (!allTenants || allTenants.length === 0) {
+    loadTenants().then(() => {
+      loadPayments();
+    });
+  } else {
+    loadPayments();
+  }
 }
 
 function showManagePaymentsSection() {
@@ -1633,6 +1640,11 @@ async function loadTenants() {
         dues: tenant.pendingDues || tenant.dues || 0,
         unitId: tenant.unitId,
         bedId: tenant.bedId,
+        // Payment status fields
+        paymentStatus: tenant.paymentStatus || 'DUE',
+        isCurrentMonthPaid: tenant.isCurrentMonthPaid || false,
+        isOverdue: tenant.isOverdue || false,
+        nextDueDate: tenant.nextDueDate || null,
         // Additional fields for profile
         dateOfBirth: tenant.dateOfBirth || null,
         gender: tenant.gender || '-',
@@ -1651,6 +1663,11 @@ async function loadTenants() {
 
     renderTenantsTable(allTenants);
     
+    // If rent collection view is active, update it
+    if (currentView === 'payments') {
+      loadRentCollectionOverview();
+    }
+    
   } catch (error) {
     console.error('Failed to load tenants:', error);
     showAlert('error', 'Failed to load tenants');
@@ -1666,7 +1683,7 @@ function renderTenantsTable(tenants) {
   if (!tenants || tenants.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" class="no-data-row">
+        <td colspan="10" class="no-data-row">
           <i class="fas fa-users" style="font-size: 48px; color: #bdc3c7; margin-bottom: 10px;"></i>
           <div>No tenants found</div>
         </td>
@@ -1680,7 +1697,8 @@ function renderTenantsTable(tenants) {
     name: tenants[0].name,
     roomNumber: tenants[0].roomNumber,
     bedNumber: tenants[0].bedNumber,
-    checkInDate: tenants[0].checkInDate
+    checkInDate: tenants[0].checkInDate,
+    paymentStatus: tenants[0].paymentStatus
   });
 
   tbody.innerHTML = tenants.map(tenant => {
@@ -1688,7 +1706,14 @@ function renderTenantsTable(tenants) {
     const duesAmount = tenant.dues || 0;
     const duesClass = duesAmount === 0 ? 'zero' : 'pending';
     const initials = tenant.name ? tenant.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'T';
-    // ...existing code...
+    
+    // Payment status
+    const paymentStatus = tenant.paymentStatus || 'DUE';
+    const paymentStatusClass = paymentStatus === 'PAID' ? 'paid' : paymentStatus === 'OVERDUE' ? 'overdue' : 'due';
+    const paymentStatusIcon = paymentStatus === 'PAID' ? '✓' : paymentStatus === 'OVERDUE' ? '!' : '⏱';
+    
+    // Next due date
+    const nextDueDate = tenant.nextDueDate ? formatDate(tenant.nextDueDate) : '-';
     
     return `
       <tr>
@@ -1707,11 +1732,16 @@ function renderTenantsTable(tenants) {
         <td>${tenant.checkInDate ? formatDate(tenant.checkInDate) : '-'}</td>
         <td><strong>₹${(tenant.rent || 0).toLocaleString()}</strong></td>
         <td><span class="status-badge ${statusClass}">${tenant.status || 'Active'}</span></td>
-        <td><span class="dues-amount ${duesClass}">₹${duesAmount.toLocaleString()}</span></td>
+        <td><span class="payment-status-badge ${paymentStatusClass}">${paymentStatusIcon} ${paymentStatus}</span></td>
+        <td><span class="next-due-date">${nextDueDate}</span></td>
         <td>
           <div class="action-buttons">
             <button class="action-btn view" onclick="viewTenantProfile(${tenant.id})">
               <i class="fas fa-eye"></i> View
+            </button>
+            
+            <button class="action-btn edit" onclick="openEditTenantModal(${tenant.id})" style="background: #3498db; color: white;">
+              <i class="fas fa-edit"></i> Edit
             </button>
             
             <button class="action-btn remove" onclick="confirmRemoveTenant(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}')">
@@ -2173,33 +2203,205 @@ let rentCollectionChart = null;
 // Load and display payments
 async function loadPayments() {
   try {
-    // Generate mock payment data for now
-    allPayments = generateMockPayments();
-    
-    // Update widgets
-    updatePaymentWidgets();
-    
-    // Populate room filter
-    populateRoomFilter();
-    
-    // Render chart
-    renderRentCollectionChart('6months');
-    
-    // Render table
-    renderPaymentsTable(allPayments);
+    // Load rent collection overview using tenant payment status
+    loadRentCollectionOverview();
     
     // Populate tenant dropdown in add payment modal
     populateTenantDropdown();
     
-    // Set default date to today
-    document.getElementById('paymentDate').valueAsDate = new Date();
-    
-    console.log('Loaded payments:', allPayments.length);
+    console.log('Loaded rent collection overview');
     
   } catch (error) {
     console.error('Failed to load payments:', error);
     showAlert('error', 'Failed to load payments');
   }
+}
+
+// Load rent collection overview and categorize tenants
+function loadRentCollectionOverview() {
+  console.log('Loading rent collection overview, tenants:', allTenants ? allTenants.length : 0);
+  
+  if (!allTenants || allTenants.length === 0) {
+    console.log('No tenants loaded yet');
+    // Update stats with zeros
+    updateCollectionStats(0, 0, 0, 0, 0);
+    // Show empty state for all categories
+    renderTenantCategory('overdueTenantsContainer', [], 'overdue');
+    renderTenantCategory('dueTodayContainer', [], 'due-today');
+    renderTenantCategory('dueWeekContainer', [], 'due-week');
+    renderTenantCategory('upcomingContainer', [], 'upcoming');
+    renderTenantCategory('paidContainer', [], 'paid');
+    // Update counts
+    document.getElementById('overdueCount').textContent = 0;
+    document.getElementById('dueTodayCount').textContent = 0;
+    document.getElementById('dueWeekCount').textContent = 0;
+    document.getElementById('upcomingCount').textContent = 0;
+    document.getElementById('paidCount').textContent = 0;
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const weekFromNow = new Date(today);
+  weekFromNow.setDate(weekFromNow.getDate() + 7);
+  
+  const monthFromNow = new Date(today);
+  monthFromNow.setDate(monthFromNow.getDate() + 30);
+
+  // Categorize tenants
+  const overdueTenants = [];
+  const dueTodayTenants = [];
+  const dueWeekTenants = [];
+  const upcomingTenants = [];
+  const paidTenants = [];
+
+  let totalExpected = 0;
+  let totalCollected = 0;
+  let totalPending = 0;
+  let totalOverdue = 0;
+
+  console.log('Sample tenant data:', allTenants[0]);
+  
+  allTenants.forEach(tenant => {
+    const rent = tenant.rent || 0;
+    totalExpected += rent;
+
+    if (tenant.paymentStatus === 'PAID') {
+      totalCollected += rent;
+      paidTenants.push(tenant);
+    } else if (tenant.isOverdue) {
+      totalOverdue += rent;
+      overdueTenants.push(tenant);
+    } else if (tenant.nextDueDate) {
+      const dueDate = new Date(tenant.nextDueDate);
+      dueDate.setHours(0, 0, 0, 0);
+
+      if (dueDate.getTime() === today.getTime()) {
+        totalPending += rent;
+        dueTodayTenants.push(tenant);
+      } else if (dueDate <= weekFromNow) {
+        totalPending += rent;
+        dueWeekTenants.push(tenant);
+      } else if (dueDate <= monthFromNow) {
+        totalPending += rent;
+        upcomingTenants.push(tenant);
+      }
+    }
+  });
+
+  // Log categorization results
+  console.log('Rent Collection Summary:', {
+    total: allTenants.length,
+    overdue: overdueTenants.length,
+    dueToday: dueTodayTenants.length,
+    dueWeek: dueWeekTenants.length,
+    upcoming: upcomingTenants.length,
+    paid: paidTenants.length,
+    totalExpected,
+    totalCollected,
+    totalPending,
+    totalOverdue
+  });
+
+  // Update overview stats
+  updateCollectionStats(totalExpected, totalCollected, totalPending, totalOverdue, allTenants.length);
+
+  // Render tenant categories
+  renderTenantCategory('overdueTenantsContainer', overdueTenants, 'overdue');
+  renderTenantCategory('dueTodayContainer', dueTodayTenants, 'due-today');
+  renderTenantCategory('dueWeekContainer', dueWeekTenants, 'due-week');
+  renderTenantCategory('upcomingContainer', upcomingTenants, 'upcoming');
+  renderTenantCategory('paidContainer', paidTenants, 'paid');
+
+  // Update counts
+  document.getElementById('overdueCount').textContent = overdueTenants.length;
+  document.getElementById('dueTodayCount').textContent = dueTodayTenants.length;
+  document.getElementById('dueWeekCount').textContent = dueWeekTenants.length;
+  document.getElementById('upcomingCount').textContent = upcomingTenants.length;
+  document.getElementById('paidCount').textContent = paidTenants.length;
+  
+  console.log('Rent collection overview loaded successfully');
+}
+
+// Update collection overview stats
+function updateCollectionStats(expected, collected, pending, overdue, totalTenants) {
+  document.getElementById('totalExpectedRent').textContent = `₹${expected.toLocaleString()}`;
+  document.getElementById('totalTenantsCount').textContent = `${totalTenants} tenants`;
+  
+  document.getElementById('totalCollectedRent').textContent = `₹${collected.toLocaleString()}`;
+  const collectionPercentage = expected > 0 ? Math.round((collected / expected) * 100) : 0;
+  document.getElementById('collectedPercentage').textContent = `${collectionPercentage}%`;
+  
+  document.getElementById('totalPendingRent').textContent = `₹${pending.toLocaleString()}`;
+  const pendingCount = allTenants.filter(t => t.paymentStatus !== 'PAID' && !t.isOverdue).length;
+  document.getElementById('pendingTenantsCount').textContent = `${pendingCount} tenants`;
+  
+  document.getElementById('totalOverdueRent').textContent = `₹${overdue.toLocaleString()}`;
+  const overdueCount = allTenants.filter(t => t.isOverdue).length;
+  document.getElementById('overdueTenantsCount').textContent = `${overdueCount} tenants`;
+}
+
+// Render tenant category with tenant cards
+function renderTenantCategory(containerId, tenants, categoryType) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (tenants.length === 0) {
+    container.innerHTML = '<div class="no-data-message">No tenants in this category</div>';
+    return;
+  }
+
+  let html = '';
+  tenants.forEach(tenant => {
+    const dueDate = tenant.nextDueDate ? new Date(tenant.nextDueDate).toLocaleDateString('en-IN', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    }) : 'N/A';
+
+    const statusClass = tenant.paymentStatus ? tenant.paymentStatus.toLowerCase() : 'due';
+    const statusText = tenant.paymentStatus || 'DUE';
+
+    html += `
+      <div class="tenant-card ${categoryType}">
+        <div class="tenant-card-header">
+          <div class="tenant-info">
+            <h4>${tenant.name}</h4>
+            <span class="tenant-location">
+              <i class="fas fa-door-open"></i> Room ${tenant.roomNumber || 'N/A'} 
+              ${tenant.bedNumber ? `• Bed ${tenant.bedNumber}` : ''}
+            </span>
+          </div>
+          <span class="payment-status-badge ${statusClass}">${statusText}</span>
+        </div>
+        <div class="tenant-card-body">
+          <div class="tenant-card-row">
+            <span class="label"><i class="fas fa-rupee-sign"></i> Rent Amount:</span>
+            <span class="value">₹${(tenant.rent || 0).toLocaleString()}</span>
+          </div>
+          <div class="tenant-card-row">
+            <span class="label"><i class="fas fa-calendar"></i> ${categoryType === 'paid' ? 'Paid' : 'Due Date'}:</span>
+            <span class="value ${tenant.isOverdue ? 'overdue-text' : ''}">${dueDate}</span>
+          </div>
+          <div class="tenant-card-row">
+            <span class="label"><i class="fas fa-phone"></i> Contact:</span>
+            <span class="value">${tenant.phone || 'N/A'}</span>
+          </div>
+        </div>
+        <div class="tenant-card-footer">
+          <button class="btn-small primary" onclick="sendPaymentReminder(${tenant.id})">
+            <i class="fas fa-bell"></i> Send Reminder
+          </button>
+          <button class="btn-small secondary" onclick="viewTenantDetails(${tenant.id})">
+            <i class="fas fa-eye"></i> View Details
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
 }
 
 // Generate mock payment data
@@ -2579,6 +2781,31 @@ function downloadReceiptPDF() {
 // Download payment report
 function downloadPaymentReport() {
   alert('Payment report download functionality will be implemented with backend integration');
+}
+
+// Send payment reminder to tenant
+function sendPaymentReminder(tenantId) {
+  const tenant = allTenants.find(t => t.id === tenantId);
+  if (!tenant) {
+    showAlert('error', 'Tenant not found');
+    return;
+  }
+  
+  // TODO: Implement SMS/Email reminder via backend API
+  showAlert('success', `Payment reminder sent to ${tenant.name}`);
+  console.log('Sending reminder to tenant:', tenantId, tenant.name);
+}
+
+// View tenant details (reuse existing function)
+function viewTenantDetails(tenantId) {
+  const tenant = allTenants.find(t => t.id === tenantId);
+  if (!tenant) {
+    showAlert('error', 'Tenant not found');
+    return;
+  }
+  
+  // Open tenant detail modal (if exists) or show info
+  openTenantModal(tenant);
 }
 
 // ===============================================
@@ -3271,6 +3498,105 @@ window.addComplaintResponse = addComplaintResponse;
 window.closeComplaintDetailModal = closeComplaintDetailModal;
 window.closeReceiptModal = closeReceiptModal;
 window.printReceipt = printReceipt;
+
+// ============================================================================
+// EDIT TENANT FUNCTIONALITY
+// ============================================================================
+
+function openEditTenantModal(tenantId) {
+  // Find tenant in allTenants array
+  const tenant = allTenants.find(t => t.id === tenantId);
+  
+  if (!tenant) {
+    showAlert('error', 'Tenant not found');
+    return;
+  }
+  
+  console.log('Opening edit modal for tenant:', tenant);
+  console.log('Tenant rentDueDate value:', tenant.rentDueDate, 'Type:', typeof tenant.rentDueDate);
+  
+  // Populate form fields
+  document.getElementById('editTenantId').value = tenant.id;
+  document.getElementById('editRentAmount').value = tenant.rent || 0;
+  document.getElementById('editSecurityDeposit').value = tenant.securityDeposit || 0;
+  
+  // Set rent due date with proper conversion
+  const dueDate = tenant.rentDueDate || 1;
+  console.log('Setting rentDueDate dropdown to:', dueDate);
+  document.getElementById('editRentDueDate').value = String(dueDate);
+  
+  // Format dates for input fields
+  if (tenant.checkInDate) {
+    const startDate = new Date(tenant.checkInDate);
+    document.getElementById('editLeaseStartDate').value = startDate.toISOString().split('T')[0];
+  } else {
+    document.getElementById('editLeaseStartDate').value = '';
+  }
+  
+  if (tenant.expectedCheckOut) {
+    const endDate = new Date(tenant.expectedCheckOut);
+    document.getElementById('editLeaseEndDate').value = endDate.toISOString().split('T')[0];
+  } else {
+    document.getElementById('editLeaseEndDate').value = '';
+  }
+  
+  // Show modal
+  document.getElementById('editTenantModal').style.display = 'flex';
+}
+
+function closeEditTenantModal() {
+  document.getElementById('editTenantModal').style.display = 'none';
+  document.getElementById('editTenantForm').reset();
+}
+
+async function saveEditedTenant(event) {
+  event.preventDefault();
+  
+  const tenantId = document.getElementById('editTenantId').value;
+  const formData = {
+    rentAmount: parseInt(document.getElementById('editRentAmount').value),
+    securityDeposit: parseInt(document.getElementById('editSecurityDeposit').value),
+    rentDueDate: parseInt(document.getElementById('editRentDueDate').value),
+    leaseStartDate: document.getElementById('editLeaseStartDate').value,
+    leaseEndDate: document.getElementById('editLeaseEndDate').value || null
+  };
+  
+  console.log('Saving tenant data:', formData);
+  
+  try {
+    // Call API to update tenant
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`${API_BASE_URL}/tenants/${tenantId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(formData)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update tenant');
+    }
+    
+    const updatedTenant = await response.json();
+    
+    showAlert('success', 'Tenant information updated successfully');
+    closeEditTenantModal();
+    
+    // Reload tenants to reflect changes
+    await loadTenants();
+    
+  } catch (error) {
+    console.error('Error updating tenant:', error);
+    showAlert('error', error.message || 'Failed to update tenant information');
+  }
+}
+
+// Export edit tenant functions
+window.openEditTenantModal = openEditTenantModal;
+window.closeEditTenantModal = closeEditTenantModal;
+window.saveEditedTenant = saveEditedTenant;
 window.downloadReceiptPDF = downloadReceiptPDF;
 window.downloadPaymentReport = downloadPaymentReport;
 

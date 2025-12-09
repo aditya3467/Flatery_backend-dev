@@ -1039,12 +1039,12 @@ function getCurrentMonthYearShort() {
     return `${months[now.getMonth()]} ${now.getFullYear()}`;
 }
 
-// Get current month and year
+// Get current month and year in YYYY-MM format (backend expects this format)
 function getCurrentMonthYear() {
     const now = new Date();
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                   'July', 'August', 'September', 'October', 'November', 'December'];
-    return `${months[now.getMonth()]} ${now.getFullYear()}`;
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    return `${year}-${month}`;
 }
 
 // Get status icon

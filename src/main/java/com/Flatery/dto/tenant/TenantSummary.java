@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,4 +30,10 @@ public class TenantSummary {
     private String propertyName;
     private String propertyCity;
     private Boolean primary;
+    
+    // Payment status fields
+    private Boolean isCurrentMonthPaid;
+    private Boolean isOverdue;
+    private LocalDate nextDueDate;
+    private String paymentStatus; // "PAID", "DUE", "OVERDUE"
 }

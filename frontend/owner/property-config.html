@@ -62,10 +62,10 @@
         </div>
 
         <div class="nav-section">
-          <h4>PAYMENTS</h4>
+          <h4>RENT COLLECTION</h4>
           <a href="#payments" class="nav-item">
             <i class="fas fa-rupee-sign"></i>
-            <span>Payments</span>
+            <span>Rent Collection</span>
           </a>
           <a href="#manage-payments" class="nav-item">
             <i class="fas fa-hand-holding-usd"></i>
@@ -684,151 +684,123 @@
         </div>
       </div>
 
-      <!-- Payments Section -->
+      <!-- Rent Collection Section -->
       <div class="payments-section" style="display: none;">
-        <!-- Payments Header -->
+        <!-- Rent Collection Header -->
         <div class="payments-header">
           <div class="header-title">
-            <h2><i class="fas fa-money-bill-wave"></i> Payment Management</h2>
-            <p class="subtitle">All transaction history, rent receipts, and dues in one place</p>
+            <h2><i class="fas fa-money-bill-wave"></i> Rent Collection</h2>
+            <p class="subtitle">Overview of rent status and due dates for all tenants</p>
           </div>
           <div class="header-actions">
-            <button class="btn-action secondary" onclick="downloadPaymentReport()">
-              <i class="fas fa-file-excel"></i> Download Report
-            </button>
             <button class="btn-action primary" onclick="openAddPaymentModal()">
               <i class="fas fa-plus"></i> Record Payment
             </button>
           </div>
         </div>
 
-        <!-- Payment Widgets -->
-        <div class="payment-widgets">
-          <div class="payment-widget collected">
-            <div class="widget-icon">
+        <!-- Collection Overview Stats -->
+        <div class="collection-overview">
+          <div class="collection-stat-card total">
+            <div class="stat-icon">
+              <i class="fas fa-rupee-sign"></i>
+            </div>
+            <div class="stat-content">
+              <h3 id="totalExpectedRent">₹0</h3>
+              <p>Expected This Month</p>
+              <span class="stat-subtitle" id="totalTenantsCount">0 tenants</span>
+            </div>
+          </div>
+
+          <div class="collection-stat-card collected">
+            <div class="stat-icon">
               <i class="fas fa-check-circle"></i>
             </div>
-            <div class="widget-content">
-              <h3 id="totalCollected">₹0</h3>
-              <p>Total Rent Collected This Month</p>
-              <div class="widget-footer">
-                <span id="paidCount">0</span> payments received
-              </div>
+            <div class="stat-content">
+              <h3 id="totalCollectedRent">₹0</h3>
+              <p>Collected</p>
+              <span class="stat-subtitle" id="collectedPercentage">0%</span>
             </div>
           </div>
 
-          <div class="payment-widget pending">
-            <div class="widget-icon">
+          <div class="collection-stat-card pending">
+            <div class="stat-icon">
               <i class="fas fa-clock"></i>
             </div>
-            <div class="widget-content">
-              <h3 id="totalPending">₹0</h3>
-              <p>Pending Dues</p>
-              <div class="widget-footer">
-                <span id="pendingCount">0</span> tenants pending
-              </div>
+            <div class="stat-content">
+              <h3 id="totalPendingRent">₹0</h3>
+              <p>Pending</p>
+              <span class="stat-subtitle" id="pendingTenantsCount">0 tenants</span>
             </div>
           </div>
 
-          <div class="payment-widget overdue">
-            <div class="widget-icon">
+          <div class="collection-stat-card overdue">
+            <div class="stat-icon">
               <i class="fas fa-exclamation-triangle"></i>
             </div>
-            <div class="widget-content">
-              <h3 id="totalOverdue">₹0</h3>
-              <p>Overdue Payments</p>
-              <div class="widget-footer">
-                <span id="overdueCount">0</span> payments overdue
-              </div>
-            </div>
-          </div>
-
-          <div class="payment-widget average">
-            <div class="widget-icon">
-              <i class="fas fa-chart-bar"></i>
-            </div>
-            <div class="widget-content">
-              <h3 id="averageRent">₹0</h3>
-              <p>Average Rent Per Bed</p>
-              <div class="widget-footer">
-                Based on <span id="totalBeds">0</span> beds
-              </div>
+            <div class="stat-content">
+              <h3 id="totalOverdueRent">₹0</h3>
+              <p>Overdue</p>
+              <span class="stat-subtitle" id="overdueTenantsCount">0 tenants</span>
             </div>
           </div>
         </div>
 
-        <!-- Rent Collection Trend Chart -->
-        <div class="payment-chart-container">
-          <div class="chart-header">
-            <h3><i class="fas fa-chart-line"></i> Rent Collection Trend</h3>
-            <div class="chart-period-selector">
-              <button class="chart-period-btn active" onclick="loadPaymentChart('6months')">6 Months</button>
-              <button class="chart-period-btn" onclick="loadPaymentChart('year')">Year</button>
+        <!-- Rent Due Categories -->
+        <div class="rent-due-categories">
+          <!-- Overdue Section -->
+          <div class="due-category overdue-section">
+            <div class="category-header">
+              <h3><i class="fas fa-exclamation-circle"></i> Overdue Payments</h3>
+              <span class="category-count" id="overdueCount">0</span>
             </div>
-          </div>
-          <canvas id="rentCollectionChart"></canvas>
-        </div>
-
-        <!-- Payment Filters -->
-        <div class="payments-content">
-          <div class="payments-filters">
-            <div class="filter-group">
-              <label><i class="fas fa-calendar"></i> Month</label>
-              <select id="monthFilter" onchange="filterPayments()">
-                <option value="">All Months</option>
-                <option value="11">November 2024</option>
-                <option value="10">October 2024</option>
-                <option value="9">September 2024</option>
-                <option value="8">August 2024</option>
-                <option value="7">July 2024</option>
-                <option value="6">June 2024</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label><i class="fas fa-filter"></i> Status</label>
-              <select id="statusFilterPayment" onchange="filterPayments()">
-                <option value="">All Status</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="overdue">Overdue</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label><i class="fas fa-door-open"></i> Room</label>
-              <select id="roomFilter" onchange="filterPayments()">
-                <option value="">All Rooms</option>
-              </select>
-            </div>
-
-            <div class="filter-group search-group">
-              <label><i class="fas fa-search"></i> Search Tenant</label>
-              <input type="text" id="tenantSearchPayment" placeholder="Search by name..." onkeyup="filterPayments()">
+            <div class="tenants-list" id="overdueTenantsContainer">
+              <div class="no-data-message">No overdue payments</div>
             </div>
           </div>
 
-          <!-- Payment Table -->
-          <div class="payments-table-container">
-            <table class="payments-table">
-              <thead>
-                <tr>
-                  <th>Tenant</th>
-                  <th>Room</th>
-                  <th>Bed</th>
-                  <th>Amount</th>
-                  <th>Payment Mode</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="paymentsTableBody">
-                <tr>
-                  <td colspan="8" class="no-data-row">Loading payments...</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Due Today Section -->
+          <div class="due-category due-today-section">
+            <div class="category-header">
+              <h3><i class="fas fa-calendar-day"></i> Due Today</h3>
+              <span class="category-count" id="dueTodayCount">0</span>
+            </div>
+            <div class="tenants-list" id="dueTodayContainer">
+              <div class="no-data-message">No payments due today</div>
+            </div>
+          </div>
+
+          <!-- Due This Week Section -->
+          <div class="due-category due-week-section">
+            <div class="category-header">
+              <h3><i class="fas fa-calendar-week"></i> Due This Week</h3>
+              <span class="category-count" id="dueWeekCount">0</span>
+            </div>
+            <div class="tenants-list" id="dueWeekContainer">
+              <div class="no-data-message">No payments due this week</div>
+            </div>
+          </div>
+
+          <!-- Upcoming Section -->
+          <div class="due-category upcoming-section">
+            <div class="category-header">
+              <h3><i class="fas fa-calendar-alt"></i> Upcoming (Next 30 Days)</h3>
+              <span class="category-count" id="upcomingCount">0</span>
+            </div>
+            <div class="tenants-list" id="upcomingContainer">
+              <div class="no-data-message">No upcoming payments</div>
+            </div>
+          </div>
+
+          <!-- All Paid Section -->
+          <div class="due-category paid-section">
+            <div class="category-header">
+              <h3><i class="fas fa-check-double"></i> Paid This Month</h3>
+              <span class="category-count" id="paidCount">0</span>
+            </div>
+            <div class="tenants-list" id="paidContainer">
+              <div class="no-data-message">No payments received yet</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1304,16 +1276,17 @@
                   <th>Name</th>
                   <th>Room</th>
                   <th>Bed</th>
-                  <th>Check-in</th>
+                  <th>Lease Start</th>
                   <th>Rent</th>
                   <th>Status</th>
-                  <th>Dues</th>
+                  <th>Payment Status</th>
+                  <th>Next Due</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="tenantsTableBody">
                 <tr>
-                  <td colspan="9" class="no-data-row">Loading tenants...</td>
+                  <td colspan="10" class="no-data-row">Loading tenants...</td>
                 </tr>
               </tbody>
             </table>
@@ -1369,7 +1342,7 @@
                 <div class="quick-info-item">
                   <i class="fas fa-calendar-check"></i>
                   <div>
-                    <span class="info-label">Check-in Date</span>
+                    <span class="info-label">Lease Start Date</span>
                     <span class="info-value" id="profileCheckIn">01 Jan 2024</span>
                   </div>
                 </div>
@@ -1470,7 +1443,7 @@
                   <h3 class="section-title">Move-in/out Details</h3>
                   <div class="info-grid">
                     <div class="info-field">
-                      <label>Check-in Date</label>
+                      <label>Lease Start Date</label>
                       <span id="detailCheckIn">-</span>
                     </div>
                     <div class="info-field">
@@ -2219,6 +2192,93 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Edit Tenant Modal -->
+  <div id="editTenantModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeEditTenantModal()">&times;</span>
+      <h2><i class="fas fa-edit"></i> Edit Tenant Information</h2>
+      
+      <form id="editTenantForm" onsubmit="saveEditedTenant(event)">
+        <input type="hidden" id="editTenantId" />
+        
+        <div class="form-section">
+          <h3>Financial Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editRentAmount">Monthly Rent (₹) *</label>
+              <input type="number" id="editRentAmount" name="rentAmount" min="0" step="1" required />
+            </div>
+            <div class="form-group">
+              <label for="editSecurityDeposit">Security Deposit (₹) *</label>
+              <input type="number" id="editSecurityDeposit" name="securityDeposit" min="0" step="1" required />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editRentDueDate">Rent Due Date (Day of Month) *</label>
+              <select id="editRentDueDate" name="rentDueDate" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+                <option value="21">21</option>
+                <option value="22">22</option>
+                <option value="23">23</option>
+                <option value="24">24</option>
+                <option value="25">25</option>
+                <option value="26">26</option>
+                <option value="27">27</option>
+                <option value="28">28</option>
+                <option value="29">29</option>
+                <option value="30">30</option>
+                <option value="31">31</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <h3>Lease Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editLeaseStartDate">Lease Start Date *</label>
+              <input type="date" id="editLeaseStartDate" name="leaseStartDate" required />
+            </div>
+            <div class="form-group">
+              <label for="editLeaseEndDate">Lease End Date</label>
+              <input type="date" id="editLeaseEndDate" name="leaseEndDate" />
+              <small>Leave blank for ongoing lease</small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeEditTenantModal()">Cancel</button>
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

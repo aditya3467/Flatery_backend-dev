@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Initial Payment API</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .result.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    
+    .result.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    
+    .result h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .result pre {
+      background: rgba(0,0,0,0.05);
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #0c5460;
+    }
+    
+    .info-box strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test Initial Payment API</h1>
+    <p class="subtitle">Test the owner-approved payment creation endpoint</p>
+    
+    <div class="info-box">
+      <strong>ℹ️ Before Testing:</strong>
+      1. Make sure your backend is running (mvnw spring-boot:run)<br>
+      2. You must be logged in as an owner<br>
+      3. Ensure you have a valid tenant ID
+    </div>
+    
+    <form id="testForm">
+      <div class="form-group">
+        <label>Tenant ID *</label>
+        <input type="number" id="tenantId" required placeholder="e.g., 1">
+      </div>
+      
+      <div class="form-group">
+        <label>Amount (₹) *</label>
+        <input type="number" id="amount" step="0.01" required placeholder="e.g., 12000">
+      </div>
+      
+      <div class="form-group">
+        <label>Payment Month (YYYY-MM) *</label>
+        <input type="month" id="paymentMonth" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Payment Mode *</label>
+        <select id="paymentMode" required>
+          <option value="CASH">CASH</option>
+          <option value="UPI">UPI</option>
+          <option value="BANK_TRANSFER">BANK_TRANSFER</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Reference/Note</label>
+        <input type="text" id="upiRef" placeholder="e.g., Initial rent payment">
+      </div>
+      
+      <button type="submit" class="btn" id="submitBtn">
+        Create Approved Payment
+      </button>
+    </form>
+    
+    <div id="result" class="result">
+      <h3 id="resultTitle"></h3>
+      <div id="resultMessage"></div>
+      <pre id="resultData"></pre>
+    </div>
+  </div>
+  
+  <script>
+    const API_BASE_URL = 'http://localhost:8081/api';
+    
+    // Set default payment month to current month
+    const now = new Date();
+    document.getElementById('paymentMonth').value = 
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    document.getElementById('testForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const resultDiv = document.getElementById('result');
+      const resultTitle = document.getElementById('resultTitle');
+      const resultMessage = document.getElementById('resultMessage');
+      const resultData = document.getElementById('resultData');
+      
+      // Disable button and show loading
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating Payment...';
+      resultDiv.style.display = 'none';
+      
+      // Get form data
+      const tenantId = parseInt(document.getElementById('tenantId').value);
+      const amount = parseFloat(document.getElementById('amount').value);
+      const paymentMonth = document.getElementById('paymentMonth').value;
+      const paymentMode = document.getElementById('paymentMode').value;
+      const upiRef = document.getElementById('upiRef').value || 'Initial rent payment - added by owner';
+      
+      const payload = {
+        tenantId,
+        amount,
+        paymentMonth,
+        paymentMode,
+        upiRef
+      };
+      
+      console.log('Sending request:', payload);
+      
+      try {
+        // Get auth token
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          throw new Error('No authentication token found. Please login first.');
+        }
+        
+        // Make API call
+        const response = await fetch(`${API_BASE_URL}/transactions/owner/create-approved`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        console.log('Response:', data);
+        
+        // Show result
+        resultDiv.style.display = 'block';
+        
+        if (response.ok) {
+          resultDiv.className = 'result success';
+          resultTitle.textContent = '✅ Payment Created Successfully!';
+          resultMessage.innerHTML = `
+            <strong>Payment ID:</strong> ${data.id}<br>
+            <strong>Amount:</strong> ₹${data.amount}<br>
+            <strong>Status:</strong> ${data.status}<br>
+            <strong>Payment Month:</strong> ${data.paymentMonth}<br>
+            <strong>Mode:</strong> ${data.paymentMode}
+          `;
+          resultData.textContent = JSON.stringify(data, null, 2);
+          
+          // Reset form
+          document.getElementById('testForm').reset();
+          document.getElementById('paymentMonth').value = 
+            `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        } else {
+          throw new Error(data.error || 'Request failed');
+        }
+        
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'result error';
+        resultTitle.textContent = '❌ Error Creating Payment';
+        resultMessage.textContent = error.message;
+        resultData.textContent = error.stack || '';
+      } finally {
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Approved Payment';
+      }
+    });
+  </script>
+</body>
+</html>

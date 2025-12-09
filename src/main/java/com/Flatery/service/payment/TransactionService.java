@@ -165,6 +165,46 @@ public class TransactionService {
         return mapToDto(saved);
     }
 
+    /**
+     * Owner creates a pre-approved payment (e.g., initial rent received during tenant onboarding)
+     */
+    @Transactional
+    public TransactionResponseDto createOwnerApprovedPayment(PaymentRequestDto dto, Long ownerId) {
+        // Validate tenant exists and belongs to this owner
+        Tenant tenant = tenantRepository.findById(dto.getTenantId())
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+        
+        if (!tenant.getOwnerId().equals(ownerId)) {
+            throw new SecurityException("You don't have permission to create payments for this tenant");
+        }
+        
+        String modeStr = dto.getPaymentMode() != null ? dto.getPaymentMode().toUpperCase() : "CASH";
+        PaymentMode paymentMode = PaymentMode.valueOf(modeStr);
+        
+        // Create transaction with VERIFIED status (pre-approved by owner)
+        Transaction transaction = Transaction.builder()
+                .tenantId(tenant.getId())
+                .ownerId(ownerId)
+                .propertyId(tenant.getPropertyId())
+                .amount(dto.getAmount())
+                .paymentMonth(dto.getPaymentMonth())
+                .paymentMode(paymentMode)
+                .upiRef(dto.getUpiRef())
+                .status(PaymentStatus.VERIFIED)
+                .paymentDate(java.time.LocalDateTime.now())
+                .createdBy("owner-" + ownerId)
+                .updatedBy("owner-" + ownerId)
+                .build();
+        
+        Transaction saved = repository.save(transaction);
+        
+        // Mark month as paid in monthly payment status
+        markMonthAsPaid(tenant.getId(), tenant.getPropertyId(), dto.getPaymentMonth(), "owner-" + ownerId);
+        
+        System.out.println("Owner-approved payment created: id=" + saved.getId());
+        return mapToDto(saved);
+    }
+
     public List<TransactionResponseDto> getTransactionsByOwnerAndStatus(Long ownerId, PaymentStatus status) {
         return repository.findByOwnerIdAndStatus(ownerId, status).stream()
                 .map(this::mapToDto)
@@ -531,9 +571,15 @@ public class TransactionService {
             
             Tenant payingTenant = payingTenantOpt.get();
             
-            // Only proceed if the paying tenant is PRIMARY
+            // Mark the paying tenant's month as paid first (regardless of primary status)
+            markMonthAsPaid(payingTenant.getId(), verifiedTransaction.getPropertyId(), 
+                          verifiedTransaction.getPaymentMonth(), "transaction-" + verifiedTransaction.getId());
+            
+            // Only proceed with multi-tenant propagation if the paying tenant is PRIMARY
+            // (For PG: all tenants are primary, so each pays for all in their unit)
+            // (For FLAT: primary tenant pays for all non-primary tenants)
             if (!payingTenant.isPrimary()) {
-                System.out.println("Paying tenant (ID: " + payingTenant.getId() + ") is not primary, skipping multi-tenant update");
+                System.out.println("Paying tenant (ID: " + payingTenant.getId() + ") is not primary, no multi-tenant propagation needed");
                 return;
             }
             
@@ -646,6 +692,40 @@ public class TransactionService {
             System.err.println("Error during cleanup: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to cleanup invalid auto-generated payments", e);
+        }
+    }
+
+    /**
+     * Helper method to mark a month as paid for a tenant
+     */
+    private void markMonthAsPaid(Long tenantId, Long propertyId, String paymentMonth, String markedBy) {
+        try {
+            Optional<TenantMonthlyPaymentStatus> existing = monthlyPaymentStatusRepository
+                    .findByTenantIdAndPaymentMonth(tenantId, paymentMonth);
+
+            if (existing.isPresent()) {
+                TenantMonthlyPaymentStatus status = existing.get();
+                if (!status.isPaid()) {
+                    status.setPaid(true);
+                    status.setMarkedPaidDate(LocalDateTime.now());
+                    status.setMarkedBy(markedBy);
+                    monthlyPaymentStatusRepository.save(status);
+                    System.out.println("Updated payment status for tenant: " + tenantId + " for month: " + paymentMonth);
+                }
+            } else {
+                TenantMonthlyPaymentStatus newStatus = TenantMonthlyPaymentStatus.builder()
+                        .tenantId(tenantId)
+                        .propertyId(propertyId)
+                        .paymentMonth(paymentMonth)
+                        .isPaid(true)
+                        .markedPaidDate(LocalDateTime.now())
+                        .markedBy(markedBy)
+                        .build();
+                monthlyPaymentStatusRepository.save(newStatus);
+                System.out.println("Created payment status for tenant: " + tenantId + " for month: " + paymentMonth);
+            }
+        } catch (Exception e) {
+            System.err.println("Error marking month as paid: " + e.getMessage());
         }
     }
 }

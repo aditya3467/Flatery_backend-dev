@@ -212,6 +212,38 @@ public class TransactionController {
     }
 
     /**
+     * Owner creates a pre-approved payment for tenant (e.g., initial rent)
+     */
+    @PostMapping("/owner/create-approved")
+    public ResponseEntity<?> createApprovedPayment(
+            @Valid @RequestBody PaymentRequestDto requestDto,
+            Authentication authentication) {
+        try {
+            Long ownerId = getAuthenticatedUserId(authentication);
+            
+            System.out.println("=== Owner Creating Pre-Approved Payment ===");
+            System.out.println("Owner ID: " + ownerId);
+            System.out.println("Tenant ID: " + requestDto.getTenantId());
+            System.out.println("Amount: " + requestDto.getAmount());
+            
+            // Create pre-approved transaction
+            TransactionResponseDto response = transactionService.createOwnerApprovedPayment(
+                    requestDto, ownerId);
+            
+            System.out.println("Pre-approved payment created: id=" + response.getId());
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException ex) {
+            System.out.println("IllegalArgumentException: " + ex.getMessage());
+            return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
+        } catch (Exception ex) {
+            System.out.println("Exception: " + ex.getMessage());
+            ex.printStackTrace();
+            return ResponseEntity.status(500).body(new ErrorResponse("Failed to create payment: " + ex.getMessage()));
+        }
+    }
+
+    /**
      * Get payment status for all tenants in a property (for testing the new system)
      */
     @GetMapping("/payment-status/property/{propertyId}")

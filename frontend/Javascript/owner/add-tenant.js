@@ -209,9 +209,9 @@ async function loadOwnerProperties() {
     propertiesCache.forEach(p => {
       const option = document.createElement('option');
       option.value = p.id;
-      const name = p.name || (p.type ? p.type : 'Property');
+      const name = p.name || `${p.type || 'Property'} #${p.id}`;
       const loc = p.location || p.city || '';
-      option.textContent = `${name} - ${loc}`;
+      option.textContent = loc ? `${name} - ${loc}` : name;
       select.appendChild(option);
     });
 
@@ -398,7 +398,28 @@ async function handleSingleTenantSubmit(fd) {
     showAlert('info', 'Adding tenant...');
     const response = await apiService.post('/tenants', data);
     console.log('[Add Tenant] Success:', response);
-    showAlert('success', `Tenant added successfully! Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+    
+    // Check if initial rent was received and create payment
+    const receivedRent = isFlat ? fd.get('sharedReceivedRent') === 'on' : fd.get('pgReceivedRent') === 'on';
+    const initialRentAmount = isFlat ? fd.get('sharedInitialRentAmount') : fd.get('pgInitialRentAmount');
+    
+    console.log('[Add Tenant] Payment check:', { receivedRent, initialRentAmount, responseId: response.id });
+    
+    if (receivedRent && initialRentAmount && response.id) {
+      try {
+        console.log('[Add Tenant] Creating initial rent payment for tenant ID:', response.id);
+        const paymentResult = await createInitialRentPayment(response.id, parseInt(initialRentAmount), data.leaseStartDate);
+        console.log('[Add Tenant] Payment created:', paymentResult);
+        showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+      } catch (paymentError) {
+        console.error('[Add Tenant] PAYMENT CREATION FAILED:', paymentError);
+        console.error('[Add Tenant] Error details:', JSON.stringify(paymentError, null, 2));
+        showAlert('warning', `Tenant added successfully but FAILED to record initial payment: ${paymentError.message || 'Unknown error'}. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+      }
+    } else {
+      console.log('[Add Tenant] Skipping payment creation - conditions not met');
+      showAlert('success', `Tenant added successfully! Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+    }
     
     // Reset form
     document.getElementById('addTenantForm').reset();
@@ -497,7 +518,21 @@ async function handleMultipleTenantSubmit(fd) {
     const response = await apiService.post('/tenants/multiple', { tenants });
     console.log('[Add Multiple Tenants] Success:', response);
     
-    let successMessage = `${tenants.length} tenants added successfully!\n\n`;
+    // Check if initial rent was received and create payment for primary tenant
+    const receivedRent = fd.get('sharedReceivedRent') === 'on';
+    const initialRentAmount = fd.get('sharedInitialRentAmount');
+    const primaryTenant = response.find(t => t.primary);
+    
+    if (receivedRent && initialRentAmount && primaryTenant && primaryTenant.id) {
+      try {
+        console.log('[Add Multiple Tenants] Creating initial rent payment for primary tenant...');
+        await createInitialRentPayment(primaryTenant.id, parseInt(initialRentAmount), sharedLeaseStartDate);
+      } catch (paymentError) {
+        console.error('[Add Multiple Tenants] Failed to create initial payment:', paymentError);
+      }
+    }
+    
+    let successMessage = `${tenants.length} tenants added successfully!${receivedRent && initialRentAmount ? ` Initial rent payment of ₹${initialRentAmount} recorded.` : ''}\n\n`;
     response.forEach((tenant, index) => {
       const phone = tenants[index]?.phoneNumber || '';
       successMessage += `${tenant.tenantName} (${phone}): ${tenant.username}${tenant.temporaryPassword ? ' (Password: ' + tenant.temporaryPassword + ')' : ''}\n`;
@@ -635,7 +670,24 @@ async function handlePGSubmit(fd) {
     showAlert('info', 'Adding tenant...');
     const response = await apiService.post('/tenants', data);
     console.log('[Add Tenant PG] Success:', response);
-    showAlert('success', `Tenant added successfully! Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+    
+    // Check if initial rent was received and create payment
+    const receivedRent = fd.get('pgReceivedRent') === 'on';
+    const initialRentAmount = fd.get('pgInitialRentAmount');
+    
+    if (receivedRent && initialRentAmount && response.id) {
+      try {
+        console.log('[Add Tenant PG] Creating initial rent payment...');
+        await createInitialRentPayment(response.id, parseInt(initialRentAmount), data.leaseStartDate);
+        showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+      } catch (paymentError) {
+        console.error('[Add Tenant PG] Failed to create initial payment:', paymentError);
+        showAlert('warning', `Tenant added successfully but failed to record initial payment. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+      }
+    } else {
+      showAlert('success', `Tenant added successfully! Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+    }
+    
     document.getElementById('addTenantForm').reset();
     toggleSections(currentPropertyType);
   } catch (error) {
@@ -965,6 +1017,69 @@ function showUnitInfo(unitId) {
   }
 }
 
+// Create initial rent payment when tenant is added
+async function createInitialRentPayment(tenantId, amount, paymentDate) {
+  try {
+    const paymentData = {
+      tenantId: tenantId,
+      amount: amount,
+      paymentMonth: paymentDate || new Date().toISOString().split('T')[0].substring(0, 7), // YYYY-MM format
+      paymentMode: 'CASH', // Default to CASH
+      upiRef: 'Initial rent payment - added by owner'
+    };
+    
+    console.log('[Initial Payment] Creating payment:', paymentData);
+    const response = await apiService.post('/transactions/owner/create-approved', paymentData);
+    console.log('[Initial Payment] Payment created successfully:', response);
+    return response;
+  } catch (error) {
+    console.error('[Initial Payment] Error creating payment:', error);
+    throw error;
+  }
+}
+
+// Toggle initial rent amount field for FLAT properties
+function toggleInitialRentAmount(checked) {
+  const amountGroup = document.getElementById('sharedInitialRentAmountGroup');
+  const amountInput = document.getElementById('sharedInitialRentAmount');
+  
+  if (amountGroup && amountInput) {
+    amountGroup.style.display = checked ? 'block' : 'none';
+    amountInput.required = checked;
+    if (!checked) {
+      amountInput.value = '';
+    } else {
+      // Pre-fill with rent amount if available
+      const rentAmount = document.querySelector('input[name="sharedRentAmount"]').value;
+      if (rentAmount) {
+        amountInput.value = rentAmount;
+      }
+    }
+  }
+}
+
+// Toggle initial rent amount field for PG properties
+function togglePgInitialRentAmount(checked) {
+  const amountGroup = document.getElementById('pgInitialRentAmountGroup');
+  const amountInput = document.getElementById('pgInitialRentAmount');
+  
+  if (amountGroup && amountInput) {
+    amountGroup.style.display = checked ? 'block' : 'none';
+    amountInput.required = checked;
+    if (!checked) {
+      amountInput.value = '';
+    } else {
+      // Pre-fill with rent amount if available
+      const rentAmount = document.querySelector('input[name="rentAmount"]').value;
+      if (rentAmount) {
+        amountInput.value = rentAmount;
+      }
+    }
+  }
+}
+
+window.toggleInitialRentAmount = toggleInitialRentAmount;
+window.togglePgInitialRentAmount = togglePgInitialRentAmount;
 window.onExistingToggleChange = onExistingToggleChange;
 window.lookupExistingUser = lookupExistingUser;
 window.lookupExistingUserForIndex = lookupExistingUserForIndex;

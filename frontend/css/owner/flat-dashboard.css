@@ -2123,13 +2123,199 @@ body {
     }
 }
 
+/* ===== Edit Tenant Modal Styles ===== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-content h2 {
+    margin: 0 0 24px 0;
+    font-size: 24px;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-content h2 i {
+    color: #6366f1;
+}
+
+.close {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #94a3b8;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.close:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+#editTenantModal .form-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+#editTenantModal .form-section:last-of-type {
+    border-bottom: none;
+}
+
+#editTenantModal .form-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+}
+
+#editTenantModal .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+#editTenantModal .form-row:last-child {
+    margin-bottom: 0;
+}
+
+#editTenantModal .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+#editTenantModal .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+#editTenantModal .form-group input,
+#editTenantModal .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+#editTenantModal .form-group input:focus,
+#editTenantModal .form-group select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+#editTenantModal .form-group small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+#editTenantModal .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+#editTenantModal .btn-primary,
+#editTenantModal .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#editTenantModal .btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+#editTenantModal .btn-primary:hover {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+#editTenantModal .btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+#editTenantModal .btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+@media (max-width: 640px) {
+    #editTenantModal .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    #editTenantModal .modal-actions {
+        flex-direction: column-reverse;
+    }
+    
+    #editTenantModal .btn-primary,
+    #editTenantModal .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 /* ===== Print Styles ===== */
 @media print {
     .sidebar,
     .mobile-header,
     .section-actions,
     .right-drawer,
-    .notification-dropdown {
+    .notification-dropdown,
+    .modal {
         display: none !important;
     }
     

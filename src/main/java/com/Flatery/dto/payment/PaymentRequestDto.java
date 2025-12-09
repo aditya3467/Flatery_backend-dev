@@ -8,6 +8,8 @@ import lombok.*;
 @AllArgsConstructor
 public class PaymentRequestDto {
 
+    private Long tenantId;      // Optional - for owner-created payments
+
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private Double amount;

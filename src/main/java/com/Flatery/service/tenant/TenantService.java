@@ -15,6 +15,7 @@ import com.Flatery.model.property.Unit;
 import com.Flatery.repository.property.UnitRepository;
 import com.Flatery.repository.property.FloorRepository;
 import com.Flatery.service.property.UnitService;
+import com.Flatery.service.payment.PaymentStatusService;
 import com.Flatery.repository.property.PropertyRepository;
 import com.Flatery.repository.tenant.TenantRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,7 @@ public class TenantService {
     private final FloorRepository floorRepository;
     private final UnitService unitService;
     private final TenancyHistoryService tenancyHistoryService;
+    private final PaymentStatusService paymentStatusService;
 
     private static final String TENANT_PREFIX = "TEN";
     private final Random random = new SecureRandom();
@@ -211,10 +213,18 @@ public class TenantService {
     tenant.setStatus(status);
     
     // Set primary tenant indicator
-    tenant.setPrimary(req.getPrimary() != null ? req.getPrimary() : false);
+    // For PG properties: Always set as primary (each tenant manages their own payment)
+    // For FLAT properties: Use the request value or default to false
+    boolean isPG = property.getType() == com.Flatery.model.property.enums.PropertyType.PG;
+    if (isPG) {
+        tenant.setPrimary(true); // All PG tenants are primary by default
+        System.out.println("PG tenant - setting as primary by default");
+    } else {
+        tenant.setPrimary(req.getPrimary() != null ? req.getPrimary() : false);
+    }
     
-    // If this tenant is marked as primary, ensure no other tenant for this property is primary
-    if (tenant.isPrimary()) {
+    // If this tenant is marked as primary in FLAT, ensure no other tenant for this property is primary
+    if (tenant.isPrimary() && !isPG) {
         List<Tenant> existingPrimaryTenants = tenantRepository.findByPropertyIdAndPrimary(property.getId(), true);
         for (Tenant existingPrimary : existingPrimaryTenants) {
             if (!existingPrimary.getId().equals(tenant.getId())) {
@@ -355,16 +365,20 @@ public class TenantService {
     @Transactional(readOnly = true)
     public List<TenantSummary> getOwnerTenants(Long ownerId) {
         return tenantRepository.findByOwnerId(ownerId).stream()
-                .map(t -> new TenantSummary(
-            t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
-            t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
-            t.getFloorId(), t.getUnitId(), t.getBedIndex(),
-            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
-            t.getEmailAddress(),
-            t.getFlatRoomNumber(),
-            null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
-            t.isPrimary()  // primary field
-                ))
+                .map(t -> {
+                    TenantSummary summary = new TenantSummary(
+                        t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
+                        t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
+                        t.getFloorId(), t.getUnitId(), t.getBedIndex(),
+                        t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+                        t.getEmailAddress(),
+                        t.getFlatRoomNumber(),
+                        null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
+                        t.isPrimary(),  // primary field
+                        null, null, null, null // Payment status fields
+                    );
+                    return enrichWithPaymentStatus(summary);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -380,33 +394,41 @@ public class TenantService {
                     }
                     return false;
                 })
-                .map(t -> new TenantSummary(
-            t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
-            t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
-            t.getFloorId(), t.getUnitId(), t.getBedIndex(),
-            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
-            t.getEmailAddress(),
-            t.getFlatRoomNumber(),
-            null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
-            t.isPrimary()  // primary field
-                ))
+                .map(t -> {
+                    TenantSummary summary = new TenantSummary(
+                        t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(), 
+                        t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
+                        t.getFloorId(), t.getUnitId(), t.getBedIndex(),
+                        t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+                        t.getEmailAddress(),
+                        t.getFlatRoomNumber(),
+                        null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
+                        t.isPrimary(),  // primary field
+                        null, null, null, null // Payment status fields
+                    );
+                    return enrichWithPaymentStatus(summary);
+                })
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<TenantSummary> getTenantsByUnit(Long unitId) {
-    return tenantRepository.findByUnitId(unitId).stream()
-        .map(t -> new TenantSummary(
-            t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(),
-            t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
-            t.getFloorId(), t.getUnitId(), t.getBedIndex(),
-            t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
-            t.getEmailAddress(),
-            t.getFlatRoomNumber(),
-            null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
-            t.isPrimary()
-        ))
-        .collect(Collectors.toList());
+        return tenantRepository.findByUnitId(unitId).stream()
+            .map(t -> {
+                TenantSummary summary = new TenantSummary(
+                    t.getId(), t.getTenantId(), t.getTenantName(), t.getStatus().name(),
+                    t.getRentAmount(), t.getSecurityDeposit(), t.getRentDueDate(), t.getPropertyId(), t.getPhoneNumber(),
+                    t.getFloorId(), t.getUnitId(), t.getBedIndex(),
+                    t.getLeaseStartDate() != null ? t.getLeaseStartDate().toString() : null,
+                    t.getEmailAddress(),
+                    t.getFlatRoomNumber(),
+                    null, null, null, null, // ownerName, ownerPhone, propertyName, propertyCity not needed
+                    t.isPrimary(),
+                    null, null, null, null // Payment status fields
+                );
+                return enrichWithPaymentStatus(summary);
+            })
+            .collect(Collectors.toList());
     }
 
     private Tenant.TenantStatus parseStatusOrDefault(String status) {
@@ -471,8 +493,9 @@ public class TenantService {
                 ownerName,
                 ownerPhone,
                 propertyName,
-        propertyCity,
-        tenant.isPrimary()
+                propertyCity,
+                tenant.isPrimary(),
+                null, null, null, null // Payment status fields
         );
     }
 
@@ -712,7 +735,8 @@ public class TenantService {
                     null,                              // ownerPhone - not needed
                     propertyName,                      // propertyName
                     null,                              // propertyCity - not needed
-                    tenant.isPrimary()                 // primary
+                    tenant.isPrimary(),                // primary
+                    null, null, null, null             // Payment status fields
                 );
             }
         }
@@ -759,6 +783,116 @@ public class TenantService {
         return tenantRepository.findById(tenantId)
                 .filter(tenant -> tenant.getOwnerId().equals(ownerId))
                 .orElse(null);
+    }
+
+    /**
+     * Update tenant information (rent, security deposit, lease dates, rent due date)
+     */
+    @Transactional
+    public TenantSummary updateTenant(Long tenantId, Long ownerId, Map<String, Object> updates) {
+        // Find tenant and verify ownership
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+        
+        if (!tenant.getOwnerId().equals(ownerId)) {
+            throw new IllegalArgumentException("You do not own this tenant's property");
+        }
+        
+        // Update fields if provided
+        if (updates.containsKey("rentAmount")) {
+            tenant.setRentAmount(((Number) updates.get("rentAmount")).intValue());
+        }
+        
+        if (updates.containsKey("securityDeposit")) {
+            tenant.setSecurityDeposit(((Number) updates.get("securityDeposit")).intValue());
+        }
+        
+        if (updates.containsKey("rentDueDate")) {
+            tenant.setRentDueDate(((Number) updates.get("rentDueDate")).intValue());
+        }
+        
+        if (updates.containsKey("leaseStartDate") && updates.get("leaseStartDate") != null) {
+            String dateStr = (String) updates.get("leaseStartDate");
+            tenant.setLeaseStartDate(LocalDate.parse(dateStr));
+        }
+        
+        if (updates.containsKey("leaseEndDate")) {
+            Object leaseEnd = updates.get("leaseEndDate");
+            if (leaseEnd != null && !((String) leaseEnd).isEmpty()) {
+                tenant.setLeaseEndDate(LocalDate.parse((String) leaseEnd));
+            } else {
+                tenant.setLeaseEndDate(null);
+            }
+        }
+        
+        // Save updated tenant
+        tenant = tenantRepository.save(tenant);
+        
+        // Return updated tenant summary
+        Property property = propertyRepository.findById(tenant.getPropertyId()).orElse(null);
+        String propertyName = property != null ? property.getName() : null;
+        
+        return new TenantSummary(
+            tenant.getId(),
+            tenant.getTenantId(),
+            tenant.getTenantName(),
+            tenant.getStatus() != null ? tenant.getStatus().name() : "ACTIVE",
+            tenant.getRentAmount(),
+            tenant.getSecurityDeposit(),
+            tenant.getRentDueDate(),
+            tenant.getPropertyId(),
+            tenant.getPhoneNumber(),
+            tenant.getFloorId(),
+            tenant.getUnitId(),
+            tenant.getBedIndex(),
+            tenant.getLeaseStartDate() != null ? tenant.getLeaseStartDate().toString() : null,
+            tenant.getEmailAddress(),
+            tenant.getFlatRoomNumber(),
+            null, // ownerName - not needed
+            null, // ownerPhone - not needed
+            propertyName,
+            null, // propertyCity - not needed
+            tenant.isPrimary(),
+            null, null, null, null // Payment status fields will be populated by frontend if needed
+        );
+    }
+
+    /**
+     * Helper method to enrich TenantSummary with payment status information
+     */
+    private TenantSummary enrichWithPaymentStatus(TenantSummary summary) {
+        try {
+            boolean isCurrentMonthPaid = paymentStatusService.isMonthPaid(
+                summary.getId(), 
+                LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"))
+            );
+            boolean isOverdue = paymentStatusService.isRentOverdue(summary.getId());
+            LocalDate nextDueDate = paymentStatusService.calculateNextDueDate(summary.getId());
+            
+            String paymentStatus = isOverdue ? "OVERDUE" : (isCurrentMonthPaid ? "PAID" : "DUE");
+            
+            summary.setIsCurrentMonthPaid(isCurrentMonthPaid);
+            summary.setIsOverdue(isOverdue);
+            summary.setNextDueDate(nextDueDate);
+            summary.setPaymentStatus(paymentStatus);
+        } catch (Exception e) {
+            System.err.println("Error enriching payment status for tenant " + summary.getId() + ": " + e.getMessage());
+        }
+        return summary;
+    }
+
+    /**
+     * Get payment status for a tenant
+     */
+    public Map<String, Object> getTenantPaymentStatus(Long tenantId) {
+        return paymentStatusService.getTenantPaymentStatus(tenantId);
+    }
+
+    /**
+     * Get payment history for a tenant
+     */
+    public List<Map<String, Object>> getTenantPaymentHistory(Long tenantId, int months) {
+        return paymentStatusService.getPaymentHistory(tenantId, months);
     }
 
     // ...existing code...

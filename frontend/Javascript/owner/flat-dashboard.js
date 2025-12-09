@@ -2850,6 +2850,9 @@ class FlatDashboard {
                         </div>
                     </div>
                     <div class="tenant-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="flatDashboard.editTenant(${tenant.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
                         <button class="btn btn-sm btn-primary" onclick="flatDashboard.makePrimary(${tenant.id})">
                             <i class="fas fa-crown"></i> Make Primary
                         </button>
@@ -2981,8 +2984,95 @@ class FlatDashboard {
     }
 
     async editTenant(tenantId) {
-        // Implementation for editing tenant
-        this.showNotification('Edit tenant functionality to be implemented', 'info');
+        try {
+            // Fetch tenant details
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_BASE_URL}/tenants/${tenantId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch tenant details');
+            
+            const tenant = await response.json();
+            console.log('[FlatDashboard] Fetched tenant data from API:', tenant);
+            console.log('[FlatDashboard] Tenant rentDueDate value:', tenant.rentDueDate, 'Type:', typeof tenant.rentDueDate);
+            
+            // Populate form fields
+            document.getElementById('editTenantId').value = tenant.id;
+            document.getElementById('editRentAmount').value = tenant.rentAmount || 0;
+            document.getElementById('editSecurityDeposit').value = tenant.securityDeposit || 0;
+            
+            // Set rent due date with proper conversion
+            const dueDate = tenant.rentDueDate || 1;
+            console.log('[FlatDashboard] Setting rentDueDate dropdown to:', dueDate);
+            document.getElementById('editRentDueDate').value = String(dueDate);
+            
+            // Format dates for input fields
+            if (tenant.leaseStartDate) {
+                const startDate = new Date(tenant.leaseStartDate);
+                document.getElementById('editLeaseStartDate').value = startDate.toISOString().split('T')[0];
+            }
+            
+            if (tenant.leaseEndDate) {
+                const endDate = new Date(tenant.leaseEndDate);
+                document.getElementById('editLeaseEndDate').value = endDate.toISOString().split('T')[0];
+            } else {
+                document.getElementById('editLeaseEndDate').value = '';
+            }
+            
+            // Show modal
+            document.getElementById('editTenantModal').style.display = 'flex';
+            
+        } catch (error) {
+            console.error('[FlatDashboard] Error opening edit modal:', error);
+            this.showNotification('Error loading tenant details', 'error');
+        }
+    }
+    
+    closeEditTenantModal() {
+        document.getElementById('editTenantModal').style.display = 'none';
+        document.getElementById('editTenantForm').reset();
+    }
+    
+    async saveEditedTenant(event) {
+        event.preventDefault();
+        
+        const tenantId = document.getElementById('editTenantId').value;
+        const formData = {
+            rentAmount: parseInt(document.getElementById('editRentAmount').value),
+            securityDeposit: parseInt(document.getElementById('editSecurityDeposit').value),
+            rentDueDate: parseInt(document.getElementById('editRentDueDate').value),
+            leaseStartDate: document.getElementById('editLeaseStartDate').value,
+            leaseEndDate: document.getElementById('editLeaseEndDate').value || null
+        };
+        
+        console.log('[FlatDashboard] Saving tenant data:', formData);
+        
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_BASE_URL}/tenants/${tenantId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) throw new Error('Failed to update tenant');
+            
+            this.showNotification('Tenant information updated successfully', 'success');
+            this.closeEditTenantModal();
+            
+            // Reload dashboard to reflect changes
+            await this.loadDashboardData();
+            
+        } catch (error) {
+            console.error('[FlatDashboard] Error updating tenant:', error);
+            this.showNotification('Failed to update tenant information', 'error');
+        }
     }
 
     async removeTenant(tenantId) {
