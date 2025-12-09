@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQs - Flatery</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/faqs.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar Placeholder -->
+    <div id="navbar-placeholder" data-component="components/navbar.html"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-faqs">
+        <div class="container">
+            <div class="gold-dot-accent"></div>
+            <h1 class="hero-title">Frequently Asked <span class="highlight">Questions</span></h1>
+            <p class="hero-subtitle">Find quick answers to common questions</p>
+        </div>
+    </section>
+
+    <!-- FAQ Content -->
+    <section class="faq-content">
+        <div class="container">
+            <!-- Category Tabs -->
+            <div class="faq-categories">
+                <button class="category-btn active" data-category="all">
+                    <i class="fas fa-th"></i> All Questions
+                </button>
+                <button class="category-btn" data-category="general">
+                    <i class="fas fa-info-circle"></i> General
+                </button>
+                <button class="category-btn" data-category="owners">
+                    <i class="fas fa-home"></i> For Owners
+                </button>
+                <button class="category-btn" data-category="tenants">
+                    <i class="fas fa-user"></i> For Tenants
+                </button>
+                <button class="category-btn" data-category="payments">
+                    <i class="fas fa-credit-card"></i> Payments
+                </button>
+            </div>
+
+            <!-- FAQ Accordion -->
+            <div class="faq-accordion">
+                <!-- General Questions -->
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>What is Flatery?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Flatery is a comprehensive property management platform that connects property owners with tenants. We provide tools for listing properties, managing tenants, tracking payments, handling maintenance requests, and generating reports. Our platform simplifies the entire rental process for both owners and tenants.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>Is Flatery free to use?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Flatery offers both free and premium features. Basic property listing and tenant search are free. Premium features like advanced analytics, automated reminders, and priority support may have associated fees. Contact us for detailed pricing information.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>How do I create an account?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Click on the "Login" or "Sign Up" button in the top right corner. Fill in your details including name, email, phone number, and password. Verify your email address through the link sent to your inbox. Once verified, you can start using the platform immediately.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>Is my data secure on Flatery?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we take data security very seriously. We use bank-level encryption (SSL/TLS) for all data transmission, secure cloud storage, regular security audits, and comply with data protection regulations. Your personal information is never sold to third parties.</p>
+                    </div>
+                </div>
+
+                <!-- Owner Questions -->
+                <div class="faq-item glass-card" data-category="owners">
+                    <div class="faq-question">
+                        <h3>How do I list my property?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>After logging in, click on "List Property" or navigate to your Owner Dashboard. Fill in property details including type, location, amenities, rent amount, and upload high-quality photos. Review the information and click "Publish." Your listing will be visible to potential tenants immediately.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="owners">
+                    <div class="faq-question">
+                        <h3>Can I manage multiple properties?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! Flatery is designed to handle multiple properties efficiently. You can add unlimited properties to your account and manage them all from a single dashboard. Each property has its own tenant management, payment tracking, and maintenance history.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="owners">
+                    <div class="faq-question">
+                        <h3>How do I add tenants to my property?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Go to your property dashboard and click "Add Tenant." Enter tenant details including name, contact information, move-in date, rent amount, and security deposit. You can also upload the rental agreement. The tenant will receive an invitation to join the platform if they don't have an account.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="owners">
+                    <div class="faq-question">
+                        <h3>Can I temporarily deactivate a property listing?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, you can deactivate properties without deleting them. Go to your Owner Dashboard, find the property, and click the "Deactivate" button. The property will no longer be visible to potential tenants but all data remains saved. You can reactivate it anytime.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="owners">
+                    <div class="faq-question">
+                        <h3>How do I track rent payments?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The Owner Dashboard displays all payment information. You can see payment status for each tenant, payment history, pending amounts, and generate payment reports. The system can also send automated payment reminders to tenants.</p>
+                    </div>
+                </div>
+
+                <!-- Tenant Questions -->
+                <div class="faq-item glass-card" data-category="tenants">
+                    <div class="faq-question">
+                        <h3>How do I search for properties?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Click on "Properties" in the navigation menu. Use filters to narrow down your search by location, property type, rent range, amenities, and more. You can view property details, photos, and contact the owner directly through the platform.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="tenants">
+                    <div class="faq-question">
+                        <h3>How do I contact property owners?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>On each property listing, you'll find contact options. You can send a message through the platform, request a callback, or view the owner's contact details (if public). All communications are logged for your reference.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="tenants">
+                    <div class="faq-question">
+                        <h3>How do I submit a maintenance request?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Go to your Tenant Dashboard and click "Report Issue" or "Maintenance Request." Describe the problem, upload photos if needed, and set priority level. The request is sent to your property owner immediately, and you can track its status in real-time.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="tenants">
+                    <div class="faq-question">
+                        <h3>Can I view my payment history?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, your Tenant Dashboard includes a complete payment history showing all rent payments, dates, amounts, and payment methods. You can download receipts and generate payment reports for your records.</p>
+                    </div>
+                </div>
+
+                <!-- Payment Questions -->
+                <div class="faq-item glass-card" data-category="payments">
+                    <div class="faq-question">
+                        <h3>What payment methods are accepted?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Flatery supports multiple payment methods including UPI, bank transfers, credit/debit cards, and digital wallets. Property owners can specify their preferred payment methods. All transactions are processed through secure payment gateways.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="payments">
+                    <div class="faq-question">
+                        <h3>Is there a transaction fee?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Payment processing fees may apply depending on the payment method used. These fees are typically minimal and will be clearly displayed before confirming any transaction. Some premium features may have service fees.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="payments">
+                    <div class="faq-question">
+                        <h3>How do I receive payment receipts?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Payment receipts are automatically generated for all transactions. You'll receive a receipt via email immediately after payment. You can also download receipts anytime from your dashboard. Receipts include all necessary details for tax and record-keeping purposes.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="payments">
+                    <div class="faq-question">
+                        <h3>What about security deposits?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Security deposits are tracked separately in the system. The amount, payment date, and terms are recorded in the rental agreement. When a tenant moves out, owners can process refunds through the platform with proper documentation of any deductions.</p>
+                    </div>
+                </div>
+
+                <!-- More General Questions -->
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>What is PG management in Flatery?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>PG (Paying Guest) management allows owners to manage individual rooms within a property. You can assign different tenants to different rooms, track rent separately for each occupant, manage shared facilities, and handle room-specific maintenance requests.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>Can I use Flatery on mobile devices?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! Flatery is fully responsive and works seamlessly on smartphones and tablets. Access all features on-the-go through your mobile browser. We're also working on dedicated mobile apps for iOS and Android.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>How do I get customer support?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We offer multiple support channels: Email us at support@flatery.com, call +91 98765 43210, use the "Request a Callback" feature, or submit a support ticket through your dashboard. Premium users get priority support with faster response times.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item glass-card" data-category="general">
+                    <div class="faq-question">
+                        <h3>Can I delete my account?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, you can delete your account at any time from your account settings. Please note that deleting your account will permanently remove all your data. If you have active rental agreements, we recommend completing those first or transferring them appropriately.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Still Have Questions -->
+            <div class="contact-cta glass-card">
+                <div class="cta-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="cta-content">
+                    <h3>Still have questions?</h3>
+                    <p>Can't find the answer you're looking for? Our support team is here to help.</p>
+                    <a href="request-callback.html" class="cta-button">
+                        Contact Support <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Placeholder -->
+    <div id="footer-placeholder" data-component="components/footer.html"></div>
+
+    <script src="Javascript/component-loader.js" defer></script>
+    <script src="Javascript/api.js" defer></script>
+    <script src="Javascript/main.js" defer></script>
+    <script>
+        // FAQ Accordion functionality
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                const isActive = item.classList.contains('active');
+                
+                // Close all other items
+                document.querySelectorAll('.faq-item').forEach(otherItem => {
+                    if (otherItem !== item) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+                
+                // Toggle current item
+                item.classList.toggle('active');
+            });
+        });
+
+        // Category filter functionality
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.category;
+                
+                // Update active button
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Filter FAQ items
+                document.querySelectorAll('.faq-item').forEach(item => {
+                    if (category === 'all' || item.dataset.category === category) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                    item.classList.remove('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

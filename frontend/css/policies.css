@@ -1,0 +1,301 @@
+/* ========================================================
+   POLICIES PAGE - SHARED PREMIUM DESIGN
+   ======================================================== */
+
+:root {
+    --dark-bg: #0A0F1C;
+    --dark-secondary: #111827;
+    --gold: #F59E0B;
+    --gold-light: #FCD34D;
+    --white: #FFFFFF;
+    --text-muted: rgba(255, 255, 255, 0.7);
+    --text-light: rgba(255, 255, 255, 0.5);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+.policies-page-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* ========================================================
+   HERO SECTION
+   ======================================================== */
+
+.hero-policies {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-secondary) 100%);
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-policies::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.gold-dot-accent {
+    width: 12px;
+    height: 12px;
+    background: var(--gold);
+    border-radius: 50%;
+    margin: 0 auto 2rem;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+}
+
+.hero-title .highlight {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* ========================================================
+   POLICIES CONTENT
+   ======================================================== */
+
+.policies-content {
+    padding: 4rem 0 6rem;
+    background: var(--dark-bg);
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Introduction Card */
+.policy-intro {
+    padding: 2rem 2.5rem;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.policy-intro p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+}
+
+/* Policy Sections */
+.policy-section {
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.policy-section:hover {
+    transform: translateX(8px);
+    border-color: var(--gold);
+}
+
+.policy-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem 2.5rem 1.5rem;
+}
+
+.policy-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+}
+
+.policy-icon i {
+    font-size: 1.5rem;
+    color: var(--dark-bg);
+}
+
+.policy-header h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.policy-body {
+    padding: 0 2.5rem 2rem;
+}
+
+.policy-body ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.policy-body ul li {
+    padding: 0.75rem 0;
+    padding-left: 2rem;
+    position: relative;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.policy-body ul li::before {
+    content: '●';
+    position: absolute;
+    left: 0.5rem;
+    color: var(--gold);
+    font-size: 1.2rem;
+    line-height: 1.7;
+}
+
+/* Policy Note Card */
+.policy-note {
+    padding: 2.5rem;
+    margin-top: 3rem;
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--gold);
+}
+
+.policy-note {
+    display: flex;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.note-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+}
+
+.note-icon i {
+    font-size: 1.8rem;
+    color: var(--dark-bg);
+}
+
+.note-content h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--white);
+}
+
+.note-content p {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.note-content strong {
+    color: var(--gold);
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN
+   ======================================================== */
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .policy-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.5rem;
+    }
+    
+    .policy-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .policy-icon i {
+        font-size: 1.2rem;
+    }
+    
+    .policy-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .policy-body {
+        padding: 0 1.5rem 1.5rem;
+    }
+    
+    .policy-body ul li {
+        padding-left: 1.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .policy-intro {
+        padding: 1.5rem;
+    }
+    
+    .policy-note {
+        flex-direction: column;
+        padding: 2rem 1.5rem;
+    }
+    
+    .note-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .note-icon i {
+        font-size: 1.4rem;
+    }
+    
+    .container {
+        padding: 0 1.5rem;
+    }
+    
+    .policy-section:hover {
+        transform: translateX(0);
+    }
+}

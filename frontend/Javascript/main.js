@@ -589,16 +589,16 @@ function updateUIForLoggedInUser() {
       }
       
       if (roles.includes('SUPERADMIN')) {
-          dashboardLink.href = 'superadmin-dashboard.html';
+          dashboardLink.href = '/frontend/superadmin-dashboard.html';
           dashboardLink.textContent = 'Admin Dashboard';
       } else if (roles.includes('ADMIN')) { // ADMIN role is for owners
-          dashboardLink.href = 'owner/Owner.html';
+          dashboardLink.href = '/frontend/owner/owner-dashboard.html';
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) { // USER role is for tenants
-          dashboardLink.href = 'tenant-dashboard.html';
+          dashboardLink.href = '/frontend/tenant-dashboard.html';
           dashboardLink.textContent = 'Tenant Dashboard';
       } else {
-          dashboardLink.href = 'tenant-dashboard.html';
+          dashboardLink.href = '/frontend/tenant-dashboard.html';
           dashboardLink.textContent = 'Dashboard';
       }
 

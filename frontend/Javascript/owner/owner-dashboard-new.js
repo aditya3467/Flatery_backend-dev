@@ -1,13 +1,13 @@
 /**
  * ========================================================
- * 🏠 PREMIUM OWNER DASHBOARD - JavaScript
+ * 🏠 OWNER DASHBOARD - JavaScript
  * ========================================================
  * 
  * Modern dashboard with visual property management
  * Dependencies: api.js, Chart.js
  */
 
-class PremiumOwnerDashboard {
+class OwnerDashboard {
     constructor() {
         this.ownerData = null;
         this.propertiesData = [];
@@ -19,7 +19,7 @@ class PremiumOwnerDashboard {
     }
 
     async init() {
-        console.log('[PremiumOwnerDashboard] Initializing...');
+        console.log('[OwnerDashboard] Initializing...');
         
         // Check authentication
         if (!this.checkAuth()) {
@@ -32,12 +32,12 @@ class PremiumOwnerDashboard {
         // Load data
         await this.loadAllData();
         
-        console.log('[PremiumOwnerDashboard] Initialization complete');
+        console.log('[OwnerDashboard] Initialization complete');
     }
 
     checkAuth() {
         if (typeof apiService === 'undefined') {
-            console.error('[PremiumOwnerDashboard] API Service not loaded');
+            console.error('[OwnerDashboard] API Service not loaded');
             alert('API Service not loaded. Please refresh the page.');
             return false;
         }
@@ -45,7 +45,7 @@ class PremiumOwnerDashboard {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
         
         if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
-            console.warn('[PremiumOwnerDashboard] Access denied');
+            console.warn('[OwnerDashboard] Access denied');
             setTimeout(() => {
                 window.location.href = '../index.html';
             }, 1500);
@@ -76,7 +76,7 @@ class PremiumOwnerDashboard {
         window.sendBulkReminder = quickActions.sendBulkReminder;
         window.generateMonthlyReport = quickActions.generateMonthlyReport;
         window.navigateToFlatCRM = () => window.location.href = 'flat-dashboard.html';
-        window.navigateToPGCRM = () => window.location.href = 'flat-dashboard.html?type=pg';
+        window.navigateToPGCRM = () => window.location.href = 'pg-list.html';
     }
 
     navigateTo(section) {
@@ -107,50 +107,91 @@ class PremiumOwnerDashboard {
             this.renderPropertyPhotoStrip();
 
         } catch (error) {
-            console.error('[PremiumOwnerDashboard] Error loading data:', error);
+            console.error('[OwnerDashboard] Error loading data:', error);
             this.showError('Failed to load dashboard data');
         }
     }
 
     async loadOwnerProfile() {
         try {
-            const response = await apiService.get('/users/profile');
+            const response = await apiService.makeRequest('/users/profile');
             this.ownerData = response;
-            console.log('[PremiumOwnerDashboard] Owner profile loaded:', this.ownerData);
+            console.log('[OwnerDashboard] Owner profile loaded:', this.ownerData);
         } catch (error) {
-            console.error('[PremiumOwnerDashboard] Error loading profile:', error);
+            console.error('[OwnerDashboard] Error loading profile:', error);
+            // Set basic data from localStorage as fallback
+            this.ownerData = {
+                firstName: localStorage.getItem('firstName') || 'Owner',
+                email: localStorage.getItem('username') || 'owner@flatery.com'
+            };
         }
     }
 
     async loadProperties() {
         try {
-            const response = await apiService.getFlatProperties();
-            this.propertiesData = Array.isArray(response) ? response : [];
-            console.log('[PremiumOwnerDashboard] Properties loaded:', this.propertiesData.length);
+            // Try to get all properties using the admin properties endpoint
+            const response = await apiService.getMyProperties(true, 0, 1000);
+            
+            // Handle both array and paginated response formats
+            if (Array.isArray(response)) {
+                this.propertiesData = response;
+            } else if (response && response.content && Array.isArray(response.content)) {
+                this.propertiesData = response.content;
+            } else if (response && response.properties && Array.isArray(response.properties)) {
+                this.propertiesData = response.properties;
+            } else {
+                this.propertiesData = [];
+            }
+            
+            console.log('[OwnerDashboard] Properties loaded:', this.propertiesData.length);
+            console.log('[OwnerDashboard] First property sample:', this.propertiesData[0]);
+            console.log('[OwnerDashboard] Full properties data:', JSON.stringify(this.propertiesData, null, 2));
         } catch (error) {
-            console.error('[PremiumOwnerDashboard] Error loading properties:', error);
+            console.error('[OwnerDashboard] Error loading properties:', error);
             this.propertiesData = [];
         }
     }
 
     async loadTenants() {
         try {
-            const response = await apiService.get('/tenants');
-            this.tenantsData = Array.isArray(response) ? response : [];
-            console.log('[PremiumOwnerDashboard] Tenants loaded:', this.tenantsData.length);
+            const response = await apiService.getTenants();
+            
+            // Handle both array and object response formats
+            if (Array.isArray(response)) {
+                this.tenantsData = response;
+            } else if (response && response.tenants && Array.isArray(response.tenants)) {
+                this.tenantsData = response.tenants;
+            } else if (response && response.content && Array.isArray(response.content)) {
+                this.tenantsData = response.content;
+            } else {
+                this.tenantsData = [];
+            }
+            
+            console.log('[OwnerDashboard] Tenants loaded:', this.tenantsData.length);
         } catch (error) {
-            console.error('[PremiumOwnerDashboard] Error loading tenants:', error);
+            console.error('[OwnerDashboard] Error loading tenants:', error);
             this.tenantsData = [];
         }
     }
 
     async loadPayments() {
         try {
-            const response = await apiService.get('/transactions/owner');
-            this.paymentsData = Array.isArray(response) ? response : [];
-            console.log('[PremiumOwnerDashboard] Payments loaded:', this.paymentsData.length);
+            const response = await apiService.makeRequest('/transactions/owner');
+            
+            // Handle both array and object response formats
+            if (Array.isArray(response)) {
+                this.paymentsData = response;
+            } else if (response && response.transactions && Array.isArray(response.transactions)) {
+                this.paymentsData = response.transactions;
+            } else if (response && response.content && Array.isArray(response.content)) {
+                this.paymentsData = response.content;
+            } else {
+                this.paymentsData = [];
+            }
+            
+            console.log('[OwnerDashboard] Payments loaded:', this.paymentsData.length);
         } catch (error) {
-            console.error('[PremiumOwnerDashboard] Error loading payments:', error);
+            console.error('[OwnerDashboard] Error loading payments:', error);
             this.paymentsData = [];
         }
     }
@@ -160,29 +201,41 @@ class PremiumOwnerDashboard {
         const totalProperties = this.propertiesData.length;
         document.getElementById('totalPropertiesMetric').textContent = totalProperties;
 
-        // Active Tenants
-        const activeTenants = this.tenantsData.filter(t => t.status === 'ACTIVE' || !t.status).length;
+        // Active Tenants - consider both ACTIVE status and no status (default to active)
+        const activeTenants = this.tenantsData.filter(t => 
+            !t.status || 
+            t.status === 'ACTIVE' || 
+            t.status === 'active' ||
+            t.isActive === true
+        ).length;
         document.getElementById('activeTenantsMetric').textContent = activeTenants;
 
-        // Pending Requests
-        const pendingPayments = this.paymentsData.filter(p => p.status === 'PENDING').length;
-        document.getElementById('pendingRequestsMetric').textContent = pendingPayments;
+        // Pending Requests - count pending payments
+        const pendingRequests = this.paymentsData.filter(p => 
+            p.status === 'PENDING' || 
+            p.status === 'pending' ||
+            p.status === 'SUBMITTED'
+        ).length;
+        document.getElementById('pendingRequestsMetric').textContent = pendingRequests;
 
         // Pending Payments Amount
         const pendingAmount = this.paymentsData
-            .filter(p => p.status === 'PENDING')
+            .filter(p => p.status === 'PENDING' || p.status === 'pending' || p.status === 'SUBMITTED')
             .reduce((sum, p) => sum + (p.amount || 0), 0);
         document.getElementById('pendingPaymentsMetric').textContent = `₹${this.formatNumber(pendingAmount)}`;
 
         // Occupancy Rate
-        const totalUnits = this.propertiesData.reduce((sum, p) => sum + (p.totalUnits || 1), 0);
-        const occupiedUnits = this.tenantsData.length;
+        const totalUnits = this.propertiesData.reduce((sum, p) => sum + (p.totalUnits || p.totalBeds || 1), 0);
+        const occupiedUnits = activeTenants;
         const occupancyRate = totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
         document.getElementById('occupancyRateMetric').textContent = `${occupancyRate}%`;
     }
 
     renderPropertyGalaxy() {
         const container = document.getElementById('propertyGalaxy');
+        
+        console.log('[OwnerDashboard] === RENDERING PROPERTY GALAXY ===');
+        console.log('[OwnerDashboard] Total properties:', this.propertiesData.length);
         
         if (this.propertiesData.length === 0) {
             container.innerHTML = `
@@ -195,22 +248,50 @@ class PremiumOwnerDashboard {
         }
 
         container.innerHTML = this.propertiesData.map(property => {
-            const imageUrl = property.primaryImageUrl || property.imageUrl || '../img/properties/default.jpg';
-            const title = property.name || `${property.propertyName || 'Property'} - ${property.flatNumber || property.unitNumber || ''}`;
+            // Handle image URLs - check for full URL or relative path
+            let imageUrl = property.primaryImageUrl || property.imageUrl;
+            if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+                imageUrl = `../${imageUrl}`;
+            }
+            if (!imageUrl) {
+                imageUrl = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500';
+            }
+            
+            // Build property title - show property name for PG
+            const isPG = property.type === 'PG' || property.type === 'Hostel' || property.propertyType === 'PG' || property.propertyType === 'Hostel';
+            const title = isPG && property.name 
+                         ? property.name 
+                         : property.name || property.propertyName || 
+                           (property.flatNumber ? `Flat ${property.flatNumber}` : `Property ${property.id}`);
+            
             const bhkType = property.bhkType || property.bhk;
-            const tenants = this.tenantsData.filter(t => t.flatId === property.id || t.propertyId === property.id);
-            const monthlyRent = property.expectedRent || property.rent || 0;
+            const tenants = this.tenantsData.filter(t => 
+                t.flatId === property.id || t.propertyId === property.id || t.propertyId === property.propertyId
+            );
+            const monthlyRent = property.expectedRent || property.rent || property.monthlyRent || 0;
+            const propertyType = property.type || (bhkType ? 'Flat' : 'Property');
+            
+            // Check status field with extensive logging
+            const rawStatus = property.status;
+            const propertyStatus = rawStatus ? rawStatus.toString().toUpperCase() : 'ACTIVE';
+            const isActive = propertyStatus === 'ACTIVE';
+            
+            console.log(`[Property ${property.id}] Raw status:`, rawStatus, 'Normalized:', propertyStatus, 'isActive:', isActive);
+            
+            // Determine CRM link based on property type
+            const crmLink = isPG ? `property-config.html?id=${property.id}` : `flat-dashboard.html?id=${property.id}`;
 
             return `
-                <div class="property-universe-card" onclick="window.location.href='flat-dashboard.html?id=${property.id}'">
-                    <img src="${imageUrl}" alt="${title}" class="property-bg-image" 
-                         onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500'">
+                <div class="property-universe-card ${!isActive ? 'inactive-property' : ''}" onclick="${!isActive ? 'event.preventDefault(); return false;' : `window.location.href='${crmLink}'`}" style="position: relative; ${!isActive ? 'pointer-events: none;' : ''}">
+                    ${!isActive ? `<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 3; pointer-events: none; border-radius: 15px;"><div style="background: #DC2626; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 800; font-size: 14px;"><i class="fas fa-eye-slash"></i> DEACTIVATED</div></div>` : ''}
+                    <img src="${imageUrl}" alt="${this.escapeHtml(title)}" class="property-bg-image" 
+                         onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500'" style="${!isActive ? 'filter: grayscale(60%) brightness(0.7);' : ''}">
                     <div class="property-universe-content">
-                        <h3 class="property-universe-title">${title}</h3>
+                        <h3 class="property-universe-title">${this.escapeHtml(title)}</h3>
                         <div class="property-chips">
                             <span class="property-chip">
                                 <i class="fas fa-building"></i>
-                                ${property.type || 'Flat'}
+                                ${propertyType}
                             </span>
                             ${bhkType ? `
                                 <span class="property-chip">
@@ -227,9 +308,18 @@ class PremiumOwnerDashboard {
                                 ₹${this.formatNumber(monthlyRent)}/mo
                             </span>
                         </div>
-                        <button class="manage-crm-btn" onclick="event.stopPropagation(); window.location.href='flat-dashboard.html?id=${property.id}'">
-                            Manage CRM <i class="fas fa-arrow-right"></i>
-                        </button>
+                        <div class="property-action-buttons" style="position: relative; z-index: 10; pointer-events: auto;">
+                            <button class="manage-crm-btn" onclick="event.stopPropagation(); ${!isActive ? 'return false;' : `window.location.href='${crmLink}'`}" style="${!isActive ? 'pointer-events: none; opacity: 0.5; cursor: not-allowed;' : ''}">
+                                Manage CRM <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="toggle-status-btn ${isActive ? 'deactivate' : 'activate'}" 
+                                    onclick="event.stopPropagation(); if(window.ownerDashboard) { window.ownerDashboard.togglePropertyStatus(${property.id}, '${propertyStatus}'); } else { alert('Dashboard not ready'); }"
+                                    title="${isActive ? 'Deactivate this listing' : 'Activate this listing'}"
+                                    style="position: relative; z-index: 20; pointer-events: auto !important; opacity: 1 !important; filter: none !important;">
+                                <i class="fas ${isActive ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                                ${isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -537,14 +627,23 @@ class PremiumOwnerDashboard {
         }
 
         container.innerHTML = this.propertiesData.map(property => {
-            const imageUrl = property.primaryImageUrl || property.imageUrl || '../img/properties/default.jpg';
-            const title = property.name || property.propertyName || `Property ${property.id}`;
+            // Handle image URLs
+            let imageUrl = property.primaryImageUrl || property.imageUrl;
+            if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+                imageUrl = `../${imageUrl}`;
+            }
+            if (!imageUrl) {
+                imageUrl = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=300';
+            }
+            
+            const title = property.name || property.propertyName || 
+                         (property.flatNumber ? `Flat ${property.flatNumber}` : `Property ${property.id}`);
 
             return `
                 <div class="polaroid-card" onclick="window.location.href='flat-dashboard.html?id=${property.id}'">
-                    <img src="${imageUrl}" alt="${title}" class="polaroid-image"
+                    <img src="${imageUrl}" alt="${this.escapeHtml(title)}" class="polaroid-image"
                          onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=300'">
-                    <div class="polaroid-caption">${title}</div>
+                    <div class="polaroid-caption">${this.escapeHtml(title)}</div>
                 </div>
             `;
         }).join('');
@@ -555,23 +654,64 @@ class PremiumOwnerDashboard {
             const confirmed = confirm('Send payment reminder to all tenants with pending payments?');
             if (!confirmed) return;
 
-            await apiService.post('/notifications/remind-all-tenants');
+            await apiService.makeRequest('/notifications/remind-all-tenants', {
+                method: 'POST'
+            });
             this.showSuccess('Reminders sent successfully!');
         } catch (error) {
-            console.error('[PremiumOwnerDashboard] Error sending reminders:', error);
-            this.showError('Failed to send reminders');
+            console.error('[OwnerDashboard] Error sending reminders:', error);
+            this.showError('Failed to send reminders. This feature may not be available yet.');
         }
     }
 
     async generateMonthlyReport() {
         try {
-            const report = await apiService.get('/reports/monthly');
+            const report = await apiService.makeRequest('/reports/monthly');
             this.showSuccess('Report generated successfully!');
             // Handle report download/display
             console.log('Report:', report);
+            
+            // If report has a download URL, open it
+            if (report && report.downloadUrl) {
+                window.open(report.downloadUrl, '_blank');
+            }
         } catch (error) {
-            console.error('[PremiumOwnerDashboard] Error generating report:', error);
-            this.showError('Failed to generate report');
+            console.error('[OwnerDashboard] Error generating report:', error);
+            this.showError('Failed to generate report. This feature may not be available yet.');
+        }
+    }
+
+    async togglePropertyStatus(propertyId, currentStatus) {
+        try {
+            console.log(`[OwnerDashboard] Toggling status for property ${propertyId}, current: ${currentStatus}`);
+            console.log(`[OwnerDashboard] Making API call to: ${apiService.baseURL}/admin/properties/${propertyId}/status`);
+            
+            // Show loading feedback
+            const btn = event?.target?.closest('.toggle-status-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            }
+            
+            const response = await apiService.put(`/admin/properties/${propertyId}/status`, {});
+            
+            console.log('[OwnerDashboard] Status toggle response:', response);
+            
+            const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+            this.showSuccess(`Property ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'} successfully!`);
+            
+            // Reload properties to reflect the change
+            await this.loadProperties();
+            this.renderPropertyGalaxy();
+            this.updateMetrics();
+            
+        } catch (error) {
+            console.error('[OwnerDashboard] Error toggling property status:', error);
+            console.error('[OwnerDashboard] Error details:', error.message || error);
+            this.showError(`Failed to update property status: ${error.message || 'Please try again.'}`);
+            
+            // Re-render to restore button state
+            this.renderPropertyGalaxy();
         }
     }
 
@@ -580,25 +720,45 @@ class PremiumOwnerDashboard {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     showLoading() {
-        console.log('[PremiumOwnerDashboard] Loading...');
+        console.log('[OwnerDashboard] Loading...');
     }
 
     showSuccess(message) {
-        alert(message); // Replace with better notification system
+        if (typeof showSuccess === 'function') {
+            showSuccess(message);
+        } else {
+            alert(message);
+        }
     }
 
     showError(message) {
-        alert('Error: ' + message); // Replace with better notification system
+        if (typeof showError === 'function') {
+            showError(message);
+        } else {
+            alert('Error: ' + message);
+        }
     }
 }
 
 // Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Wait for API service to be ready
-    if (typeof apiService !== 'undefined') {
-        new PremiumOwnerDashboard();
-    } else {
-        console.error('[PremiumOwnerDashboard] API Service not available');
-    }
+    const initDashboard = () => {
+        if (typeof apiService !== 'undefined') {
+            console.log('[OwnerDashboard] Initializing dashboard...');
+            window.ownerDashboard = new OwnerDashboard();
+        } else {
+            console.warn('[OwnerDashboard] API Service not ready, retrying...');
+            setTimeout(initDashboard, 100);
+        }
+    };
+    
+    initDashboard();
 });

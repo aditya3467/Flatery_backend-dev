@@ -12,6 +12,7 @@ public class PropertyResponse {
     private Long id;
 
     private PropertyType type;
+    private PropertyStatus status;
     private String name;
     private BhkType bhkType;
     private Integer pgSeater;

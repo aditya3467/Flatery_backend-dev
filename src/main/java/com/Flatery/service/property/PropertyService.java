@@ -48,6 +48,22 @@ public class PropertyService {
     }
 
     @Transactional
+    public PropertyResponse toggleStatus(Long id, Long actorUserId) {
+        Property existing = propertyRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Property not found"));
+        enforceOwnershipOrSuperAdmin(existing, actorUserId);
+        
+        // Toggle between ACTIVE and INACTIVE
+        existing.setStatus(existing.getStatus() == com.Flatery.model.property.enums.PropertyStatus.ACTIVE 
+            ? com.Flatery.model.property.enums.PropertyStatus.INACTIVE 
+            : com.Flatery.model.property.enums.PropertyStatus.ACTIVE);
+        
+        Property saved = propertyRepository.save(existing);
+        String primary = imageService.getPrimaryImageUrl(saved.getId());
+        return mapper.toResponse(saved, primary);
+    }
+
+    @Transactional
     public void delete(Long id, Long actorUserId) {
         Property existing = propertyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Property not found"));

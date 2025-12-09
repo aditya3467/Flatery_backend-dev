@@ -37,6 +37,11 @@ public class Property {
     @Column(nullable = false, length = 20)
     private PropertyType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    @Builder.Default
+    private PropertyStatus status = PropertyStatus.ACTIVE;
+
     @Column(length = 120)
     private String name; // required if APARTMENT/PG
 

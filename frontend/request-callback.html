@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request a Callback - Flatery</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/request-callback.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar Placeholder -->
+    <div id="navbar-placeholder" data-component="components/navbar.html"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-callback">
+        <div class="container">
+            <div class="gold-dot-accent"></div>
+            <h1 class="hero-title">Let's <span class="highlight">Connect</span></h1>
+            <p class="hero-subtitle">We're here to help you get started</p>
+        </div>
+    </section>
+
+    <!-- Callback Form Section -->
+    <section class="callback-section">
+        <div class="container">
+            <div class="callback-layout">
+                <!-- Left Side - Form -->
+                <div class="form-container glass-card">
+                    <div class="form-header">
+                        <h2>Request a Callback</h2>
+                        <p>Fill in your details and our team will reach out to you within 24 hours</p>
+                    </div>
+
+                    <form id="callbackForm" class="callback-form">
+                        <div class="form-group">
+                            <label for="fullName">
+                                <i class="fas fa-user"></i> Full Name
+                            </label>
+                            <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">
+                                <i class="fas fa-envelope"></i> Email Address
+                            </label>
+                            <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">
+                                <i class="fas fa-phone"></i> Phone Number
+                            </label>
+                            <input type="tel" id="phone" name="phone" required placeholder="+91 98765 43210">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="userType">
+                                <i class="fas fa-user-tag"></i> I am a
+                            </label>
+                            <select id="userType" name="userType" required>
+                                <option value="">Select your role</option>
+                                <option value="owner">Property Owner</option>
+                                <option value="tenant">Tenant</option>
+                                <option value="agent">Real Estate Agent</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="propertyType">
+                                <i class="fas fa-building"></i> Property Type
+                            </label>
+                            <select id="propertyType" name="propertyType" required>
+                                <option value="">Select property type</option>
+                                <option value="apartment">Apartment/Flat</option>
+                                <option value="villa">Independent House/Villa</option>
+                                <option value="pg">Paying Guest (PG)</option>
+                                <option value="commercial">Commercial Property</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="preferredTime">
+                                <i class="fas fa-clock"></i> Preferred Callback Time
+                            </label>
+                            <select id="preferredTime" name="preferredTime" required>
+                                <option value="">Select time slot</option>
+                                <option value="morning">Morning (9 AM - 12 PM)</option>
+                                <option value="afternoon">Afternoon (12 PM - 4 PM)</option>
+                                <option value="evening">Evening (4 PM - 8 PM)</option>
+                                <option value="anytime">Anytime</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message">
+                                <i class="fas fa-comment-dots"></i> Message (Optional)
+                            </label>
+                            <textarea id="message" name="message" rows="4" placeholder="Tell us about your requirements..."></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-paper-plane"></i> Submit Request
+                        </button>
+                    </form>
+
+                    <div id="formSuccess" class="success-message" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Request Submitted Successfully!</h3>
+                        <p>Our team will contact you within 24 hours.</p>
+                    </div>
+                </div>
+
+                <!-- Right Side - Info Cards -->
+                <div class="info-cards">
+                    <div class="info-card glass-card">
+                        <div class="info-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h3>24/7 Support</h3>
+                        <p>Our customer support team is available round the clock to assist you with any queries.</p>
+                    </div>
+
+                    <div class="info-card glass-card">
+                        <div class="info-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Quick Response</h3>
+                        <p>We guarantee a response within 24 hours of your callback request submission.</p>
+                    </div>
+
+                    <div class="info-card glass-card">
+                        <div class="info-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <h3>Expert Guidance</h3>
+                        <p>Get personalized recommendations from our property management experts.</p>
+                    </div>
+
+                    <div class="contact-methods">
+                        <h4>Other Ways to Reach Us</h4>
+                        <div class="contact-item">
+                            <i class="fas fa-phone-alt"></i>
+                            <div>
+                                <strong>Phone</strong>
+                                <p>+91 98765 43210</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <strong>Email</strong>
+                                <p>support@flatery.com</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>
+                                <strong>Address</strong>
+                                <p>Bangalore, Karnataka, India</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Placeholder -->
+    <div id="footer-placeholder" data-component="components/footer.html"></div>
+
+    <script src="Javascript/component-loader.js" defer></script>
+    <script src="Javascript/api.js" defer></script>
+    <script src="Javascript/main.js" defer></script>
+    <script>
+        document.getElementById('callbackForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simple form validation
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Here you would typically send the data to your backend
+            console.log('Callback request:', data);
+            
+            // Show success message
+            document.querySelector('.callback-form').style.display = 'none';
+            document.querySelector('.form-header').style.display = 'none';
+            document.getElementById('formSuccess').style.display = 'block';
+            
+            // Reset form after 3 seconds and show it again
+            setTimeout(() => {
+                this.reset();
+                document.querySelector('.callback-form').style.display = 'block';
+                document.querySelector('.form-header').style.display = 'block';
+                document.getElementById('formSuccess').style.display = 'none';
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

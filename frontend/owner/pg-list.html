@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PG Portfolio - Flatery</title>
+    <!--===== Font Awesome =====-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!--===== Main CSS =====-->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/owner/pg-list.css">
+    <!--===== Scripts =====-->
+    <script src="../Javascript/api.js"></script>
+    <script src="../Javascript/component-loader.js" defer></script>
+    <script src="../Javascript/notifications.js" defer></script>
+    <script src="../Javascript/main.js" defer></script>
+    <script src="../Javascript/owner/pg-list.js" defer></script>
+</head>
+
+<body>
+    <!--===== Navbar Component =====-->
+    <div id="navbar-container" data-component="../components/navbar.html"></div>
+
+    <!-- Main Container -->
+    <div class="pg-portfolio-container">
+
+        <!-- 1. Header Section -->
+        <section class="pg-header">
+            <div class="header-left">
+                <h1>PG Portfolio</h1>
+                <p>Manage all your PG properties from one place.</p>
+            </div>
+            <div class="header-right">
+                <div class="stat-pills">
+                    <div class="stat-pill">
+                        <i class="fas fa-building"></i>
+                        <div class="stat-pill-content">
+                            <span class="stat-pill-label">Total PGs</span>
+                            <span class="stat-pill-value" id="totalPGsCount">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-pill">
+                        <i class="fas fa-bed"></i>
+                        <div class="stat-pill-content">
+                            <span class="stat-pill-label">Total Beds</span>
+                            <span class="stat-pill-value" id="totalBedsCount">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-pill">
+                        <i class="fas fa-chart-pie"></i>
+                        <div class="stat-pill-content">
+                            <span class="stat-pill-label">Occupancy</span>
+                            <span class="stat-pill-value" id="occupancyRate">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-add-pg" onclick="window.location.href='add-property.html?type=pg'">
+                    <i class="fas fa-plus"></i>
+                    Add PG
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. Filters & Search Row -->
+        <section class="filters-section">
+            <div class="filters-card">
+                <div class="filters-row">
+                    <!-- Search Box -->
+                    <div class="filter-item search-box-container">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="pgSearchInput" placeholder="Search by PG name, area or landmark...">
+                        </div>
+                    </div>
+
+                    <!-- City Filter -->
+                    <div class="filter-item">
+                        <label>City</label>
+                        <select id="cityFilter">
+                            <option value="">All Cities</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Chennai">Chennai</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="filter-item">
+                        <label>Status</label>
+                        <select id="statusFilter">
+                            <option value="">All</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    <!-- Occupancy Filter -->
+                    <div class="filter-item">
+                        <label>Occupancy</label>
+                        <select id="occupancyFilter">
+                            <option value="">All</option>
+                            <option value="high">≥ 90%</option>
+                            <option value="medium">70-90%</option>
+                            <option value="low">< 70%</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort -->
+                    <div class="filter-item">
+                        <label>Sort by</label>
+                        <select id="sortFilter">
+                            <option value="name">Name (A-Z)</option>
+                            <option value="occupancy">Highest Occupancy</option>
+                            <option value="beds">Most Beds</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Active Filters Summary -->
+                <div class="filters-summary" id="filtersSummary" style="display: none;">
+                    <span class="summary-label">Active Filters:</span>
+                    <div class="summary-chips" id="summaryChips"></div>
+                    <button class="clear-filters-btn" id="clearFiltersBtn">
+                        <i class="fas fa-times"></i> Clear All
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. PG Cards Grid -->
+        <section class="pg-grid-section">
+            <div class="pg-grid" id="pgGrid">
+                <!-- Loading State -->
+                <div class="grid-loading" id="gridLoading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading PG properties...</p>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-state-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h3>No PGs added yet</h3>
+                <p>Start by adding your first PG property. You can manage rooms, beds, tenants and payments in one place.</p>
+                <button class="btn-add-pg" onclick="window.location.href='add-property.html?type=pg'">
+                    <i class="fas fa-plus"></i>
+                    Add Your First PG
+                </button>
+            </div>
+        </section>
+
+        <!-- 4. Pagination -->
+        <section class="pagination-section" id="paginationSection" style="display: none;">
+            <button class="pagination-btn" id="prevBtn" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <div class="pagination-numbers" id="paginationNumbers">
+                <!-- Dynamic page numbers -->
+            </div>
+            <button class="pagination-btn" id="nextBtn">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </section>
+
+    </div>
+
+</body>
+
+</html>

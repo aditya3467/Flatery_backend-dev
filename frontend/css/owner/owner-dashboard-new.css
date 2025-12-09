@@ -156,6 +156,7 @@ body {
 
 .property-galaxy {
     margin-bottom: var(--spacing-lg);
+    overflow: visible;
 }
 
 .galaxy-header {
@@ -184,7 +185,10 @@ body {
     display: flex;
     gap: var(--spacing-md);
     overflow-x: auto;
+    overflow-y: visible;
     padding: var(--spacing-sm) 0;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
     scroll-behavior: smooth;
     scrollbar-width: thin;
     scrollbar-color: var(--electric-blue) var(--light-gray);
@@ -220,11 +224,21 @@ body {
     min-width: 320px;
     height: 280px;
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    overflow: visible !important;
     position: relative;
     cursor: pointer;
     transition: all var(--transition-normal);
     box-shadow: var(--shadow-md);
+}
+
+.property-universe-card > img,
+.property-universe-card > .property-universe-content {
+    border-radius: var(--radius-lg);
+}
+
+.property-universe-card .property-bg-image,
+.property-universe-card .property-universe-content {
+    overflow: hidden;
 }
 
 .property-universe-card:hover {
@@ -293,6 +307,12 @@ body {
     gap: 0.4rem;
 }
 
+.property-action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
 .manage-crm-btn {
     background: var(--electric-blue);
     color: var(--white);
@@ -305,13 +325,111 @@ body {
     align-items: center;
     gap: 0.5rem;
     transition: all var(--transition-fast);
-    width: 100%;
+    flex: 1;
     justify-content: center;
 }
 
 .manage-crm-btn:hover {
     background: var(--deep-blue);
     transform: translateX(4px);
+}
+
+.toggle-status-btn {
+    border: none;
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all var(--transition-fast);
+    font-size: 0.9rem;
+}
+
+.toggle-status-btn.deactivate {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: var(--white);
+}
+
+.toggle-status-btn.deactivate:hover {
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+    transform: translateY(-2px);
+}
+
+.toggle-status-btn.activate {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: var(--white);
+}
+
+.toggle-status-btn.activate:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+}
+
+.inactive-property {
+    opacity: 0.75;
+    filter: grayscale(30%);
+    position: relative;
+}
+
+.inactive-property:hover {
+    opacity: 0.9;
+}
+
+.inactive-property::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(220, 38, 38, 0.1) 100%);
+    pointer-events: none;
+    border-radius: var(--radius-lg);
+    z-index: 1;
+}
+
+.inactive-ribbon {
+    position: absolute;
+    top: 20px;
+    right: -35px;
+    background: #DC2626;
+    color: #FFFFFF;
+    padding: 8px 50px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transform: rotate(45deg);
+    box-shadow: 0 3px 10px rgba(220, 38, 38, 0.6);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
+    border: 2px solid #B91C1C;
+}
+
+.inactive-ribbon i {
+    font-size: 0.85rem;
+}
+
+.inactive-notice {
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border: 2px solid #FCA5A5;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: #991B1B;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.inactive-notice i {
+    font-size: 1.1rem;
+    color: #DC2626;
 }
 
 /* ========================================================

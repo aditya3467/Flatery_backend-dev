@@ -68,6 +68,17 @@ public class AdminPropertyController {
         return ResponseEntity.ok(res);
     }
 
+    // Toggle property status (ACTIVE/INACTIVE)
+    @PutMapping("/{id}/status")
+    public ResponseEntity<PropertyResponse> toggleStatus(
+            @PathVariable Long id,
+            Authentication auth
+    ) {
+        Long userId = getUserId(auth);
+        PropertyResponse res = propertyService.toggleStatus(id, userId);
+        return ResponseEntity.ok(res);
+    }
+
     // Delete property
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

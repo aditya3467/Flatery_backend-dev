@@ -9,6 +9,7 @@ import java.time.LocalDate;
 public class PropertySummary {
     private Long id;
     private PropertyType type;
+    private PropertyStatus status;
     private BhkType bhkType;
     private String city;
     private String location;

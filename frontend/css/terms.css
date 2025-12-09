@@ -1,0 +1,299 @@
+/* ========================================================
+   TERMS & CONDITIONS PAGE - PREMIUM DESIGN
+   ======================================================== */
+
+:root {
+    --dark-bg: #0A0F1C;
+    --dark-secondary: #111827;
+    --gold: #F59E0B;
+    --gold-light: #FCD34D;
+    --white: #FFFFFF;
+    --text-muted: rgba(255, 255, 255, 0.7);
+    --text-light: rgba(255, 255, 255, 0.5);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+.terms-page-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* ========================================================
+   HERO SECTION
+   ======================================================== */
+
+.hero-terms {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-secondary) 100%);
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-terms::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.gold-dot-accent {
+    width: 12px;
+    height: 12px;
+    background: var(--gold);
+    border-radius: 50%;
+    margin: 0 auto 2rem;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+}
+
+.hero-title .highlight {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.last-updated {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+/* ========================================================
+   TERMS CONTENT
+   ======================================================== */
+
+.terms-content {
+    padding: 4rem 0 6rem;
+    background: var(--dark-bg);
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.terms-section {
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.terms-section:hover {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.terms-section h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-number {
+    color: var(--gold);
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.terms-section p {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.terms-section p:last-child {
+    margin-bottom: 0;
+}
+
+.terms-section p strong {
+    color: var(--white);
+    font-weight: 600;
+}
+
+.terms-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.terms-section ul li {
+    padding: 0.5rem 0;
+    padding-left: 2rem;
+    position: relative;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.terms-section ul li::before {
+    content: '●';
+    position: absolute;
+    left: 0.5rem;
+    color: var(--gold);
+    font-size: 1rem;
+}
+
+/* Contact Info */
+.contact-info {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.contact-info p {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.contact-info p:last-child {
+    margin-bottom: 0;
+}
+
+.contact-info i {
+    color: var(--gold);
+    font-size: 1.1rem;
+    width: 20px;
+}
+
+.contact-info strong {
+    color: var(--white);
+}
+
+/* Acceptance Box */
+.acceptance-box {
+    padding: 2.5rem;
+    margin-top: 3rem;
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--gold);
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.acceptance-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
+}
+
+.acceptance-icon i {
+    font-size: 2rem;
+    color: var(--dark-bg);
+}
+
+.acceptance-content h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--white);
+}
+
+.acceptance-content p {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN
+   ======================================================== */
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+    
+    .terms-section {
+        padding: 1.5rem;
+    }
+    
+    .terms-section h2 {
+        font-size: 1.3rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .section-number {
+        font-size: 1.5rem;
+    }
+    
+    .terms-section ul li {
+        padding-left: 1.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .acceptance-box {
+        flex-direction: column;
+        text-align: center;
+        padding: 2rem 1.5rem;
+    }
+    
+    .acceptance-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .acceptance-icon i {
+        font-size: 1.6rem;
+    }
+    
+    .container {
+        padding: 0 1.5rem;
+    }
+}

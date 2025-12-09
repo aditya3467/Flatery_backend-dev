@@ -69,6 +69,7 @@ public class PropertyMapper {
         PropertyResponse res = new PropertyResponse();
         res.setId(p.getId());
         res.setType(p.getType());
+        res.setStatus(p.getStatus());
         res.setName(p.getName());
         res.setBhkType(p.getBhkType());
         res.setPgSeater(p.getPgSeater());
@@ -115,6 +116,7 @@ public class PropertyMapper {
         PropertySummary s = new PropertySummary();
         s.setId(p.getId());
         s.setType(p.getType());
+        s.setStatus(p.getStatus());
         s.setBhkType(p.getBhkType());
         s.setCity(p.getCity());
         s.setLocation(p.getLocation());
