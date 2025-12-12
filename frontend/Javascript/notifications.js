@@ -265,10 +265,34 @@ class NotificationManager {
         // Close dropdown
         this.closeDropdown();
 
-        // Redirect if URL is provided
-        if (redirectUrl) {
-            window.location.href = redirectUrl;
+        if (!redirectUrl) {
+            return;
         }
+
+        // If already on owner dashboard, just switch to manage payments
+        if (window.location.pathname.includes('/owner/owner-dashboard.html')) {
+            if (redirectUrl.includes('manage-payments') && typeof window.showManagePaymentsSection === 'function') {
+                window.showManagePaymentsSection();
+                return;
+            }
+        }
+
+        // If already on tenant dashboard, just switch to rent & payments
+        if (window.location.pathname.includes('/tenant-dashboard.html')) {
+            if (redirectUrl.includes('payments') && typeof window.loadRentPaymentsData === 'function') {
+                // Activate the rent-payments section if sidebar is present
+                const navItem = document.querySelector('.nav-item[data-section="rent-payments"]');
+                if (navItem) {
+                    navItem.click();
+                }
+                // Reload payments data
+                window.loadRentPaymentsData();
+                return;
+            }
+        }
+
+        // Default: navigate to the target URL; page scripts will handle section selection
+        window.location.href = redirectUrl;
     }
 
     /**

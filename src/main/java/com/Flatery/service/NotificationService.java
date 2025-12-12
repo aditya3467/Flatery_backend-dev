@@ -123,6 +123,8 @@ public class NotificationService {
      * Notify owner about payment submission
      */
     public Notification notifyPaymentSubmitted(Long ownerId, Long tenantId, String tenantName, Long paymentId) {
+        // Default redirect for PG properties will be overridden with proper query string
+        // containing property id at the point where we know the property context.
         return createNotification(
             ownerId,
             tenantId,

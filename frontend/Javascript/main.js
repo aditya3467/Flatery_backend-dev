@@ -718,7 +718,8 @@ async function handleChangePassword(e) {
       if (roles.includes('USER')) {
         window.location.href = '/frontend/tenant.html';
       } else if (roles.includes('ADMIN')) {
-        window.location.href = '/frontend/owner/Owner.html';
+        // Redirect owners to the new owner dashboard
+        window.location.href = '/frontend/owner/owner-dashboard.html';
       } else if (roles.includes('SUPERADMIN')) {
         window.location.href = '/frontend/superadmin-dashboard.html';
       } else {

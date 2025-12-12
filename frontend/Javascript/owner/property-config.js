@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Ensure authenticated and owner role
   const ok = await ensureOwnerSession();
-  if (ok) {
+    if (ok) { 
     await loadPropertyConfig();
     setupNavigationHandlers();
   }
@@ -43,7 +43,7 @@ function setupNavigationHandlers() {
 
       // Show appropriate section
       if (href === '#dashboard') {
-        showDashboardSection();
+      showDashboardSection(); 
       } else if (href === '#financial') {
         showFinancialSection();
       } else if (href === '#floors') {
@@ -51,7 +51,7 @@ function setupNavigationHandlers() {
       } else if (href === '#tenants') {
         showTenantsSection();
       } else if (href === '#payments') {
-        showPaymentsSection();
+      showPaymentsSection(); 
       } else if (href === '#manage-payments') {
         showManagePaymentsSection();
       } else if (href === '#maintenance') {
@@ -132,7 +132,7 @@ function showPaymentsSection() {
   toggleTopMeta(false);
   // Load tenants first if not loaded, then load payments
   if (!allTenants || allTenants.length === 0) {
-    loadTenants().then(() => {
+      loadTenants().then(() => { 
       loadPayments();
     });
   } else {
@@ -172,7 +172,7 @@ async function loadDashboardData(period = 'month') {
     
     // Calculate rent collected (mock data - replace with actual API)
     const totalRent = units.reduce((sum, u) => sum + (u.rent * u.occupied), 0);
-    const collectedRent = Math.floor(totalRent * 0.75); // Mock: 75% collected
+  const collectedRent = Math.floor(totalRent * 0.75); // Mock: 75% collected 
     const pendingRent = totalRent - collectedRent;
     
     document.getElementById('kpiRentCollected').textContent = `₹${formatNumber(collectedRent)}`;
@@ -1259,7 +1259,7 @@ function renderRevenueExpenseChart() {
   const avgRev = Math.floor(revenueData.reduce((a, b) => a + b, 0) / revenueData.length);
   const avgExp = Math.floor(expenseData.reduce((a, b) => a + b, 0) / expenseData.length);
   const avgProf = avgRev - avgExp;
-  
+        
   document.getElementById('avgRevenue').textContent = `₹${formatNumber(avgRev)}`;
   document.getElementById('avgExpense').textContent = `₹${formatNumber(avgExp)}`;
   document.getElementById('avgProfit').textContent = `₹${formatNumber(avgProf)}`;

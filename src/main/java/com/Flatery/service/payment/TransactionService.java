@@ -145,7 +145,17 @@ public class TransactionService {
                 saved.getPaymentMonth(),
                 saved.getPaymentMode().toString().replace("_", " ")
             );
-            String redirectUrl = "/owner/Owner.html"; // Redirect to owner dashboard
+            // Build context-aware redirect URL for owner when a new payment is submitted.
+            String redirectUrl;
+
+            if (propertyId != null) {
+                // We'll default to property-config with explicit id; frontend will handle
+                // whether this is PG/FLAT based on property type if needed.
+                redirectUrl = "/frontend/owner/property-config.html?id=" + propertyId + "#manage-payments";
+            } else {
+                // Fallback: send to owner dashboard manage-payments
+                redirectUrl = "/frontend/owner/owner-dashboard.html#manage-payments";
+            }
             
             notificationService.createNotification(
                 ownerId,                   // userId (recipient - owner)
