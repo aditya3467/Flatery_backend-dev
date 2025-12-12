@@ -161,18 +161,21 @@ class ComponentLoader {
      */
     setupLogoLink() {
         const logoLink = document.getElementById('logoLink');
+        const logoImg = document.getElementById('flateryLogoImg');
+        const footerLogoImg = document.getElementById('flateryFooterLogoImg');
         if (logoLink) {
-            // Determine the correct path to index.html based on current location
+            // Determine the correct path to index.html and logo.png based on current location
             const currentPath = window.location.pathname;
             let indexPath = 'index.html';
-            
-            // If we're in a subdirectory (like /owner/), go up one level
+            let logoPath = 'img/logo.png';
             if (currentPath.includes('/owner/') || currentPath.includes('/tenant/')) {
                 indexPath = '../index.html';
+                logoPath = '../img/logo.png';
             }
-            
             logoLink.href = indexPath;
-            console.log('Logo link set to:', indexPath);
+            if (logoImg) logoImg.src = logoPath;
+            if (footerLogoImg) footerLogoImg.src = logoPath;
+            console.log('Logo link set to:', indexPath, 'Logo src:', logoPath);
         }
     }
 

@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 charCountSpan.textContent = '0';
                 
                 // Redirect to owner dashboard
-                window.location.href = 'Owner.html';
+                window.location.href = 'owner-dashboard.html';
             }, 2000);
 
         } catch (error) {

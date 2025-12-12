@@ -4,7 +4,7 @@
  * ========================================================
  * 
  * This file handles:
- * 1. Owner Dashboard (Owner.html) - Display property listings
+ * 1. Owner Dashboard (owner-dashboard.html) - Display property listings
  * 2. Edit Property Page (edit-property.html) - Edit property details
  * 
  * Previously: edit-property.js was separate
@@ -682,7 +682,7 @@
       const payload = buildUpdateData();
       await apiService.updateProperty(propertyId, payload);
       notify('Property updated successfully', 'success');
-      setTimeout(() => window.location.href = 'Owner.html', 800);
+      setTimeout(() => window.location.href = 'owner-dashboard.html', 800);
     } catch (err){
       console.error(err);
       notify(err.message || 'Failed to update property', 'error');

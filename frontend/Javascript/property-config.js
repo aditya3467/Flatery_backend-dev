@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   if (!currentPropertyId) {
     showAlert('error', 'No property selected');
-    setTimeout(() => window.location.href = 'Owner.html', 2000);
+    setTimeout(() => window.location.href = 'owner-dashboard.html', 2000);
     return;
   }
 
@@ -577,7 +577,7 @@ async function loadPropertyConfig() {
     const pType = (propertyData?.type || '').toString().toUpperCase();
     if (pType !== 'PG') {
       showAlert('error', 'This configuration page is only for PG properties.');
-      setTimeout(() => window.location.href = 'Owner.html', 1800);
+      setTimeout(() => window.location.href = 'owner-dashboard.html', 1800);
       return;
     }
     
@@ -2061,7 +2061,6 @@ function generateAgreement() {
 // Download rent receipts
 function downloadRentReceipts() {
   alert('Rent receipts download functionality will be implemented with backend integration');
-  console.log('Downloading rent receipts for tenant:', currentTenantId);
 }
 
 // Download individual receipt

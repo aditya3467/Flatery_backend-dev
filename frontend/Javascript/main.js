@@ -450,7 +450,7 @@ async function handleLogin(e) { // e can be a form event or an object with crede
         return; // Stop further execution
     } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
         setTimeout(() => {
-            window.location.href = '/frontend/owner/Owner.html';
+            window.location.href = '/frontend/owner/owner-dashboard.html';
         }, 100);
         return;
   } else if (roles.includes('USER')) {

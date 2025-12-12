@@ -1665,7 +1665,7 @@ async function remindOwnerForPayment(paymentMonth, transactionId) {
             type: 'PAYMENT_REMINDER',
             title: '💰 Payment Reminder',
             message: `${tenantName} has reminded you about their pending payment for ${paymentMonth}. Please verify their payment submission.`,
-            redirectUrl: '/owner/Owner.html#pending-payments'
+            redirectUrl: '/owner/owner-dashboard.html#pending-payments'
         };
 
         console.log('Sending reminder notification:', notificationData);
