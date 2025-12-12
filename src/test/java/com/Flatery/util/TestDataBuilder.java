@@ -1,3 +1,6 @@
+import com.Flatery.model.User;
+import com.Flatery.model.property.Property;
+
 public class TestDataBuilder {
     private String username;
     private String password;
@@ -24,11 +27,11 @@ public class TestDataBuilder {
         return this;
     }
 
-    public User buildUser() {
-        return new User(username, password, email);
-    }
+    // public User buildUser() {
+    //     return new User(username, password, email);
+    // }
 
-    public Property buildProperty() {
-        return new Property(propertyName);
-    }
+    // public Property buildProperty() {
+    //     return new Property(propertyName);
+    // }
 }
