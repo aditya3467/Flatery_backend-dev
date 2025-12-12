@@ -573,6 +573,9 @@ function showNoActiveStay() {
     `;
 }
 
+        // Redirect to tenant status page
+        window.location.href = 'tenant-status.html';
+
 function showError(message) {
     console.error(message);
     // You can add a toast notification here

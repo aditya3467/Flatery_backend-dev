@@ -658,6 +658,13 @@ class ApiService {
             method: 'POST'
         });
     }
+
+        // Get tenant's past stays/tenancy history
+        async getTenantPastStays() {
+            return this.makeRequest('/tenants/me/past-stays', {
+                method: 'GET'
+            });
+        }
 }
 
 // Create global API service instance

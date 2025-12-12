@@ -1,0 +1,321 @@
+/* Tenant Status Page Styling */
+
+:root {
+  --flatery-blue: #3b82f6;
+  --flatery-blue-light: rgba(59, 130, 246, 0.08);
+  --flatery-blue-hover: #2563eb;
+  --bg-primary: #f5f7fa;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border-color: #e5e7eb;
+  --white: #ffffff;
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  color: var(--text-primary);
+}
+
+.tenant-status-container {
+  min-height: 100vh;
+  padding: 60px 20px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Status Card Section */
+.status-card {
+  width: 520px;
+  max-width: 100%;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  padding: 48px 40px;
+  margin: 0 auto 80px;
+  text-align: center;
+}
+
+.status-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  background: var(--flatery-blue-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--flatery-blue);
+}
+
+.status-heading {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.status-subtext {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.status-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.btn-view-stays {
+  background: var(--flatery-blue);
+  color: var(--white);
+  border: none;
+  border-radius: 10px;
+  padding: 0 28px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.btn-view-stays:hover {
+  background: var(--flatery-blue-hover);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-view-stays:active {
+  transform: translateY(1px);
+}
+
+/* Past Stays Section */
+.past-stays-section {
+  margin-top: 80px;
+  scroll-margin-top: 100px;
+}
+
+.section-header {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Past Stays Container */
+.past-stays-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.past-stay-card {
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.past-stay-card:hover {
+  border-color: var(--flatery-blue);
+  box-shadow: var(--shadow-hover);
+}
+
+.stay-icon {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  background: var(--flatery-blue-light);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--flatery-blue);
+}
+
+.stay-details {
+  flex: 1;
+  text-align: left;
+}
+
+.stay-property-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.stay-location {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.stay-duration {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.stay-status-chip {
+  display: inline-block;
+  background: var(--flatery-blue-light);
+  color: var(--flatery-blue);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* No Past Stays Message */
+.no-past-stays {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.no-past-stays i {
+  font-size: 48px;
+  color: var(--border-color);
+  margin-bottom: 16px;
+  display: block;
+  opacity: 0.7;
+}
+
+.no-past-stays p {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.past-stays-container:not(:empty) + .no-past-stays {
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .tenant-status-container {
+    padding: 40px 16px 32px;
+  }
+
+  .status-card {
+    width: 100%;
+    padding: 32px 20px;
+    margin-bottom: 60px;
+  }
+
+  .status-heading {
+    font-size: 18px;
+  }
+
+  .status-subtext {
+    font-size: 13px;
+  }
+
+  .past-stays-container {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+  }
+
+  .status-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tenant-status-container {
+    padding: 30px 12px 24px;
+  }
+
+  .status-card {
+    padding: 24px 16px;
+    border-radius: 12px;
+    margin-bottom: 48px;
+  }
+
+  .status-heading {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .status-subtext {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .status-hint {
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+
+  .btn-view-stays {
+    padding: 0 24px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .past-stays-section {
+    margin-top: 48px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+
+  .past-stay-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .stay-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    min-width: 48px;
+  }
+
+  .stay-property-name {
+    font-size: 14px;
+  }
+}

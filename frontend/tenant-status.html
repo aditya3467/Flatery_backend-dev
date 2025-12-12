@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tenant Status - Flatery</title>
+  <link rel="icon" type="image/png" href="img/icon.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css?v=2" />
+  <link rel="stylesheet" href="css/tenant-status.css?v=1">
+  <script src="Javascript/component-loader.js" defer></script>
+  <script src="Javascript/api.js" defer></script>
+  <script src="Javascript/notifications.js" defer></script>
+  <script src="Javascript/tenant-status.js" defer></script>
+  <script src="Javascript/main.js" defer></script>
+</head>
+<body>
+  <div id="navbar-container" data-component="components/navbar.html"></div>
+
+  <!-- Main Content -->
+  <div class="tenant-status-container">
+    <!-- No Property Card -->
+    <div class="status-card">
+      <div class="status-icon">
+        <i class="fas fa-building"></i>
+      </div>
+      
+      <div class="status-content">
+        <h1 class="status-heading">You're not added to any property yet</h1>
+        
+        <p class="status-subtext">
+          Once your property owner adds you to a Flat or PG, it will appear here automatically.
+        </p>
+        
+        <p class="status-hint">
+          If you believe this is incorrect, please contact your property owner.
+        </p>
+        
+        <button class="btn-primary btn-view-stays" id="viewStaysBtn">
+          View Past Stays
+        </button>
+      </div>
+    </div>
+
+    <!-- Past Stays Section -->
+    <div class="past-stays-section" id="pastStaysSection">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Past Stays</h2>
+          <p class="section-subtitle">Your previous Flats or PG accommodations</p>
+        </div>
+      </div>
+
+      <div class="past-stays-container" id="pastStaysContainer">
+        <!-- Past stay cards will be loaded here -->
+      </div>
+
+      <div class="no-past-stays" id="noPastStaysMessage">
+        <i class="fas fa-home"></i>
+        <p>No past stays found</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-container" data-component="components/footer.html"></div>
+</body>
+</html>

@@ -289,6 +289,27 @@ public class TenantController {
         return user.getId();
     }
 
+        /**
+         * Get past stays/tenancy history for the current tenant
+         */
+        @GetMapping("/me/past-stays")
+        @PreAuthorize("hasRole('TENANT')")
+        public ResponseEntity<?> getTenantPastStays(Authentication authentication) {
+            try {
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+                String username = userDetails.getUsername();
+                User user = userRepository.findByUsername(username).orElseThrow();
+            
+                // Get past stays for this user
+                List<TenancyHistory> pastStays = tenancyHistoryService.getTenantHistory(user.getPhoneNumber());
+            
+                return ResponseEntity.ok(pastStays);
+            } catch (Exception ex) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new ErrorResponse("Failed to get past stays: " + ex.getMessage()));
+            }
+        }
+
     public record ErrorResponse(String error) {}
     
     public record VacateTenantRequest(
