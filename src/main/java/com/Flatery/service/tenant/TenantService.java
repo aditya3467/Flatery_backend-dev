@@ -16,6 +16,10 @@ import com.Flatery.repository.property.UnitRepository;
 import com.Flatery.repository.property.FloorRepository;
 import com.Flatery.service.property.UnitService;
 import com.Flatery.service.payment.PaymentStatusService;
+import com.Flatery.model.payment.Transaction;
+import com.Flatery.model.payment.PaymentStatus;
+import com.Flatery.model.payment.PaymentMode;
+import com.Flatery.repository.payment.TransactionRepository;
 import com.Flatery.repository.property.PropertyRepository;
 import com.Flatery.repository.tenant.TenantRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +59,7 @@ public class TenantService {
     private final UnitService unitService;
     private final TenancyHistoryService tenancyHistoryService;
     private final PaymentStatusService paymentStatusService;
+    private final TransactionRepository transactionRepository;
 
     private static final String TENANT_PREFIX = "TEN";
     private final Random random = new SecureRandom();
@@ -325,11 +330,39 @@ public class TenantService {
         userRepository.save(user);
     }
 
+    // Record security deposit transaction directly in the same transaction
+    if (req.getSecurityDeposit() != null && req.getSecurityDeposit() > 0) {
+        try {
+            String paymentMonth = tenant.getLeaseStartDate().getYear() + "-" + 
+                                 String.format("%02d", tenant.getLeaseStartDate().getMonthValue());
+            
+            Transaction depositTransaction = Transaction.builder()
+                    .tenantId(tenant.getId())
+                    .ownerId(ownerId)
+                    .propertyId(tenant.getPropertyId())
+                    .amount((double) req.getSecurityDeposit())
+                    .paymentMonth(paymentMonth)
+                    .paymentMode(PaymentMode.CASH)
+                    .upiRef("Security Deposit - Tenant Onboarding")
+                    .status(PaymentStatus.VERIFIED)
+                    .paymentDate(java.time.LocalDateTime.now())
+                    .createdBy("owner-" + ownerId)
+                    .updatedBy("owner-" + ownerId)
+                    .build();
+            
+            transactionRepository.save(depositTransaction);
+            System.out.println("Security deposit transaction recorded: ₹" + req.getSecurityDeposit());
+        } catch (Exception e) {
+            System.err.println("Failed to record security deposit: " + e.getMessage());
+            // Don't fail tenant creation if transaction recording fails
+        }
+    }
+
     // Build response
     TenantResponse response = TenantResponse.of(tenant);
     response.setUsername(username);
     response.setTemporaryPassword(rawPassword); // null when existing user
-        return response;
+    return response;
     }
 
     @Transactional
@@ -521,6 +554,13 @@ public class TenantService {
     public TenantPropertyDetails getTenantPropertyDetails(String username) {
         Tenant tenant = tenantRepository.findByPhoneNumber(username)
                 .orElseThrow(() -> new IllegalArgumentException("Tenant not found for user: " + username));
+
+        // Only allow active tenancy; otherwise signal no active stay
+        boolean isActive = tenant.getStatus() == Tenant.TenantStatus.ACTIVE;
+        boolean leaseValid = tenant.getLeaseEndDate() == null || tenant.getLeaseEndDate().isAfter(java.time.LocalDate.now());
+        if (!isActive || !leaseValid) {
+            throw new IllegalStateException("No active tenancy for user: " + username);
+        }
 
         // Get property information
         Property property = propertyRepository.findById(tenant.getPropertyId())

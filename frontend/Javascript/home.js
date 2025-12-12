@@ -14,21 +14,21 @@ document.addEventListener('DOMContentLoaded', async function() {
  */
 function setupSearchButton() {
     const searchButton = document.getElementById('searchButton');
-    const citySelect = document.getElementById('citySelect');
-    const searchTerm = document.getElementById('searchTerm');
+    const propertyTypeSelect = document.getElementById('propertyTypeSelect');
+    const locationInput = document.getElementById('locationInput');
     
     if (searchButton) {
         searchButton.addEventListener('click', function() {
-            const city = citySelect ? citySelect.value : '';
-            const keyword = searchTerm ? searchTerm.value.trim() : '';
+            const propertyType = propertyTypeSelect ? propertyTypeSelect.value : '';
+            const city = locationInput ? locationInput.value.trim() : '';
             
             // Build query parameters
             const params = new URLSearchParams();
+            if (propertyType) {
+                params.append('propertyType', propertyType);
+            }
             if (city) {
                 params.append('city', city);
-            }
-            if (keyword) {
-                params.append('keyword', keyword);
             }
             
             // Navigate to properties page with filters
@@ -38,8 +38,8 @@ function setupSearchButton() {
     }
     
     // Allow Enter key to trigger search
-    if (searchTerm) {
-        searchTerm.addEventListener('keypress', function(e) {
+    if (locationInput) {
+        locationInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchButton.click();
             }

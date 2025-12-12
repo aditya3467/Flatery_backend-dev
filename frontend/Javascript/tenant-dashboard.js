@@ -112,11 +112,13 @@ async function loadDashboardData() {
         } catch (error) {
             console.error('❌ CRITICAL ERROR: Failed to load tenant data from API:', error);
             showError('Failed to load tenant information. Please ensure you are logged in and the backend is running.');
+            window.location.href = 'tenant-status.html';
             return; // Stop execution - don't use mock data
         }
         
-        if (!tenantData.propertyId) {
-            showNoActiveStay();
+        // If no active tenancy, redirect to status page
+        if (!tenantData.propertyId || (tenantData.status && tenantData.status !== 'ACTIVE')) {
+            window.location.href = 'tenant-status.html';
             return;
         }
         
@@ -572,9 +574,6 @@ function showNoActiveStay() {
         </div>
     `;
 }
-
-        // Redirect to tenant status page
-        window.location.href = 'tenant-status.html';
 
 function showError(message) {
     console.error(message);

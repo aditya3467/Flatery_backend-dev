@@ -48,26 +48,16 @@
                 </div>
                 <div class="hero-bar row">
                     <div class="location">
-                        <select name="citySelect" id="citySelect">
-                            <option value="">Select City</option>
-                            <option value="Mumbai">Mumbai</option>
-                            <option value="Delhi">Delhi</option>
-                            <option value="Bangalore">Bangalore</option>
-                            <option value="Pune">Pune</option>
-                            <option value="Hyderabad">Hyderabad</option>
-                            <option value="Chennai">Chennai</option>
-                            <option value="Kolkata">Kolkata</option>
-                            <option value="Ahmedabad">Ahmedabad</option>
-                            <option value="Noida">Noida</option>
-                            <option value="Gurgaon">Gurgaon</option>
-                            <option value="Chandigarh">Chandigarh</option>
-                            <option value="Mohali">Mohali</option>
+                        <select name="propertyTypeSelect" id="propertyTypeSelect">
+                            <option value="">Looking for (PG/Flat)</option>
+                            <option value="PG">PG</option>
+                            <option value="FLAT">Flat</option>
                         </select>
                     </div>
                     <div class="search-bar">
                         <div class="wrap">
                             <div class="search">
-                                <input type="text" id="searchTerm" class="searchTerm" placeholder="Search by location, property type...">
+                                <input type="text" id="locationInput" class="searchTerm" placeholder="Enter city or location">
                                 <button type="button" id="searchButton" class="searchButton">
                                     <i class="fa fa-search"></i>
                                 </button>
@@ -255,63 +245,8 @@
 
 
     <!-- How it works ends -->
-    <!--===== Footer Start =====-->
-
-
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="footer-details-col">
-                    <div class="footer-logo">
-                        <img src="img/logo.png" alt="Flatery Logo" class="footer-logo-img">
-                    </div>
-                    <p>Your trusted platform for finding the perfect home.</p>
-                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis cumque reprehenderit ullam
-                        soluta earum praesentium doloribus ex, numquam optio accusantium sed natus sint quod architecto
-                        nostrum illo nihil veritatis facere!</p>
-                </div>
-                <div class="links">
-                    <div class="footer-links-col">
-                        <h3>Quick Links</h3>
-                        <ul>
-                            <li><a href="#">Home</a></li>
-                            <li><a href="#">About Us</a></li>
-                            <li><a href="#">Services</a></li>
-                            <li><a href="#">Contact</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-owner-col">
-                        <h3>owner
-                        </h3>
-                        <ul>
-                            <li><a href="#">List Property</a></li>
-                            <li><a href="#">Manage Listings</a></li>
-                            <li><a href="#">Owner Dashboard</a></li>
-                            <li><a href="#">Support</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-tenant-col">
-                        <h3>Tenant</h3>
-                        <ul>
-                            <li><a href="#">Browse Properties</a></li>
-                            <li><a href="#">My Favorites</a></li>
-                            <li><a href="#">Tenant Dashboard</a></li>
-                            <li><a href="#">Support</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="social">
-                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-linkedin-in"></i></a>
-            </div>
-            <hr>
-            <p class="copyright">Copyright &copy; 2024 Flatery. All rights reserved.</p>
-        </div>
-    </footer>
-    <!--===== Footer End =====-->
+    <!-- Footer Component -->
+    <div id="footer-container" data-component="components/footer.html"></div>
 
 
     <!--===== Modals Component =====-->
