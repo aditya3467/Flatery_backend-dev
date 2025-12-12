@@ -736,3 +736,38 @@ async function handleChangePassword(e) {
     hideLoading(submitBtn);
   }
 }
+
+// Google OAuth2 Sign-In
+function loginWithGoogle() {
+  // Redirect to backend OAuth2 authorization endpoint
+  window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+}
+
+// Handle OAuth2 callback (token in URL)
+function handleOAuth2Callback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  const username = urlParams.get('username');
+  const email = urlParams.get('email');
+
+  if (token && username && email) {
+    // Store authentication data
+    localStorage.setItem('token', token);
+    localStorage.setItem('username', username);
+    localStorage.setItem('email', email);
+
+    // Clean URL (remove query parameters)
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Update UI for logged-in user
+    updateUIForLoggedInUser();
+
+    // Show success message
+    showSuccess('Successfully signed in with Google!');
+  }
+}
+
+// Call OAuth2 callback handler on page load
+document.addEventListener('DOMContentLoaded', function() {
+  handleOAuth2Callback();
+});

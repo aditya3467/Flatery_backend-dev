@@ -9,8 +9,8 @@ html
 }
 :root
 {
-    --main-color:#0d61a6;
-    --color-main-2: #7cc8ff;
+    --main-color:#5B6EFF;
+    --color-main-2: #8896FF;
     --shadow-black-100:0 5px 15px rgba(0,0,0,0.2);
     --black-900:#000;
     --black-400:#646f87;
@@ -266,11 +266,15 @@ img
 
 {
     margin-left: 80px;
-    font-size: 24px;
-    color: var(--text-light);
-    font-weight: 700;
-    text-transform: capitalize;
-    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navbar .logo .logo-img {
+    height: 70px;
+    width: auto;
+    object-fit: contain;
 }
 
 .navbar .options{
@@ -1705,6 +1709,18 @@ img
     width: 50%;
     margin: 0 0.5rem;
     text-align: left;
+}
+
+.footer-details-col .footer-logo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.footer-details-col .footer-logo-img {
+    height: 100px;
+    width: auto;
+    object-fit: contain;
 }
 
 .footer .links{
