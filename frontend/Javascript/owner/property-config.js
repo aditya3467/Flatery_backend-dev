@@ -2,6 +2,7 @@
 function generateMockDues() {
   return [];
 }
+
 // Property Configuration Page Script
 let currentPropertyId = null;
 let propertyData = null;
@@ -17,50 +18,96 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   if (!currentPropertyId) {
     showAlert('error', 'No property selected');
-    setTimeout(() => window.location.href = '../owner-dashboard.html', 2000);
+    setTimeout(() => window.location.href = 'owner-dashboard.html', 2000);
     return;
   }
 
-  // Ensure authenticated and owner role
-  const ok = await ensureOwnerSession();
-  if (ok) {
+  try {
+    // Ensure authenticated and owner role
+    const ok = await ensureOwnerSession();
+    
+    if (!ok) {
+      return;
+    }
+    
     await loadPropertyConfig();
     setupNavigationHandlers();
+    
+  } catch (error) {
+    console.error('Error during initialization:', error);
+    showAlert('error', 'Failed to initialize page: ' + error.message);
   }
 });
 
+let navigationHandlersSetup = false;
+
 function setupNavigationHandlers() {
-  // Handle navigation between sections (sidebar only)
-  document.querySelectorAll('.config-sidebar .nav-item').forEach(item => {
-    item.addEventListener('click', function(e) {
-      const href = this.getAttribute('href') || '';
-      if (!href.startsWith('#')) return; // allow normal links
-      e.preventDefault();
-
-      // Remove active class from sidebar nav items
-      document.querySelectorAll('.config-sidebar .nav-item').forEach(nav => nav.classList.remove('active'));
-      this.classList.add('active');
-
-      // Show appropriate section
-      if (href === '#dashboard') {
-        showDashboardSection();
-      } else if (href === '#financial') {
-        showFinancialSection();
-      } else if (href === '#floors') {
-        showFloorsSection();
-      } else if (href === '#tenants') {
-        showTenantsSection();
-      } else if (href === '#payments') {
-        showPaymentsSection();
-      } else if (href === '#manage-payments') {
-        showManagePaymentsSection();
-      } else if (href === '#maintenance') {
-        showMaintenanceSection();
-      } else if (href === '#notices') {
-        showNoticesSection();
-      }
+  if (navigationHandlersSetup) {
+    console.log('Navigation handlers already setup, skipping');
+    return;
+  }
+  
+  const sidebar = document.querySelector('.config-sidebar');
+  
+  if (!sidebar) {
+    console.error('Navigation sidebar not found');
+    return;
+  }
+  
+  // Use event delegation on sidebar for navigation
+  sidebar.addEventListener('click', function(e) {
+    const navItem = e.target.closest('a.nav-item');
+    
+    if (!navItem) return;
+    
+    const href = navItem.getAttribute('href');
+    
+    if (!href || !href.startsWith('#')) return;
+    
+    e.preventDefault();
+    
+    // Remove active from all, add to clicked
+    sidebar.querySelectorAll('a.nav-item').forEach(item => {
+      item.classList.remove('active');
     });
+    navItem.classList.add('active');
+    
+    // Route to appropriate section
+    switch(href) {
+      case '#dashboard':
+        showDashboardSection();
+        break;
+      case '#financial':
+        showFinancialSection();
+        break;
+      case '#floors':
+        showFloorsSection();
+        break;
+      case '#tenants':
+        showTenantsSection();
+        break;
+      case '#payments':
+        showPaymentsSection();
+        break;
+      case '#manage-payments':
+        showManagePaymentsSection();
+        break;
+      case '#payment-settings':
+        showPaymentSettingsSection();
+        break;
+      case '#maintenance':
+        showMaintenanceSection();
+        break;
+      case '#notices':
+        showNoticesSection();
+        break;
+      case '#preferences':
+        showPreferencesSection();
+        break;
+    }
   });
+  
+  navigationHandlersSetup = true;
 }
 
 function showDashboardSection() {
@@ -70,17 +117,33 @@ function showDashboardSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
-  document.querySelector('.manage-payments-section').style.display = 'none';
-  document.querySelector('.maintenance-section').style.display = 'none';
-  document.querySelector('.notices-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   toggleTopMeta(false);
   loadDashboardData();
 }
 
 function showFinancialSection() {
   currentView = 'financial';
-  hideAllSections();
+  document.querySelector('.dashboard-section').style.display = 'none';
   document.querySelector('.financial-section').style.display = 'block';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   toggleTopMeta(false);
   loadFinancialData();
 }
@@ -102,7 +165,14 @@ function showFloorsSection() {
   document.querySelector('.floors-section').style.display = 'block';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
-  document.querySelector('.manage-payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   // Show top meta (title/filters/stats) in floors view
   toggleTopMeta(true);
 }
@@ -114,7 +184,14 @@ function showTenantsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'block';
   document.querySelector('.payments-section').style.display = 'none';
-  document.querySelector('.manage-payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   // Hide top meta (title/filters/stats) in tenants view
   toggleTopMeta(false);
   loadTenants();
@@ -127,17 +204,57 @@ function showPaymentsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'block';
-  document.querySelector('.manage-payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   // Hide top meta (title/filters/stats) in payments view
   toggleTopMeta(false);
-  // Load tenants first if not loaded, then load payments
-  if (!allTenants || allTenants.length === 0) {
-    loadTenants().then(() => {
-      loadPayments();
-    });
+  loadPayments();
+}
+
+function showPaymentSettingsSection() {
+  currentView = 'payment-settings';
+  
+  // Hide all sections
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  const noticesSection = document.querySelector('.notices-section');
+  
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  if (noticesSection) noticesSection.style.display = 'none';
+  
+  // Show payment settings section
+  if (paymentSettingsSection) {
+    paymentSettingsSection.style.display = 'block';
   } else {
-    loadPayments();
+    console.error('Payment settings section not found in DOM');
+    showAlert('error', 'Payment settings section not available');
+    return;
   }
+  
+  // Hide top meta
+  toggleTopMeta(false);
+  
+  // Load payment settings and setup form
+  loadPaymentSettings().catch(err => {
+    console.error('Error loading payment settings:', err);
+  });
+  
+  setupPaymentSettingsForm();
 }
 
 function showManagePaymentsSection() {
@@ -147,10 +264,57 @@ function showManagePaymentsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
-  document.querySelector('.manage-payments-section').style.display = 'block';
-  // Hide top meta (title/filters/stats) in manage payments view
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'block';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   toggleTopMeta(false);
-  loadPaymentSubmissions();
+}
+
+function showMaintenanceSection() {
+  currentView = 'maintenance';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'block';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
+  toggleTopMeta(false);
+}
+
+function showNoticesSection() {
+  currentView = 'notices';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'block';
+  toggleTopMeta(false);
+}
+
+function showPreferencesSection() {
+  currentView = 'preferences';
+  // Preferences section doesn't exist yet, show a placeholder
+  alert('Property Preferences section coming soon!');
 }
 
 // ========================================
@@ -564,6 +728,12 @@ function formatNumber(num) {
 
 async function ensureOwnerSession() {
   try {
+    if (typeof apiService === 'undefined') {
+      console.error('API Service not loaded');
+      showAlert('error', 'API Service not loaded. Please refresh the page.');
+      return false;
+    }
+    
     if (!apiService.isAuthenticated()) {
       showAlert('error', 'Please log in as an owner.');
       setTimeout(() => window.location.href = 'index.html', 2000);
@@ -573,7 +743,7 @@ async function ensureOwnerSession() {
     let roles = [];
     try { 
       roles = JSON.parse(localStorage.getItem('roles') || '[]'); 
-    } catch { 
+    } catch (e) { 
       roles = []; 
     }
     
@@ -599,16 +769,25 @@ async function ensureOwnerSession() {
 
 async function loadPropertyConfig() {
   try {
+    console.log('===== loadPropertyConfig STARTED =====');
+    
     // Load property details
+    console.log('Fetching property:', currentPropertyId);
     propertyData = await apiService.getMyProperty(currentPropertyId);
+    console.log('Property data received:', propertyData);
     
     // Guard: Only allow PG properties to access this page
     const pType = (propertyData?.type || '').toString().toUpperCase();
+    console.log('Property type:', pType);
+    
     if (pType !== 'PG') {
+      console.error('❌ Property is not PG type, aborting. Type is:', pType);
       showAlert('error', 'This configuration page is only for PG properties.');
-      setTimeout(() => window.location.href = '../owner-dashboard.html', 1800);
+      setTimeout(() => window.location.href = 'owner-dashboard.html', 1800);
       return;
     }
+    
+    console.log('✓ Property is PG type, continuing...');
     
     // Update UI with property name
     document.getElementById('propertyName').textContent = propertyData.name || 'Property';
@@ -618,20 +797,26 @@ async function loadPropertyConfig() {
     const firstName = localStorage.getItem('firstName') || 'Owner';
     document.getElementById('userName').textContent = firstName;
     
-  // Load floors and units from backend
-  await loadFloorsAndUnitsFromApi();
+    // Load floors and units from backend
+    console.log('Loading floors and units...');
+    await loadFloorsAndUnitsFromApi();
+    console.log('Floors and units loaded');
     
-  // Render the configuration
-  renderFloorsAndUnits();
-  updateStats();
-  populateFloorFilters();
-  
-  // Load dashboard by default
-  showDashboardSection();
+    // Render the configuration
+    renderFloorsAndUnits();
+    updateStats();
+    populateFloorFilters();
+    
+    // Load dashboard by default
+    console.log('Showing dashboard section...');
+    showDashboardSection();
+    
+    console.log('===== loadPropertyConfig COMPLETED SUCCESSFULLY =====');
     
   } catch (error) {
-    console.error('Failed to load property configuration:', error);
-    showAlert('error', 'Failed to load property configuration');
+    console.error('❌ Failed to load property configuration:', error);
+    console.error('Error stack:', error.stack);
+    showAlert('error', 'Failed to load property configuration: ' + error.message);
   }
 }
 
@@ -916,14 +1101,6 @@ function deleteFloor(floorNumber) {
 // Utility Functions
 function showAlert(type, message) {
   const alert = document.getElementById('alertMessage');
-  
-  if (!alert) {
-    console.error('Alert element not found, creating fallback');
-    // Fallback: just log to console
-    console.log(`[${type.toUpperCase()}] ${message}`);
-    return;
-  }
-  
   alert.className = `alert ${type}`;
   alert.textContent = message;
   alert.style.display = 'block';
@@ -962,7 +1139,7 @@ function renderTenants() {
         <i class="fas fa-users"></i>
         <h3>No Tenants Yet</h3>
         <p>Start by adding tenants to your property</p>
-        <button class="btn-primary" onclick="window.location.href='/frontend/owner/add-tenant.html?propertyId=${currentPropertyId}'">
+        <button class="btn-primary" onclick="window.location.href='add-tenant.html?propertyId=${currentPropertyId}'">
           <i class="fas fa-plus"></i> Add Tenant
         </button>
       </div>
@@ -1640,11 +1817,6 @@ async function loadTenants() {
         dues: tenant.pendingDues || tenant.dues || 0,
         unitId: tenant.unitId,
         bedId: tenant.bedId,
-        // Payment status fields
-        paymentStatus: tenant.paymentStatus || 'DUE',
-        isCurrentMonthPaid: tenant.isCurrentMonthPaid || false,
-        isOverdue: tenant.isOverdue || false,
-        nextDueDate: tenant.nextDueDate || null,
         // Additional fields for profile
         dateOfBirth: tenant.dateOfBirth || null,
         gender: tenant.gender || '-',
@@ -1663,11 +1835,6 @@ async function loadTenants() {
 
     renderTenantsTable(allTenants);
     
-    // If rent collection view is active, update it
-    if (currentView === 'payments') {
-      loadRentCollectionOverview();
-    }
-    
   } catch (error) {
     console.error('Failed to load tenants:', error);
     showAlert('error', 'Failed to load tenants');
@@ -1683,7 +1850,7 @@ function renderTenantsTable(tenants) {
   if (!tenants || tenants.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="10" class="no-data-row">
+        <td colspan="9" class="no-data-row">
           <i class="fas fa-users" style="font-size: 48px; color: #bdc3c7; margin-bottom: 10px;"></i>
           <div>No tenants found</div>
         </td>
@@ -1697,8 +1864,7 @@ function renderTenantsTable(tenants) {
     name: tenants[0].name,
     roomNumber: tenants[0].roomNumber,
     bedNumber: tenants[0].bedNumber,
-    checkInDate: tenants[0].checkInDate,
-    paymentStatus: tenants[0].paymentStatus
+    checkInDate: tenants[0].checkInDate
   });
 
   tbody.innerHTML = tenants.map(tenant => {
@@ -1706,14 +1872,7 @@ function renderTenantsTable(tenants) {
     const duesAmount = tenant.dues || 0;
     const duesClass = duesAmount === 0 ? 'zero' : 'pending';
     const initials = tenant.name ? tenant.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'T';
-    
-    // Payment status
-    const paymentStatus = tenant.paymentStatus || 'DUE';
-    const paymentStatusClass = paymentStatus === 'PAID' ? 'paid' : paymentStatus === 'OVERDUE' ? 'overdue' : 'due';
-    const paymentStatusIcon = paymentStatus === 'PAID' ? '✓' : paymentStatus === 'OVERDUE' ? '!' : '⏱';
-    
-    // Next due date
-    const nextDueDate = tenant.nextDueDate ? formatDate(tenant.nextDueDate) : '-';
+    // ...existing code...
     
     return `
       <tr>
@@ -1732,16 +1891,11 @@ function renderTenantsTable(tenants) {
         <td>${tenant.checkInDate ? formatDate(tenant.checkInDate) : '-'}</td>
         <td><strong>₹${(tenant.rent || 0).toLocaleString()}</strong></td>
         <td><span class="status-badge ${statusClass}">${tenant.status || 'Active'}</span></td>
-        <td><span class="payment-status-badge ${paymentStatusClass}">${paymentStatusIcon} ${paymentStatus}</span></td>
-        <td><span class="next-due-date">${nextDueDate}</span></td>
+        <td><span class="dues-amount ${duesClass}">₹${duesAmount.toLocaleString()}</span></td>
         <td>
           <div class="action-buttons">
             <button class="action-btn view" onclick="viewTenantProfile(${tenant.id})">
               <i class="fas fa-eye"></i> View
-            </button>
-            
-            <button class="action-btn edit" onclick="openEditTenantModal(${tenant.id})" style="background: #3498db; color: white;">
-              <i class="fas fa-edit"></i> Edit
             </button>
             
             <button class="action-btn remove" onclick="confirmRemoveTenant(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}')">
@@ -2121,7 +2275,6 @@ function generateAgreement() {
 // Download rent receipts
 function downloadRentReceipts() {
   alert('Rent receipts download functionality will be implemented with backend integration');
-  console.log('Downloading rent receipts for tenant:', currentTenantId);
 }
 
 // Download individual receipt
@@ -2203,205 +2356,33 @@ let rentCollectionChart = null;
 // Load and display payments
 async function loadPayments() {
   try {
-    // Load rent collection overview using tenant payment status
-    loadRentCollectionOverview();
+    // Generate mock payment data for now
+    allPayments = generateMockPayments();
+    
+    // Update widgets
+    updatePaymentWidgets();
+    
+    // Populate room filter
+    populateRoomFilter();
+    
+    // Render chart
+    renderRentCollectionChart('6months');
+    
+    // Render table
+    renderPaymentsTable(allPayments);
     
     // Populate tenant dropdown in add payment modal
     populateTenantDropdown();
     
-    console.log('Loaded rent collection overview');
+    // Set default date to today
+    document.getElementById('paymentDate').valueAsDate = new Date();
+    
+    console.log('Loaded payments:', allPayments.length);
     
   } catch (error) {
     console.error('Failed to load payments:', error);
     showAlert('error', 'Failed to load payments');
   }
-}
-
-// Load rent collection overview and categorize tenants
-function loadRentCollectionOverview() {
-  console.log('Loading rent collection overview, tenants:', allTenants ? allTenants.length : 0);
-  
-  if (!allTenants || allTenants.length === 0) {
-    console.log('No tenants loaded yet');
-    // Update stats with zeros
-    updateCollectionStats(0, 0, 0, 0, 0);
-    // Show empty state for all categories
-    renderTenantCategory('overdueTenantsContainer', [], 'overdue');
-    renderTenantCategory('dueTodayContainer', [], 'due-today');
-    renderTenantCategory('dueWeekContainer', [], 'due-week');
-    renderTenantCategory('upcomingContainer', [], 'upcoming');
-    renderTenantCategory('paidContainer', [], 'paid');
-    // Update counts
-    document.getElementById('overdueCount').textContent = 0;
-    document.getElementById('dueTodayCount').textContent = 0;
-    document.getElementById('dueWeekCount').textContent = 0;
-    document.getElementById('upcomingCount').textContent = 0;
-    document.getElementById('paidCount').textContent = 0;
-    return;
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const weekFromNow = new Date(today);
-  weekFromNow.setDate(weekFromNow.getDate() + 7);
-  
-  const monthFromNow = new Date(today);
-  monthFromNow.setDate(monthFromNow.getDate() + 30);
-
-  // Categorize tenants
-  const overdueTenants = [];
-  const dueTodayTenants = [];
-  const dueWeekTenants = [];
-  const upcomingTenants = [];
-  const paidTenants = [];
-
-  let totalExpected = 0;
-  let totalCollected = 0;
-  let totalPending = 0;
-  let totalOverdue = 0;
-
-  console.log('Sample tenant data:', allTenants[0]);
-  
-  allTenants.forEach(tenant => {
-    const rent = tenant.rent || 0;
-    totalExpected += rent;
-
-    if (tenant.paymentStatus === 'PAID') {
-      totalCollected += rent;
-      paidTenants.push(tenant);
-    } else if (tenant.isOverdue) {
-      totalOverdue += rent;
-      overdueTenants.push(tenant);
-    } else if (tenant.nextDueDate) {
-      const dueDate = new Date(tenant.nextDueDate);
-      dueDate.setHours(0, 0, 0, 0);
-
-      if (dueDate.getTime() === today.getTime()) {
-        totalPending += rent;
-        dueTodayTenants.push(tenant);
-      } else if (dueDate <= weekFromNow) {
-        totalPending += rent;
-        dueWeekTenants.push(tenant);
-      } else if (dueDate <= monthFromNow) {
-        totalPending += rent;
-        upcomingTenants.push(tenant);
-      }
-    }
-  });
-
-  // Log categorization results
-  console.log('Rent Collection Summary:', {
-    total: allTenants.length,
-    overdue: overdueTenants.length,
-    dueToday: dueTodayTenants.length,
-    dueWeek: dueWeekTenants.length,
-    upcoming: upcomingTenants.length,
-    paid: paidTenants.length,
-    totalExpected,
-    totalCollected,
-    totalPending,
-    totalOverdue
-  });
-
-  // Update overview stats
-  updateCollectionStats(totalExpected, totalCollected, totalPending, totalOverdue, allTenants.length);
-
-  // Render tenant categories
-  renderTenantCategory('overdueTenantsContainer', overdueTenants, 'overdue');
-  renderTenantCategory('dueTodayContainer', dueTodayTenants, 'due-today');
-  renderTenantCategory('dueWeekContainer', dueWeekTenants, 'due-week');
-  renderTenantCategory('upcomingContainer', upcomingTenants, 'upcoming');
-  renderTenantCategory('paidContainer', paidTenants, 'paid');
-
-  // Update counts
-  document.getElementById('overdueCount').textContent = overdueTenants.length;
-  document.getElementById('dueTodayCount').textContent = dueTodayTenants.length;
-  document.getElementById('dueWeekCount').textContent = dueWeekTenants.length;
-  document.getElementById('upcomingCount').textContent = upcomingTenants.length;
-  document.getElementById('paidCount').textContent = paidTenants.length;
-  
-  console.log('Rent collection overview loaded successfully');
-}
-
-// Update collection overview stats
-function updateCollectionStats(expected, collected, pending, overdue, totalTenants) {
-  document.getElementById('totalExpectedRent').textContent = `₹${expected.toLocaleString()}`;
-  document.getElementById('totalTenantsCount').textContent = `${totalTenants} tenants`;
-  
-  document.getElementById('totalCollectedRent').textContent = `₹${collected.toLocaleString()}`;
-  const collectionPercentage = expected > 0 ? Math.round((collected / expected) * 100) : 0;
-  document.getElementById('collectedPercentage').textContent = `${collectionPercentage}%`;
-  
-  document.getElementById('totalPendingRent').textContent = `₹${pending.toLocaleString()}`;
-  const pendingCount = allTenants.filter(t => t.paymentStatus !== 'PAID' && !t.isOverdue).length;
-  document.getElementById('pendingTenantsCount').textContent = `${pendingCount} tenants`;
-  
-  document.getElementById('totalOverdueRent').textContent = `₹${overdue.toLocaleString()}`;
-  const overdueCount = allTenants.filter(t => t.isOverdue).length;
-  document.getElementById('overdueTenantsCount').textContent = `${overdueCount} tenants`;
-}
-
-// Render tenant category with tenant cards
-function renderTenantCategory(containerId, tenants, categoryType) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  if (tenants.length === 0) {
-    container.innerHTML = '<div class="no-data-message">No tenants in this category</div>';
-    return;
-  }
-
-  let html = '';
-  tenants.forEach(tenant => {
-    const dueDate = tenant.nextDueDate ? new Date(tenant.nextDueDate).toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
-    }) : 'N/A';
-
-    const statusClass = tenant.paymentStatus ? tenant.paymentStatus.toLowerCase() : 'due';
-    const statusText = tenant.paymentStatus || 'DUE';
-
-    html += `
-      <div class="tenant-card ${categoryType}">
-        <div class="tenant-card-header">
-          <div class="tenant-info">
-            <h4>${tenant.name}</h4>
-            <span class="tenant-location">
-              <i class="fas fa-door-open"></i> Room ${tenant.roomNumber || 'N/A'} 
-              ${tenant.bedNumber ? `• Bed ${tenant.bedNumber}` : ''}
-            </span>
-          </div>
-          <span class="payment-status-badge ${statusClass}">${statusText}</span>
-        </div>
-        <div class="tenant-card-body">
-          <div class="tenant-card-row">
-            <span class="label"><i class="fas fa-rupee-sign"></i> Rent Amount:</span>
-            <span class="value">₹${(tenant.rent || 0).toLocaleString()}</span>
-          </div>
-          <div class="tenant-card-row">
-            <span class="label"><i class="fas fa-calendar"></i> ${categoryType === 'paid' ? 'Paid' : 'Due Date'}:</span>
-            <span class="value ${tenant.isOverdue ? 'overdue-text' : ''}">${dueDate}</span>
-          </div>
-          <div class="tenant-card-row">
-            <span class="label"><i class="fas fa-phone"></i> Contact:</span>
-            <span class="value">${tenant.phone || 'N/A'}</span>
-          </div>
-        </div>
-        <div class="tenant-card-footer">
-          <button class="btn-small primary" onclick="sendPaymentReminder(${tenant.id})">
-            <i class="fas fa-bell"></i> Send Reminder
-          </button>
-          <button class="btn-small secondary" onclick="viewTenantDetails(${tenant.id})">
-            <i class="fas fa-eye"></i> View Details
-          </button>
-        </div>
-      </div>
-    `;
-  });
-
-  container.innerHTML = html;
 }
 
 // Generate mock payment data
@@ -2778,703 +2759,226 @@ function downloadReceiptPDF() {
   alert('PDF download functionality will be implemented with backend integration');
 }
 
+// ========================================
+// PAYMENT SETTINGS FUNCTIONS
+// ========================================
+
+let currentQRFile = null;
+
+// Setup payment settings form handler
+function setupPaymentSettingsForm() {
+  console.log('Setting up payment settings form');
+  const form = document.getElementById('paymentSettingsForm');
+  if (!form) {
+    console.warn('Payment settings form not found');
+    return;
+  }
+  
+  // Remove any existing listeners
+  const newForm = form.cloneNode(true);
+  form.parentNode.replaceChild(newForm, form);
+  
+  // Add submit handler
+  newForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    await savePaymentSettings();
+  });
+  console.log('Payment settings form setup complete');
+}
+
+// Load payment settings from API
+async function loadPaymentSettings() {
+  try {
+    const data = await apiService.get('/owner-payment-info');
+    if (data) {
+      populatePaymentSettingsForm(data);
+    } else {
+      clearPaymentSettingsForm();
+    }
+  } catch (error) {
+    if (error.status === 204) {
+      // No content - user hasn't set up payment info yet
+      console.log('No payment info found - showing empty form');
+      clearPaymentSettingsForm();
+    } else {
+      console.error('Error loading payment settings:', error);
+      showAlert('error', 'Error loading payment settings: ' + (error.message || 'Unknown error'));
+    }
+  }
+}
+
+// Populate form with existing data
+function populatePaymentSettingsForm(data) {
+  document.getElementById('upiId').value = data.upiId || '';
+  document.getElementById('preferredMode').value = data.preferredMode || '';
+  document.getElementById('isActive').checked = data.isActive !== false;
+  
+  // Show QR code if exists
+  if (data.qrImageUrl) {
+    document.getElementById('qrImage').src = data.qrImageUrl;
+    document.getElementById('qrImage').style.display = 'block';
+    document.getElementById('qrPlaceholder').style.display = 'none';
+    document.getElementById('removeQRBtn').style.display = 'block';
+  } else {
+    clearQRPreview();
+  }
+}
+
+// Clear form
+function clearPaymentSettingsForm() {
+  document.getElementById('upiId').value = '';
+  document.getElementById('preferredMode').value = '';
+  document.getElementById('isActive').checked = true;
+  clearQRPreview();
+}
+
+// Clear QR preview
+function clearQRPreview() {
+  document.getElementById('qrImage').style.display = 'none';
+  document.getElementById('qrImage').src = '';
+  document.getElementById('qrPlaceholder').style.display = 'flex';
+  document.getElementById('removeQRBtn').style.display = 'none';
+  currentQRFile = null;
+}
+
+// Handle QR code upload
+async function handleQRUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showAlert('error', 'Please upload an image file');
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showAlert('error', 'File size must be less than 5MB');
+    return;
+  }
+
+  // Store file for later upload
+  currentQRFile = file;
+
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('qrImage').src = e.target.result;
+    document.getElementById('qrImage').style.display = 'block';
+    document.getElementById('qrPlaceholder').style.display = 'none';
+    document.getElementById('removeQRBtn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Remove QR code
+function removeQRCode() {
+  clearQRPreview();
+  document.getElementById('qrCodeUpload').value = '';
+}
+
+// Save payment settings
+async function savePaymentSettings() {
+  try {
+    const upiId = document.getElementById('upiId').value.trim();
+    const preferredMode = document.getElementById('preferredMode').value;
+    const isActive = document.getElementById('isActive').checked;
+
+    // Validate UPI ID if provided
+    if (upiId && !validateUpiId(upiId)) {
+      showAlert('error', 'Please enter a valid UPI ID (e.g., username@paytm)');
+      return;
+    }
+
+    // Upload QR code if user selected a new file
+    if (currentQRFile) {
+      console.log('Uploading QR code to S3...');
+      const qrImageUrl = await uploadQRCode(currentQRFile);
+      if (!qrImageUrl) {
+        showAlert('error', 'Failed to upload QR code. Please try again.');
+        return;
+      }
+      console.log('QR code uploaded successfully:', qrImageUrl);
+      // QR URL is now saved to database by the upload endpoint, no need to send it again
+    }
+
+    // Prepare payload - don't send qrImageUrl, backend already updated it
+    const payload = {
+      upiId: upiId || null,
+      preferredMode: preferredMode || null,
+      isActive: isActive
+    };
+
+    // Save to API using apiService
+    const result = await apiService.post('/owner-payment-info', payload);
+    showAlert('success', 'Payment settings saved successfully!');
+    currentQRFile = null;
+    // Reload to show saved data
+    await loadPaymentSettings();
+  } catch (error) {
+    console.error('Error saving payment settings:', error);
+    showAlert('error', error.message || 'Error saving payment settings');
+  }
+}
+
+// Upload QR code image
+async function uploadQRCode(file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Use the same token key as apiService
+    const token = localStorage.getItem('authToken');
+    
+    // Validate token exists and is not null
+    if (!token || token === 'null' || token === 'undefined') {
+      console.error('No valid authentication token found!');
+      console.log('Token value:', token);
+      throw new Error('Authentication required. Please log in again.');
+    }
+    
+    console.log('Token exists:', !!token);
+    console.log('Token preview:', token.substring(0, 20) + '...');
+
+    // Use the owner-payment-info QR upload endpoint
+    const response = await fetch(`${apiService.baseURL}/owner-payment-info/upload-qr`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+        // Note: Don't set Content-Type for FormData - browser sets it automatically with boundary
+      },
+      body: formData
+    });
+
+    console.log('Upload response status:', response.status);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Upload result:', result);
+      return result.url;
+    } else {
+      const errorText = await response.text();
+      console.error('Failed to upload QR code:', response.status, errorText);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error uploading QR code:', error);
+    throw error; // Propagate error so savePaymentSettings can show it to user
+  }
+}
+
+// Validate UPI ID format
+function validateUpiId(upiId) {
+  // Basic UPI ID format: username@bank
+  const upiPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z]+$/;
+  return upiPattern.test(upiId);
+}
+
+
 // Download payment report
 function downloadPaymentReport() {
   alert('Payment report download functionality will be implemented with backend integration');
-}
-
-// Send payment reminder to tenant
-function sendPaymentReminder(tenantId) {
-  const tenant = allTenants.find(t => t.id === tenantId);
-  if (!tenant) {
-    showAlert('error', 'Tenant not found');
-    return;
-  }
-  
-  // TODO: Implement SMS/Email reminder via backend API
-  showAlert('success', `Payment reminder sent to ${tenant.name}`);
-  console.log('Sending reminder to tenant:', tenantId, tenant.name);
-}
-
-// View tenant details (reuse existing function)
-function viewTenantDetails(tenantId) {
-  const tenant = allTenants.find(t => t.id === tenantId);
-  if (!tenant) {
-    showAlert('error', 'Tenant not found');
-    return;
-  }
-  
-  // Open tenant detail modal (if exists) or show info
-  openTenantModal(tenant);
-}
-
-// ===============================================
-// MANAGE PAYMENT SUBMISSIONS (TENANT SUBMISSIONS)
-// ===============================================
-
-// Mock data for payment submissions (will be replaced with API calls when backend is ready)
-let paymentSubmissions = [
-  {
-    id: 1,
-    tenantName: 'Amit Kumar',
-    unit: '101',
-    rentMonth: 'November 2024',
-    amount: 8500,
-    paymentMode: 'UPI',
-    dateSubmitted: '2024-11-10',
-    status: 'PENDING',
-    proofUrl: 'proof1.jpg',
-    tenantRemark: 'Paid via PhonePe'
-  },
-  {
-    id: 2,
-    tenantName: 'Rajesh Sharma',
-    unit: '102',
-    rentMonth: 'November 2024',
-    amount: 9000,
-    paymentMode: 'BANK_TRANSFER',
-    dateSubmitted: '2024-11-08',
-    status: 'VERIFIED',
-    proofUrl: 'proof2.jpg',
-    tenantRemark: 'NEFT Transfer',
-    approvedDate: '2024-11-08'
-  },
-  {
-    id: 3,
-    tenantName: 'Priya Singh',
-    unit: '103',
-    rentMonth: 'November 2024',
-    amount: 7500,
-    paymentMode: 'CASH',
-    dateSubmitted: '2024-11-05',
-    status: 'REJECTED',
-    proofUrl: 'proof3.jpg',
-    tenantRemark: 'Paid to security guard',
-    rejectionRemark: 'Payment not received in account'
-  }
-];
-
-// Load payment submissions
-async function loadPaymentSubmissions() {
-  console.log('Loading payment submissions from API...');
-
-  try {
-    // Fetch all submissions from backend (owner view)
-    const submissions = await apiService.getOwnerAllPayments();
-    console.log('Raw API response:', submissions);
-
-    // Normalize response if needed - backend expected to return array of transactions
-    const rawSubmissions = Array.isArray(submissions) ? submissions : (submissions.items || []);
-
-    // Map backend TransactionResponseDto to frontend format
-    paymentSubmissions = rawSubmissions.map(tx => ({
-      id: tx.id,
-      tenantId: tx.tenantId,
-      // Use real tenant name and unit from backend
-      tenantName: tx.tenantName || `Tenant ${tx.tenantId}`,
-      unit: tx.unitNumber || 'N/A',
-      rentMonth: tx.paymentMonth,
-      amount: tx.amount || 0,
-      paymentMode: tx.paymentMode || 'UPI',
-      dateSubmitted: tx.paymentDate || new Date().toISOString().split('T')[0],
-      status: tx.status || 'PENDING',
-      proofUrl: tx.screenshotUrl || '',
-      tenantRemark: tx.upiRef ? `Ref: ${tx.upiRef}` : '',
-      rejectionRemark: '',
-      approvedDate: tx.status === 'VERIFIED' ? tx.paymentDate : null
-    }));
-
-    console.log('Mapped submissions:', paymentSubmissions);
-
-    // Update stats and render
-    updatePaymentSubmissionStats();
-    renderPaymentSubmissions(paymentSubmissions);
-  } catch (err) {
-    console.error('Failed to load payment submissions from API:', err);
-    showAlert('error', 'Failed to load payment submissions');
-
-    // Fallback to existing mock data rendering so UI isn't empty
-    updatePaymentSubmissionStats();
-    renderPaymentSubmissions(paymentSubmissions);
-  }
-}
-
-// Update stats cards
-function updatePaymentSubmissionStats() {
-  const pending = paymentSubmissions.filter(s => s.status === 'PENDING').length;
-  const approved = paymentSubmissions.filter(s => s.status === 'VERIFIED' || s.status === 'APPROVED').length;
-  const rejected = paymentSubmissions.filter(s => s.status === 'REJECTED').length;
-  const totalAmount = paymentSubmissions
-    .filter(s => s.status === 'PENDING')
-    .reduce((sum, s) => sum + (s.amount || 0), 0);
-  
-  document.getElementById('pendingSubmissionsCount').textContent = pending;
-  document.getElementById('approvedSubmissionsCount').textContent = approved;
-  document.getElementById('rejectedSubmissionsCount').textContent = rejected;
-  document.getElementById('totalSubmittedAmount').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
-}
-
-// Render payment submissions table
-function renderPaymentSubmissions(submissions) {
-  const tbody = document.getElementById('paymentSubmissionsTableBody');
-  
-  if (submissions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="no-data-row">No payment submissions found</td></tr>';
-    return;
-  }
-  
-  tbody.innerHTML = submissions.map(sub => {
-    const daysAgo = getDaysAgo(sub.dateSubmitted);
-    const statusBadge = getStatusBadge(sub.status);
-    const modeBadge = getPaymentModeBadge(sub.paymentMode);
-    const actions = getActionButtons(sub);
-    
-    return `
-      <tr>
-        <td>
-          <div class="tenant-info-simple">
-            <div>
-              <strong>${sub.tenantName}</strong>
-              <small>${sub.unit || ''}</small>
-            </div>
-          </div>
-        </td>
-        <td>${sub.rentMonth}</td>
-        <td><strong>₹${sub.amount.toLocaleString('en-IN')}</strong></td>
-        <td>${modeBadge}</td>
-        <td>
-          <div class="date-info">
-            <div>${formatDate(sub.dateSubmitted)}</div>
-            <small>${daysAgo}</small>
-          </div>
-        </td>
-        <td>${statusBadge}</td>
-        <td>
-          <button class="btn-icon" onclick="viewPaymentProof('${sub.proofUrl}')" title="View Proof">
-            <i class="fas fa-image"></i>
-          </button>
-        </td>
-        <td>
-          <div class="tenant-remark">
-            <small>${sub.tenantRemark || '-'}</small>
-          </div>
-        </td>
-        <td>${actions}</td>
-      </tr>
-    `;
-  }).join('');
-}
-
-// Get status badge HTML
-function getStatusBadge(status) {
-  const badges = {
-    'PENDING': '<span class="status-badge pending">Pending</span>',
-    'VERIFIED': '<span class="status-badge approved">Approved</span>',
-    'APPROVED': '<span class="status-badge approved">Approved</span>',
-    'REJECTED': '<span class="status-badge rejected">Rejected</span>'
-  };
-  return badges[status] || `<span class="status-badge">${status}</span>`;
-}
-
-// Get payment mode badge HTML
-function getPaymentModeBadge(mode) {
-  const modeMap = {
-    'UPI': 'upi',
-    'BANK_TRANSFER': 'bank',
-    'CASH': 'cash',
-    'CARD': 'card'
-  };
-  const modeText = {
-    'UPI': 'UPI',
-    'BANK_TRANSFER': 'Bank Transfer',
-    'CASH': 'Cash',
-    'CARD': 'Card'
-  };
-  const cssClass = modeMap[mode] || 'upi';
-  return `<span class="payment-mode-badge ${cssClass}">${modeText[mode] || mode}</span>`;
-}
-
-// Get action buttons HTML
-function getActionButtons(submission) {
-  if (submission.status === 'PENDING') {
-    return `
-      <div class="action-buttons">
-        <button class="btn btn-success btn-sm" onclick="approvePaymentSubmission(${submission.id})" title="Approve Payment">
-          <i class="fas fa-check"></i> Approve
-        </button>
-        <button class="btn btn-danger btn-sm" onclick="openRejectModal(${submission.id})" title="Reject Payment">
-          <i class="fas fa-times"></i> Reject
-        </button>
-      </div>
-    `;
-  } else if (submission.status === 'VERIFIED' || submission.status === 'APPROVED') {
-    return `<div class="action-buttons"><span class="action-completed">✓ Approved</span></div>`;
-  } else if (submission.status === 'REJECTED') {
-    return `<div class="action-buttons"><span class="action-rejected">✗ Rejected</span></div>`;
-  }
-  return '';
-}
-
-// Approve payment submission
-let currentApprovalSubmissionId = null;
-
-async function approvePaymentSubmission(submissionId) {
-  console.log('=== approvePaymentSubmission called ===');
-  console.log('Submission ID:', submissionId);
-  
-  // Store the submission ID and find the submission details
-  currentApprovalSubmissionId = submissionId;
-  const submission = paymentSubmissions.find(s => s.id === submissionId);
-  
-  console.log('Found submission:', submission);
-  
-  if (!submission) {
-    showAlert('error', 'Payment submission not found');
-    return;
-  }
-
-  // Populate modal with payment details
-  const detailsHtml = `
-    <div class="detail-row">
-      <span class="detail-label">Tenant:</span>
-      <span class="detail-value"><strong>${submission.tenantName}</strong></span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Unit:</span>
-      <span class="detail-value">${submission.unit}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Amount:</span>
-      <span class="detail-value"><strong>₹${submission.amount.toLocaleString('en-IN')}</strong></span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Payment Month:</span>
-      <span class="detail-value">${submission.rentMonth}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Payment Mode:</span>
-      <span class="detail-value">${submission.paymentMode}</span>
-    </div>
-    ${submission.tenantRemark ? `
-    <div class="detail-row">
-      <span class="detail-label">Remark:</span>
-      <span class="detail-value">${submission.tenantRemark}</span>
-    </div>
-    ` : ''}
-  `;
-  
-  document.getElementById('approvePaymentDetails').innerHTML = detailsHtml;
-  document.getElementById('approvePaymentModal').style.display = 'block';
-  console.log('Modal opened');
-}
-
-// Close approve modal
-function closeApproveModal() {
-  document.getElementById('approvePaymentModal').style.display = 'none';
-  currentApprovalSubmissionId = null;
-}
-
-// Confirm approval and call API
-async function confirmApprovePayment() {
-  console.log('=== confirmApprovePayment called ===');
-  console.log('currentApprovalSubmissionId:', currentApprovalSubmissionId);
-  
-  if (!currentApprovalSubmissionId) {
-    showAlert('error', 'No payment selected');
-    return;
-  }
-
-  const submissionId = currentApprovalSubmissionId;
-  console.log('Approving submission ID:', submissionId);
-
-  try {
-    closeApproveModal();
-    showAlert('info', 'Approving payment...');
-
-    // Call backend to verify/approve
-    console.log('Calling API: verifyPaymentSubmission with ID:', submissionId);
-    const response = await apiService.verifyPaymentSubmission(submissionId);
-    console.log('API response:', response);
-
-    // Update local state optimistically (backend uses VERIFIED for approved)
-    const submission = paymentSubmissions.find(s => s.id === submissionId);
-    console.log('Found submission in local state:', submission);
-    
-    if (submission) {
-      submission.status = 'VERIFIED';
-      submission.approvedDate = new Date().toISOString().split('T')[0];
-      console.log('Updated submission status to VERIFIED');
-    }
-
-    // Create notification for tenant if tenantId available
-    try {
-      const tenantId = submission?.tenantId;
-      if (tenantId) {
-        await apiService.createNotification({
-          userId: tenantId,
-          type: 'PaymentApproved',
-          title: 'Payment Approved',
-          message: `Your payment has been approved by the owner.`,
-          redirectUrl: '/frontend/tenant-dashboard.html#payments'
-        });
-      }
-    } catch (nerr) {
-      console.warn('Failed to create notification after approval:', nerr);
-    }
-
-    showAlert('success', 'Payment approved successfully');
-    // Refresh list from server to get canonical state
-    await loadPaymentSubmissions();
-  } catch (err) {
-    console.error('Error approving payment:', err);
-    showAlert('error', err.message || 'Failed to approve payment');
-  }
-}
-
-// Open reject modal
-function openRejectModal(submissionId) {
-  document.getElementById('rejectSubmissionId').value = submissionId;
-  document.getElementById('rejectionRemark').value = '';
-  document.getElementById('rejectPaymentModal').style.display = 'block';
-}
-
-// Close reject modal
-function closeRejectModal() {
-  document.getElementById('rejectPaymentModal').style.display = 'none';
-}
-
-// Handle reject payment form submission
-async function handleRejectPayment(event) {
-  event.preventDefault();
-  
-  const submissionId = parseInt(document.getElementById('rejectSubmissionId').value);
-  const remark = document.getElementById('rejectionRemark').value.trim();
-  
-  if (remark.length < 10) {
-    showAlert('error', 'Rejection reason must be at least 10 characters');
-    return;
-  }
-  
-  console.log('Rejecting submission:', submissionId, 'Reason:', remark);
-  try {
-    showAlert('info', 'Rejecting payment...');
-
-    // Call backend reject API
-    await apiService.rejectPaymentSubmission(submissionId, remark);
-
-    // Update local state optimistically
-    const submission = paymentSubmissions.find(s => s.id === submissionId || s.transactionId === submissionId);
-    if (submission) {
-      submission.status = 'REJECTED';
-      submission.rejectionRemark = remark;
-    }
-
-    // Notify tenant
-    try {
-      const tenantId = submission?.tenantId || submission?.userId;
-      if (tenantId) {
-        await apiService.createNotification({
-          userId: tenantId,
-          type: 'PaymentRejected',
-          title: 'Payment Rejected',
-          message: `Your payment was rejected. Reason: ${remark}`,
-          redirectUrl: '/frontend/tenant-dashboard.html#payments'
-        });
-      }
-    } catch (nerr) {
-      console.warn('Failed to create notification after rejection:', nerr);
-    }
-
-    showAlert('success', 'Payment rejected and tenant notified');
-    closeRejectModal();
-    await loadPaymentSubmissions();
-  } catch (err) {
-    console.error('Failed to reject payment:', err);
-    showAlert('error', err.message || 'Failed to reject payment');
-  }
-}
-
-// View payment proof
-function viewPaymentProof(proofUrl) {
-  console.log('Viewing proof:', proofUrl);
-  
-  const img = document.getElementById('proofImage');
-  
-  // If proofUrl is absolute (http/https) use as-is, otherwise prepend API base
-  if (proofUrl.startsWith('http://') || proofUrl.startsWith('https://')) {
-    img.src = proofUrl;
-  } else if (proofUrl.startsWith('/uploads/')) {
-    // Backend returns relative path like /uploads/payment-proofs/payment-xxx.jpg
-    img.src = API_BASE_URL.replace('/api', '') + proofUrl;
-  } else {
-    img.src = proofUrl;
-  }
-  
-  img.alt = 'Payment Proof';
-  img.onerror = function() {
-    console.error('Failed to load image:', proofUrl);
-    img.src = 'https://via.placeholder.com/600x800?text=Image+Not+Found';
-  };
-  
-  document.getElementById('viewProofModal').style.display = 'block';
-}
-
-// Close proof modal
-function closeProofModal() {
-  document.getElementById('viewProofModal').style.display = 'none';
-}
-
-// Download proof
-function downloadProof() {
-  const img = document.getElementById('proofImage');
-  const link = document.createElement('a');
-  link.href = img.src;
-  link.download = 'payment-proof.jpg';
-  link.click();
-  
-  showAlert('success', 'Proof downloaded successfully');
-}
-
-// Open proof in new tab
-function openProofInNewTab() {
-  const img = document.getElementById('proofImage');
-  window.open(img.src, '_blank');
-}
-
-// Filter payment submissions
-function filterPaymentSubmissions() {
-  const statusFilter = document.getElementById('submissionStatusFilter').value;
-  const monthFilter = document.getElementById('submissionMonthFilter').value;
-  const searchTerm = document.getElementById('submissionTenantSearch').value.toLowerCase();
-  
-  let filtered = paymentSubmissions;
-  
-  // Filter by status
-  if (statusFilter) {
-    filtered = filtered.filter(s => s.status === statusFilter);
-  }
-  
-  // Filter by month
-  if (monthFilter) {
-    filtered = filtered.filter(s => {
-      // monthFilter format: "11-2024"
-      const [month, year] = monthFilter.split('-');
-      return s.rentMonth.includes(getMonthName(parseInt(month))) && s.rentMonth.includes(year);
-    });
-  }
-  
-  // Filter by search term
-  if (searchTerm) {
-    filtered = filtered.filter(s => 
-      s.tenantName.toLowerCase().includes(searchTerm) ||
-      s.room.toLowerCase().includes(searchTerm) ||
-      s.bed.toLowerCase().includes(searchTerm)
-    );
-  }
-  
-  renderPaymentSubmissions(filtered);
-}
-
-// Refresh payment submissions
-function refreshPaymentSubmissions() {
-  showAlert('info', 'Refreshing payment submissions...');
-  loadPaymentSubmissions();
-  // TODO: When backend is ready, fetch from API
-  // const submissions = await apiService.getPaymentSubmissions(currentPropertyId);
-  // paymentSubmissions = submissions;
-  // renderPaymentSubmissions(paymentSubmissions);
-}
-
-// Export payment submissions
-function exportPaymentSubmissions() {
-  showAlert('info', 'Export functionality will be implemented with backend integration');
-  // TODO: Implement CSV/Excel export
-}
-
-// Utility: Get days ago text
-function getDaysAgo(dateString) {
-  const date = new Date(dateString);
-  const today = new Date();
-  const diffTime = Math.abs(today - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  return `${diffDays} days ago`;
-}
-
-// Utility: Format date
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = date.toLocaleString('en-US', { month: 'short' });
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
-}
-
-// Utility: Get month name
-function getMonthName(monthNum) {
-  const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'];
-  return months[monthNum - 1];
-}
-
-
-// ===================== MAINTENANCE SECTION =====================
-
-function showMaintenanceSection() {
-  currentView = 'maintenance';
-  hideAllSections();
-  document.querySelector('.maintenance-section').style.display = 'block';
-  toggleTopMeta(false);
-  loadMaintenanceData();
-}
-
-function showNoticesSection() {
-  currentView = 'notices';
-  hideAllSections();
-  document.querySelector('.notices-section').style.display = 'block';
-  toggleTopMeta(false);
-  // Notice functionality to be implemented
-}
-
-function hideAllSections() {
-  const sections = [
-    '.dashboard-section',
-    '.financial-section',
-    '.floors-section',
-    '.tenants-section',
-    '.payments-section',
-    '.manage-payments-section',
-    '.maintenance-section',
-    '.notices-section'
-  ];
-  
-  sections.forEach(selector => {
-    const element = document.querySelector(selector);
-    if (element) element.style.display = 'none';
-  });
-}
-
-async function loadMaintenanceData() {
-  try {
-    // Load complaint statistics
-    const stats = await complaintManager.getComplaintStats();
-    complaintManager.renderComplaintStats(stats, '');
-    
-    // Load complaints list
-    await loadOwnerComplaints();
-    
-  } catch (error) {
-    console.error('Error loading maintenance data:', error);
-    showAlert('error', 'Failed to load maintenance data');
-  }
-}
-
-async function loadOwnerComplaints() {
-  try {
-    const complaints = await complaintManager.getComplaints();
-    complaintManager.renderComplaintsTable(complaints, 'complaintsTableBody');
-    
-    // Update complaint counts
-    updateComplaintCounts(complaints);
-    
-  } catch (error) {
-    console.error('Error loading complaints:', error);
-    showAlert('error', 'Failed to load complaints');
-  }
-}
-
-function updateComplaintCounts(complaints) {
-  const openCount = complaints.filter(c => c.status === 'OPEN').length;
-  const inProgressCount = complaints.filter(c => c.status === 'IN_PROGRESS').length;
-  const resolvedCount = complaints.filter(c => c.status === 'RESOLVED').length;
-  
-  const openElement = document.getElementById('openComplaintsCount');
-  const progressElement = document.getElementById('inProgressComplaintsCount');
-  const resolvedElement = document.getElementById('resolvedComplaintsCount');
-  
-  if (openElement) openElement.textContent = openCount;
-  if (progressElement) progressElement.textContent = inProgressCount;
-  if (resolvedElement) resolvedElement.textContent = resolvedCount;
-}
-
-function filterComplaints() {
-  const statusFilter = document.getElementById('complaintStatusFilter').value;
-  const categoryFilter = document.getElementById('complaintCategoryFilter').value;
-  
-  const filters = {};
-  if (statusFilter) filters.status = statusFilter;
-  if (categoryFilter) filters.category = categoryFilter;
-  
-  loadComplaintsWithFilters(filters);
-}
-
-async function loadComplaintsWithFilters(filters = {}) {
-  try {
-    const complaints = await complaintManager.getComplaints(filters);
-    complaintManager.renderComplaintsTable(complaints, 'complaintsTableBody');
-  } catch (error) {
-    console.error('Error filtering complaints:', error);
-  }
-}
-
-function loadComplaintStats() {
-  loadMaintenanceData();
-}
-
-// Modal functions for complaint detail
-function closeComplaintDetailModal() {
-  const modal = document.getElementById('complaintDetailModal');
-  if (modal) modal.style.display = 'none';
-}
-
-async function updateComplaintStatus(event) {
-  event.preventDefault();
-  
-  const form = event.target;
-  const formData = new FormData(form);
-  const status = formData.get('status');
-  const comment = formData.get('comment');
-  
-  if (!complaintManager.currentComplaint) return;
-  
-  try {
-    await complaintManager.updateComplaintStatus(complaintManager.currentComplaint.id, status, comment);
-    closeComplaintDetailModal();
-    await loadOwnerComplaints(); // Reload complaints
-    showAlert('success', 'Status updated successfully');
-  } catch (error) {
-    console.error('Failed to update status:', error);
-    showAlert('error', 'Failed to update status');
-  }
-}
-
-async function addComplaintResponse(event) {
-  event.preventDefault();
-  
-  const form = event.target;
-  const formData = new FormData(form);
-  const message = formData.get('message');
-  
-  if (!complaintManager.currentComplaint || !message.trim()) return;
-  
-  try {
-    await complaintManager.addComplaintResponse(complaintManager.currentComplaint.id, message.trim());
-    
-    // Reload complaint details to show new response
-    const updatedComplaint = await complaintManager.getComplaintDetails(complaintManager.currentComplaint.id);
-    if (updatedComplaint) {
-      complaintManager.populateOwnerComplaintModal(updatedComplaint);
-    }
-    
-    // Clear form
-    form.reset();
-    showAlert('success', 'Response sent successfully');
-  } catch (error) {
-    console.error('Failed to add response:', error);
-    showAlert('error', 'Failed to send response');
-  }
 }
 
 // Export functions
@@ -3486,117 +2990,8 @@ window.closeAddPaymentModal = closeAddPaymentModal;
 window.handleAddPayment = handleAddPayment;
 window.markAsPaid = markAsPaid;
 window.viewReceipt = viewReceipt;
-
-// Export maintenance functions
-window.showMaintenanceSection = showMaintenanceSection;
-window.showNoticesSection = showNoticesSection;
-window.loadOwnerComplaints = loadOwnerComplaints;
-window.filterComplaints = filterComplaints;
-window.loadComplaintStats = loadComplaintStats;
-window.updateComplaintStatus = updateComplaintStatus;
-window.addComplaintResponse = addComplaintResponse;
-window.closeComplaintDetailModal = closeComplaintDetailModal;
 window.closeReceiptModal = closeReceiptModal;
 window.printReceipt = printReceipt;
-
-// ============================================================================
-// EDIT TENANT FUNCTIONALITY
-// ============================================================================
-
-function openEditTenantModal(tenantId) {
-  // Find tenant in allTenants array
-  const tenant = allTenants.find(t => t.id === tenantId);
-  
-  if (!tenant) {
-    showAlert('error', 'Tenant not found');
-    return;
-  }
-  
-  console.log('Opening edit modal for tenant:', tenant);
-  console.log('Tenant rentDueDate value:', tenant.rentDueDate, 'Type:', typeof tenant.rentDueDate);
-  
-  // Populate form fields
-  document.getElementById('editTenantId').value = tenant.id;
-  document.getElementById('editRentAmount').value = tenant.rent || 0;
-  document.getElementById('editSecurityDeposit').value = tenant.securityDeposit || 0;
-  
-  // Set rent due date with proper conversion
-  const dueDate = tenant.rentDueDate || 1;
-  console.log('Setting rentDueDate dropdown to:', dueDate);
-  document.getElementById('editRentDueDate').value = String(dueDate);
-  
-  // Format dates for input fields
-  if (tenant.checkInDate) {
-    const startDate = new Date(tenant.checkInDate);
-    document.getElementById('editLeaseStartDate').value = startDate.toISOString().split('T')[0];
-  } else {
-    document.getElementById('editLeaseStartDate').value = '';
-  }
-  
-  if (tenant.expectedCheckOut) {
-    const endDate = new Date(tenant.expectedCheckOut);
-    document.getElementById('editLeaseEndDate').value = endDate.toISOString().split('T')[0];
-  } else {
-    document.getElementById('editLeaseEndDate').value = '';
-  }
-  
-  // Show modal
-  document.getElementById('editTenantModal').style.display = 'flex';
-}
-
-function closeEditTenantModal() {
-  document.getElementById('editTenantModal').style.display = 'none';
-  document.getElementById('editTenantForm').reset();
-}
-
-async function saveEditedTenant(event) {
-  event.preventDefault();
-  
-  const tenantId = document.getElementById('editTenantId').value;
-  const formData = {
-    rentAmount: parseInt(document.getElementById('editRentAmount').value),
-    securityDeposit: parseInt(document.getElementById('editSecurityDeposit').value),
-    rentDueDate: parseInt(document.getElementById('editRentDueDate').value),
-    leaseStartDate: document.getElementById('editLeaseStartDate').value,
-    leaseEndDate: document.getElementById('editLeaseEndDate').value || null
-  };
-  
-  console.log('Saving tenant data:', formData);
-  
-  try {
-    // Call API to update tenant
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/tenants/${tenantId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(formData)
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to update tenant');
-    }
-    
-    const updatedTenant = await response.json();
-    
-    showAlert('success', 'Tenant information updated successfully');
-    closeEditTenantModal();
-    
-    // Reload tenants to reflect changes
-    await loadTenants();
-    
-  } catch (error) {
-    console.error('Error updating tenant:', error);
-    showAlert('error', error.message || 'Failed to update tenant information');
-  }
-}
-
-// Export edit tenant functions
-window.openEditTenantModal = openEditTenantModal;
-window.closeEditTenantModal = closeEditTenantModal;
-window.saveEditedTenant = saveEditedTenant;
 window.downloadReceiptPDF = downloadReceiptPDF;
 window.downloadPaymentReport = downloadPaymentReport;
 

@@ -11,7 +11,7 @@ public class OwnerPaymentInfoDto {
 
     private Long id;
 
-    @NotNull(message = "Owner ID is required")
+    // OwnerId is set by the backend from authentication, not required in request
     private Long ownerId;
 
     private String upiId;

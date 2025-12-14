@@ -31,6 +31,7 @@ public class OwnerPaymentInfoService {
         OwnerPaymentInfo info = repository.findByOwnerId(ownerId)
                 .orElse(new OwnerPaymentInfo());
 
+        // Set basic fields
         info.setOwnerId(ownerId);
         info.setUpiId(dto.getUpiId());
         info.setQrImageUrl(dto.getQrImageUrl());
@@ -42,6 +43,12 @@ public class OwnerPaymentInfoService {
         info.setBankName(dto.getBankName());
         info.setAccountNumber(dto.getAccountNumber());
         info.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
+
+        // Set audit fields if new record
+        if (info.getId() == null) {
+            info.setCreatedBy("OWNER_" + ownerId);
+        }
+        info.setUpdatedBy("OWNER_" + ownerId);
 
         OwnerPaymentInfo saved = repository.save(info);
         return mapToDto(saved);

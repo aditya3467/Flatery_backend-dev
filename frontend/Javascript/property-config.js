@@ -2,7 +2,10 @@
 function generateMockDues() {
   return [];
 }
+
 // Property Configuration Page Script
+console.log('%c✅ property-config.js LOADED SUCCESSFULLY', 'background: green; color: white; font-weight: bold; padding: 5px;');
+
 let currentPropertyId = null;
 let propertyData = null;
 let floors = [];
@@ -10,51 +13,180 @@ let units = [];
 let tenants = [];
 let currentView = 'dashboard'; // 'dashboard', 'floors' or 'tenants'
 
+console.log('%c⏳ Waiting for DOMContentLoaded event...', 'color: gray;');
+
 document.addEventListener('DOMContentLoaded', async function() {
+  console.log('===== DOMContentLoaded STARTED =====');
+  console.log('%c📍 INITIALIZATION CHECKPOINT 1: DOMContentLoaded fired', 'color: blue; font-weight: bold;');
+  
   // Get property ID from URL
   const urlParams = new URLSearchParams(window.location.search);
   currentPropertyId = urlParams.get('id');
+  console.log('Current Property ID:', currentPropertyId);
+  console.log('%c📍 CHECKPOINT 2: Property ID extracted', 'color: blue; font-weight: bold;');
   
   if (!currentPropertyId) {
+    console.error('❌ No property ID in URL');
     showAlert('error', 'No property selected');
     setTimeout(() => window.location.href = 'owner-dashboard.html', 2000);
     return;
   }
 
-  // Ensure authenticated and owner role
-  const ok = await ensureOwnerSession();
-  if (ok) {
+  try {
+    // Ensure authenticated and owner role
+    console.log('Checking owner session...');
+    console.log('%c📍 CHECKPOINT 3: Checking owner session', 'color: blue; font-weight: bold;');
+    const ok = await ensureOwnerSession();
+    console.log('Owner session check result:', ok);
+    console.log('%c📍 CHECKPOINT 4: Owner session result -', ok ? 'PASS' : 'FAIL', 'color: ' + (ok ? 'green' : 'red') + '; font-weight: bold;');
+    
+    if (!ok) {
+      console.error('❌ Owner session check failed');
+      return;
+    }
+    
+    console.log('✓ Owner authenticated, proceeding with config load');
+    console.log('%c📍 CHECKPOINT 5: Loading property config', 'color: blue; font-weight: bold;');
     await loadPropertyConfig();
+    console.log('Property config loaded successfully');
+    console.log('%c📍 CHECKPOINT 6: Property config loaded', 'color: blue; font-weight: bold;');
+    
+    console.log('Setting up navigation handlers...');
+    console.log('%c📍 CHECKPOINT 7: Setting up navigation handlers', 'color: blue; font-weight: bold;');
     setupNavigationHandlers();
+    console.log('Navigation handlers setup complete');
+    console.log('%c📍 CHECKPOINT 8: Navigation handlers ready ✓', 'color: green; font-weight: bold;');
+    
+    // Verify sidebar exists
+    const sidebar = document.querySelector('.config-sidebar');
+    console.log('Sidebar element exists:', !!sidebar);
+    
+    // Verify payment settings link exists
+    const paymentSettingsLink = document.querySelector('a[href="#payment-settings"]');
+    console.log('Payment Settings link found:', !!paymentSettingsLink);
+    
+    // List all nav items
+    const allNavItems = document.querySelectorAll('a.nav-item');
+    console.log('Total nav items on page:', allNavItems.length);
+    allNavItems.forEach((item, idx) => {
+      console.log(`  [${idx}] ${item.getAttribute('href')} - ${item.textContent.trim()}`);
+    });
+    
+  } catch (error) {
+    console.error('❌ CRITICAL ERROR during initialization:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.log('%c📍 CHECKPOINT ERROR: Exception occurred', 'color: red; font-weight: bold;');
+    alert('⚠️ FATAL ERROR: ' + error.message);
   }
+  
+  console.log('===== DOMContentLoaded COMPLETED =====');
 });
 
 function setupNavigationHandlers() {
-  // Handle navigation between sections (sidebar only)
-  document.querySelectorAll('.config-sidebar .nav-item').forEach(item => {
-    item.addEventListener('click', function(e) {
-      const href = this.getAttribute('href') || '';
-      if (!href.startsWith('#')) return; // allow normal links
-      e.preventDefault();
-
-      // Remove active class from sidebar nav items
-      document.querySelectorAll('.config-sidebar .nav-item').forEach(nav => nav.classList.remove('active'));
-      this.classList.add('active');
-
-      // Show appropriate section
-      if (href === '#dashboard') {
-        showDashboardSection();
-      } else if (href === '#financial') {
-        showFinancialSection();
-      } else if (href === '#floors') {
-        showFloorsSection();
-      } else if (href === '#tenants') {
-        showTenantsSection();
-      } else if (href === '#payments') {
-        showPaymentsSection();
-      }
+  console.log('===== setupNavigationHandlers STARTED =====');
+  console.log('%c🔧 Setting up event delegation for navigation', 'color: purple; font-weight: bold;');
+  
+  // Use event delegation on the sidebar itself
+  const sidebar = document.querySelector('.config-sidebar');
+  console.log('Sidebar element found:', !!sidebar);
+  
+  if (!sidebar) {
+    console.error('❌ CRITICAL: Sidebar not found! Cannot setup navigation.');
+    console.error('Available elements with class="config-sidebar":', document.querySelectorAll('.config-sidebar').length);
+    alert('❌ ERROR: Navigation sidebar not found in DOM');
+    return;
+  }
+  
+  console.log('✓ Sidebar found, attaching click listener...');
+  
+  // Add single click listener to sidebar
+  sidebar.addEventListener('click', function(e) {
+    console.log('%c📌 CLICK EVENT DETECTED on sidebar', 'color: orange; font-weight: bold;');
+    console.log('Event target:', e.target);
+    console.log('Event target tagName:', e.target.tagName);
+    console.log('Event target classList:', Array.from(e.target.classList));
+    console.log('Event target textContent:', e.target.textContent);
+    
+    // Find the closest nav-item link
+    const navItem = e.target.closest('a.nav-item');
+    console.log('Closest "a.nav-item" found:', !!navItem);
+    
+    if (!navItem) {
+      console.log('⚠️ Click not on a nav-item, ignoring');
+      return;
+    }
+    
+    const href = navItem.getAttribute('href');
+    console.log('NavItem href:', href);
+    
+    if (!href || !href.startsWith('#')) {
+      console.log('⚠️ Invalid href, ignoring');
+      return;
+    }
+    
+    e.preventDefault();
+    console.log('✓ Event prevented, processing navigation...');
+    
+    // Remove active from all
+    sidebar.querySelectorAll('a.nav-item').forEach(item => {
+      item.classList.remove('active');
     });
-  });
+    
+    // Add active to clicked
+    navItem.classList.add('active');
+    console.log('✓ Active class toggled');
+    
+    // Route to appropriate section
+    console.log('%c🔀 ROUTING TO SECTION:', 'color: teal; font-weight: bold;', href);
+    switch(href) {
+      case '#dashboard':
+        console.log('→ showDashboardSection()');
+        showDashboardSection();
+        break;
+      case '#financial':
+        console.log('→ showFinancialSection()');
+        showFinancialSection();
+        break;
+      case '#floors':
+        console.log('→ showFloorsSection()');
+        showFloorsSection();
+        break;
+      case '#tenants':
+        console.log('→ showTenantsSection()');
+        showTenantsSection();
+        break;
+      case '#payments':
+        console.log('→ showPaymentsSection()');
+        showPaymentsSection();
+        break;
+      case '#manage-payments':
+        console.log('→ showManagePaymentsSection()');
+        showManagePaymentsSection();
+        break;
+      case '#payment-settings':
+        console.log('%c🎯 PAYMENT SETTINGS SECTION SELECTED 🎯', 'background: yellow; color: black; font-weight: bold; padding: 5px;');
+        showPaymentSettingsSection();
+        break;
+      case '#maintenance':
+        console.log('→ showMaintenanceSection()');
+        showMaintenanceSection();
+        break;
+      case '#notices':
+        console.log('→ showNoticesSection()');
+        showNoticesSection();
+        break;
+      case '#preferences':
+        console.log('→ showPreferencesSection()');
+        showPreferencesSection();
+        break;
+      default:
+        console.log('❌ Unknown section:', href);
+    }
+  }, true); // Use capturing phase to ensure we catch all clicks
+  
+  console.log('✓ Click listener attached with capturing enabled');
+  console.log('===== setupNavigationHandlers COMPLETED =====');
 }
 
 function showDashboardSection() {
@@ -64,6 +196,14 @@ function showDashboardSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   toggleTopMeta(false);
   loadDashboardData();
 }
@@ -75,6 +215,14 @@ function showFinancialSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   toggleTopMeta(false);
   loadFinancialData();
 }
@@ -96,6 +244,14 @@ function showFloorsSection() {
   document.querySelector('.floors-section').style.display = 'block';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   // Show top meta (title/filters/stats) in floors view
   toggleTopMeta(true);
 }
@@ -107,6 +263,14 @@ function showTenantsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'block';
   document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   // Hide top meta (title/filters/stats) in tenants view
   toggleTopMeta(false);
   loadTenants();
@@ -119,9 +283,158 @@ function showPaymentsSection() {
   document.querySelector('.floors-section').style.display = 'none';
   document.querySelector('.tenants-section').style.display = 'none';
   document.querySelector('.payments-section').style.display = 'block';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
   // Hide top meta (title/filters/stats) in payments view
   toggleTopMeta(false);
   loadPayments();
+}
+
+function showPaymentSettingsSection() {
+  try {
+    console.log('%c╔════════════════════════════════════════════════════════╗', 'color: lime; font-weight: bold;');
+    console.log('%c║ ENTERING showPaymentSettingsSection() ║', 'color: lime; font-weight: bold;');
+    console.log('%c╚════════════════════════════════════════════════════════╝', 'color: lime; font-weight: bold;');
+    
+    currentView = 'payment-settings';
+    console.log('✓ currentView set to: payment-settings');
+    
+    // Hide all sections
+    const sectionsTohide = [
+      { name: 'dashboard', selector: '.dashboard-section' },
+      { name: 'financial', selector: '.financial-section' },
+      { name: 'floors', selector: '.floors-section' },
+      { name: 'tenants', selector: '.tenants-section' },
+      { name: 'payments', selector: '.payments-section' },
+      { name: 'managePayments', selector: '.manage-payments-section' },
+      { name: 'maintenance', selector: '.maintenance-section' },
+      { name: 'notices', selector: '.notices-section' }
+    ];
+    
+    console.log('%c🔍 Hiding all sections...', 'color: cyan;');
+    sectionsTohide.forEach(section => {
+      const el = document.querySelector(section.selector);
+      if (el) {
+        el.style.display = 'none';
+        console.log(`  ✓ ${section.name} hidden`);
+      } else {
+        console.warn(`  ⚠️ ${section.name} NOT found (${section.selector})`);
+      }
+    });
+    
+    // Show payment settings section
+    console.log('%c🔍 Showing payment settings section...', 'color: cyan;');
+    const paymentSettingsSection = document.querySelector('.payment-settings-section');
+    if (paymentSettingsSection) {
+      paymentSettingsSection.style.display = 'block';
+      console.log('%c✅ PAYMENT SETTINGS SECTION IS NOW VISIBLE! ✅', 'background: lime; color: black; font-weight: bold; padding: 5px;');
+    } else {
+      console.error('%c❌ CRITICAL: Payment settings section element NOT FOUND in DOM!', 'background: red; color: white; font-weight: bold; padding: 5px;');
+      console.error('DOM query ".payment-settings-section" returned null');
+      
+      // Debug: list all divs with "payment" in them
+      const allDivs = document.querySelectorAll('div[class*="payment"]');
+      console.log('Found', allDivs.length, 'divs with "payment" in class name:');
+      allDivs.forEach((div, idx) => {
+        console.log(`  [${idx}] ${div.className}`);
+      });
+      
+      alert('⚠️ ERROR: Payment settings section element not found in DOM!');
+      return;
+    }
+    
+    // Hide top meta (title/filters/stats)
+    toggleTopMeta(false);
+    console.log('✓ Top meta section toggled off');
+    
+    // Load payment settings from API
+    console.log('%c📡 Loading payment settings from API...', 'color: magenta;');
+    loadPaymentSettings().then(() => {
+      console.log('✓ Payment settings loaded from API');
+    }).catch(err => {
+      console.error('⚠️ Error loading payment settings:', err);
+    });
+    
+    // Setup form handler
+    console.log('%c⚙️ Setting up payment settings form handler...', 'color: magenta;');
+    setupPaymentSettingsForm();
+    console.log('✓ Form handler setup complete');
+    
+    console.log('%c╔════════════════════════════════════════════════════════╗', 'color: lime; font-weight: bold;');
+    console.log('%c║ EXITING showPaymentSettingsSection() - SUCCESS! ║', 'color: lime; font-weight: bold;');
+    console.log('%c╚════════════════════════════════════════════════════════╝', 'color: lime; font-weight: bold;');
+  } catch (error) {
+    console.error('%c❌ EXCEPTION in showPaymentSettingsSection():', 'background: red; color: white; font-weight: bold; padding: 5px;');
+    console.error('Error message:', error.message);
+    console.error('Stack trace:', error.stack);
+    alert('⚠️ ERROR: ' + error.message);
+  }
+}
+
+function showManagePaymentsSection() {
+  currentView = 'manage-payments';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'block';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
+  toggleTopMeta(false);
+}
+
+function showMaintenanceSection() {
+  currentView = 'maintenance';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'block';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
+  toggleTopMeta(false);
+}
+
+function showNoticesSection() {
+  currentView = 'notices';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'none';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'block';
+  toggleTopMeta(false);
+}
+
+function showPreferencesSection() {
+  currentView = 'preferences';
+  // Preferences section doesn't exist yet, show a placeholder
+  alert('Property Preferences section coming soon!');
 }
 
 // ========================================
@@ -535,34 +848,68 @@ function formatNumber(num) {
 
 async function ensureOwnerSession() {
   try {
-    if (!apiService.isAuthenticated()) {
+    console.log('%c🔐 ensureOwnerSession() STARTING', 'background: purple; color: white; font-weight: bold; padding: 5px;');
+    
+    // Check if apiService exists
+    if (typeof apiService === 'undefined') {
+      console.error('%c❌ apiService not defined!', 'background: red; color: white;');
+      showAlert('error', 'API Service not loaded. Please refresh the page.');
+      return false;
+    }
+    console.log('✓ apiService is available');
+    
+    // Check authentication
+    const isAuth = apiService.isAuthenticated();
+    console.log('isAuthenticated():', isAuth);
+    
+    if (!isAuth) {
+      console.error('%c❌ User is NOT authenticated', 'background: red; color: white;');
+      console.log('localStorage content:', {
+        token: localStorage.getItem('token') ? '(exists)' : '(missing)',
+        userId: localStorage.getItem('userId'),
+        roles: localStorage.getItem('roles')
+      });
       showAlert('error', 'Please log in as an owner.');
       setTimeout(() => window.location.href = 'index.html', 2000);
       return false;
     }
     
+    console.log('✓ User is authenticated');
+    
     let roles = [];
     try { 
       roles = JSON.parse(localStorage.getItem('roles') || '[]'); 
-    } catch { 
+    } catch (e) { 
+      console.warn('Failed to parse roles:', e);
       roles = []; 
     }
     
+    console.log('Roles from localStorage:', roles);
+    
     if (!roles.length) {
+      console.log('No roles in localStorage, fetching from API...');
       const user = await apiService.getCurrentUser();
+      console.log('Current user from API:', user);
       roles = user?.roles ? Array.from(user.roles) : [];
+      console.log('Roles from API:', roles);
     }
     
     const isOwner = roles.includes('ADMIN') || roles.includes('SUPERADMIN');
+    console.log('Is owner (ADMIN or SUPERADMIN)?:', isOwner);
+    
     if (!isOwner) {
+      console.error('%c❌ User is NOT an owner', 'background: red; color: white;');
       showAlert('error', 'Only property owners can access this page.');
       setTimeout(() => window.location.href = 'index.html', 2000);
       return false;
     }
     
+    console.log('%c✅ ensureOwnerSession PASSED', 'background: green; color: white; font-weight: bold; padding: 5px;');
     return true;
   } catch (e) {
-    console.error('Auth check failed', e);
+    console.error('%c❌ Exception in ensureOwnerSession:', 'background: red; color: white;');
+    console.error('Error:', e);
+    console.error('Stack:', e.stack);
     showAlert('error', 'Authentication required. Please log in again.');
     return false;
   }
@@ -570,16 +917,25 @@ async function ensureOwnerSession() {
 
 async function loadPropertyConfig() {
   try {
+    console.log('===== loadPropertyConfig STARTED =====');
+    
     // Load property details
+    console.log('Fetching property:', currentPropertyId);
     propertyData = await apiService.getMyProperty(currentPropertyId);
+    console.log('Property data received:', propertyData);
     
     // Guard: Only allow PG properties to access this page
     const pType = (propertyData?.type || '').toString().toUpperCase();
+    console.log('Property type:', pType);
+    
     if (pType !== 'PG') {
+      console.error('❌ Property is not PG type, aborting. Type is:', pType);
       showAlert('error', 'This configuration page is only for PG properties.');
       setTimeout(() => window.location.href = 'owner-dashboard.html', 1800);
       return;
     }
+    
+    console.log('✓ Property is PG type, continuing...');
     
     // Update UI with property name
     document.getElementById('propertyName').textContent = propertyData.name || 'Property';
@@ -589,20 +945,26 @@ async function loadPropertyConfig() {
     const firstName = localStorage.getItem('firstName') || 'Owner';
     document.getElementById('userName').textContent = firstName;
     
-  // Load floors and units from backend
-  await loadFloorsAndUnitsFromApi();
+    // Load floors and units from backend
+    console.log('Loading floors and units...');
+    await loadFloorsAndUnitsFromApi();
+    console.log('Floors and units loaded');
     
-  // Render the configuration
-  renderFloorsAndUnits();
-  updateStats();
-  populateFloorFilters();
-  
-  // Load dashboard by default
-  showDashboardSection();
+    // Render the configuration
+    renderFloorsAndUnits();
+    updateStats();
+    populateFloorFilters();
+    
+    // Load dashboard by default
+    console.log('Showing dashboard section...');
+    showDashboardSection();
+    
+    console.log('===== loadPropertyConfig COMPLETED SUCCESSFULLY =====');
     
   } catch (error) {
-    console.error('Failed to load property configuration:', error);
-    showAlert('error', 'Failed to load property configuration');
+    console.error('❌ Failed to load property configuration:', error);
+    console.error('Error stack:', error.stack);
+    showAlert('error', 'Failed to load property configuration: ' + error.message);
   }
 }
 
@@ -2544,6 +2906,226 @@ function printReceipt() {
 function downloadReceiptPDF() {
   alert('PDF download functionality will be implemented with backend integration');
 }
+
+// ========================================
+// PAYMENT SETTINGS FUNCTIONS
+// ========================================
+
+let currentQRFile = null;
+
+// Setup payment settings form handler
+function setupPaymentSettingsForm() {
+  console.log('Setting up payment settings form');
+  const form = document.getElementById('paymentSettingsForm');
+  if (!form) {
+    console.warn('Payment settings form not found');
+    return;
+  }
+  
+  // Remove any existing listeners
+  const newForm = form.cloneNode(true);
+  form.parentNode.replaceChild(newForm, form);
+  
+  // Add submit handler
+  newForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    await savePaymentSettings();
+  });
+  console.log('Payment settings form setup complete');
+}
+
+// Load payment settings from API
+async function loadPaymentSettings() {
+  try {
+    const response = await fetch(`${apiService.baseURL}/api/owner-payment-info`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      populatePaymentSettingsForm(data);
+    } else if (response.status === 204) {
+      // No content - user hasn't set up payment info yet
+      console.log('No payment info found - showing empty form');
+      clearPaymentSettingsForm();
+    } else {
+      console.error('Failed to load payment settings');
+      showAlert('error', 'Failed to load payment settings');
+    }
+  } catch (error) {
+    console.error('Error loading payment settings:', error);
+    showAlert('error', 'Error loading payment settings');
+  }
+}
+
+// Populate form with existing data
+function populatePaymentSettingsForm(data) {
+  document.getElementById('upiId').value = data.upiId || '';
+  document.getElementById('preferredMode').value = data.preferredMode || '';
+  document.getElementById('isActive').checked = data.isActive !== false;
+  
+  // Show QR code if exists
+  if (data.qrImageUrl) {
+    document.getElementById('qrImage').src = data.qrImageUrl;
+    document.getElementById('qrImage').style.display = 'block';
+    document.getElementById('qrPlaceholder').style.display = 'none';
+    document.getElementById('removeQRBtn').style.display = 'block';
+  } else {
+    clearQRPreview();
+  }
+}
+
+// Clear form
+function clearPaymentSettingsForm() {
+  document.getElementById('upiId').value = '';
+  document.getElementById('preferredMode').value = '';
+  document.getElementById('isActive').checked = true;
+  clearQRPreview();
+}
+
+// Clear QR preview
+function clearQRPreview() {
+  document.getElementById('qrImage').style.display = 'none';
+  document.getElementById('qrImage').src = '';
+  document.getElementById('qrPlaceholder').style.display = 'flex';
+  document.getElementById('removeQRBtn').style.display = 'none';
+  currentQRFile = null;
+}
+
+// Handle QR code upload
+async function handleQRUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showAlert('error', 'Please upload an image file');
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showAlert('error', 'File size must be less than 5MB');
+    return;
+  }
+
+  // Store file for later upload
+  currentQRFile = file;
+
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('qrImage').src = e.target.result;
+    document.getElementById('qrImage').style.display = 'block';
+    document.getElementById('qrPlaceholder').style.display = 'none';
+    document.getElementById('removeQRBtn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Remove QR code
+function removeQRCode() {
+  clearQRPreview();
+  document.getElementById('qrCodeUpload').value = '';
+}
+
+// Save payment settings
+async function savePaymentSettings() {
+  try {
+    const upiId = document.getElementById('upiId').value.trim();
+    const preferredMode = document.getElementById('preferredMode').value;
+    const isActive = document.getElementById('isActive').checked;
+
+    // Validate UPI ID if provided
+    if (upiId && !validateUpiId(upiId)) {
+      showAlert('error', 'Please enter a valid UPI ID (e.g., username@paytm)');
+      return;
+    }
+
+    // Upload QR code if a new file was selected
+    let qrImageUrl = document.getElementById('qrImage').src;
+    if (currentQRFile) {
+      qrImageUrl = await uploadQRCode(currentQRFile);
+      if (!qrImageUrl) {
+        showAlert('error', 'Failed to upload QR code');
+        return;
+      }
+    }
+
+    // Prepare payload
+    const payload = {
+      upiId: upiId || null,
+      qrImageUrl: qrImageUrl && qrImageUrl.startsWith('http') ? qrImageUrl : null,
+      preferredMode: preferredMode || null,
+      isActive: isActive
+    };
+
+    // Save to API
+    const response = await fetch(`${apiService.baseURL}/api/owner-payment-info`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      showAlert('success', 'Payment settings saved successfully!');
+      currentQRFile = null;
+      // Reload to show saved data
+      await loadPaymentSettings();
+    } else {
+      const error = await response.json();
+      showAlert('error', error.error || 'Failed to save payment settings');
+    }
+  } catch (error) {
+    console.error('Error saving payment settings:', error);
+    showAlert('error', 'Error saving payment settings');
+  }
+}
+
+// Upload QR code image
+async function uploadQRCode(file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Use the tenant payment-proof endpoint which handles image uploads
+    // In future, this could be replaced with a dedicated QR upload endpoint
+    const response = await fetch(`${apiService.baseURL}/api/tenants/me/payment-proof`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return result.fileUrl || result.url;
+    } else {
+      console.error('Failed to upload QR code');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error uploading QR code:', error);
+    return null;
+  }
+}
+
+// Validate UPI ID format
+function validateUpiId(upiId) {
+  // Basic UPI ID format: username@bank
+  const upiPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z]+$/;
+  return upiPattern.test(upiId);
+}
+
 
 // Download payment report
 function downloadPaymentReport() {

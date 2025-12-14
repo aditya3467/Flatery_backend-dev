@@ -34,12 +34,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String username;
 
+        // Debug logging for upload-qr endpoint
+        if (request.getRequestURI().contains("upload-qr")) {
+            System.out.println("=== JWT Filter Debug ===");
+            System.out.println("Request URI: " + request.getRequestURI());
+            System.out.println("Auth Header: " + (authHeader != null ? authHeader.substring(0, Math.min(50, authHeader.length())) + "..." : "null"));
+        }
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         jwt = authHeader.substring(7);
+        
+        // Debug logging for upload-qr endpoint
+        if (request.getRequestURI().contains("upload-qr")) {
+            System.out.println("JWT token: " + jwt.substring(0, Math.min(30, jwt.length())) + "...");
+            System.out.println("JWT periods count: " + jwt.chars().filter(ch -> ch == '.').count());
+        }
+        
         username = jwtService.extractUsername(jwt);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

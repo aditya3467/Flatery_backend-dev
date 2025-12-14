@@ -10,6 +10,7 @@ import com.Flatery.model.property.PropertyImage;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.repository.property.PropertyImageRepository;
 import com.Flatery.service.property.FileStorageService;
+import com.Flatery.service.storage.S3StorageService;
 import com.Flatery.service.property.PropertyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class AdminPropertyController {
     private final PropertyService propertyService;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final S3StorageService s3StorageService;
     private final PropertyImageRepository propertyImageRepository;
 
         // Get total active security deposits for the authenticated owner
@@ -157,8 +159,8 @@ public class AdminPropertyController {
         
         for (MultipartFile file : files) {
             if (!file.isEmpty()) {
-                String url = fileStorageService.storeFile(file, id);
-                log.info("Stored image for property {} at {} (original: {})", id, url, file.getOriginalFilename());
+                String url = s3StorageService.storePropertyImage(file, id);
+                log.info("Stored image for property {} at S3: {} (original: {})", id, url, file.getOriginalFilename());
                 
                 PropertyImage image = PropertyImage.builder()
                         .propertyId(id)

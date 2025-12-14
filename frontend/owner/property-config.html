@@ -59,6 +59,10 @@
             <i class="fas fa-cog"></i>
             <span>Property Preferences</span>
           </a>
+          <a href="#payment-settings" class="nav-item">
+            <i class="fas fa-credit-card"></i>
+            <span>Payment Settings</span>
+          </a>
         </div>
 
         <div class="nav-section">
@@ -1785,6 +1789,145 @@
           <i class="fas fa-bell-slash"></i>
           <h3>Coming Soon</h3>
           <p>Notice and announcement functionality will be available soon.</p>
+        </div>
+      </div>
+
+      <!-- Payment Settings Section -->
+      <div class="payment-settings-section" style="display: none;">
+        <div class="section-header">
+          <h2><i class="fas fa-credit-card"></i> Payment Settings</h2>
+          <p class="section-subtitle">Configure your payment details for receiving rent from tenants</p>
+        </div>
+
+        <div class="payment-settings-content">
+          <!-- Payment Details Card -->
+          <div class="settings-card">
+            <div class="card-header">
+              <h3><i class="fas fa-mobile-alt"></i> UPI Payment Details</h3>
+              <p>Set up your UPI details for quick and easy rent collection</p>
+            </div>
+            
+            <div class="card-body">
+              <form id="paymentSettingsForm">
+                <!-- UPI ID Field -->
+                <div class="form-group">
+                  <label for="upiId">
+                    UPI ID <span class="required">*</span>
+                    <span class="field-hint">Your UPI ID (e.g., username@paytm, phone@ybl)</span>
+                  </label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-at"></i>
+                    <input 
+                      type="text" 
+                      id="upiId" 
+                      name="upiId"
+                      placeholder="Enter your UPI ID"
+                      pattern="[a-zA-Z0-9._-]+@[a-zA-Z]+"
+                      title="Enter a valid UPI ID (e.g., username@paytm)"
+                    >
+                  </div>
+                </div>
+
+                <!-- QR Code Upload Field -->
+                <div class="form-group">
+                  <label for="qrCodeUpload">
+                    Payment QR Code
+                    <span class="field-hint">Upload your payment QR code image</span>
+                  </label>
+                  <div class="qr-upload-container">
+                    <div class="qr-preview" id="qrPreview">
+                      <div class="qr-placeholder" id="qrPlaceholder">
+                        <i class="fas fa-qrcode"></i>
+                        <p>No QR code uploaded</p>
+                      </div>
+                      <img id="qrImage" src="" alt="Payment QR Code" style="display: none;">
+                    </div>
+                    <div class="qr-upload-actions">
+                      <input 
+                        type="file" 
+                        id="qrCodeUpload" 
+                        accept="image/*"
+                        style="display: none;"
+                        onchange="handleQRUpload(event)"
+                      >
+                      <button 
+                        type="button" 
+                        class="btn-upload" 
+                        onclick="document.getElementById('qrCodeUpload').click()"
+                      >
+                        <i class="fas fa-upload"></i> Upload QR Code
+                      </button>
+                      <button 
+                        type="button" 
+                        class="btn-remove" 
+                        id="removeQRBtn"
+                        onclick="removeQRCode()"
+                        style="display: none;"
+                      >
+                        <i class="fas fa-trash"></i> Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Preferred Payment Mode -->
+                <div class="form-group">
+                  <label for="preferredMode">
+                    Preferred Payment Mode
+                    <span class="field-hint">Default payment method you prefer</span>
+                  </label>
+                  <select id="preferredMode" name="preferredMode">
+                    <option value="">Select preferred mode</option>
+                    <option value="UPI">UPI</option>
+                    <option value="BANK_TRANSFER">Bank Transfer</option>
+                    <option value="CASH">Cash</option>
+                  </select>
+                </div>
+
+                <!-- Status Toggle -->
+                <div class="form-group">
+                  <div class="toggle-field">
+                    <label class="toggle-label">
+                      <span class="toggle-text">
+                        <strong>Active Status</strong>
+                        <small>Enable to show payment details to tenants</small>
+                      </span>
+                      <label class="switch">
+                        <input type="checkbox" id="isActive" name="isActive" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions">
+                  <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Save Payment Settings
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="loadPaymentSettings()">
+                    <i class="fas fa-undo"></i> Reset
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Info Card -->
+          <div class="settings-info-card">
+            <div class="info-icon">
+              <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="info-content">
+              <h4>Why set up payment details?</h4>
+              <ul>
+                <li>Tenants can view your UPI ID and QR code directly in their dashboard</li>
+                <li>Simplifies rent payment process</li>
+                <li>Reduces payment collection time</li>
+                <li>All payment proofs are tracked automatically</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 

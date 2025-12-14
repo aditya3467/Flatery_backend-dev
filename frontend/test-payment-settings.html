@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Settings Click Test</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    .sidebar { border: 1px solid #ccc; padding: 10px; width: 200px; }
+    .nav-item { display: block; padding: 10px; margin: 5px 0; cursor: pointer; border: 1px solid #ddd; text-decoration: none; color: blue; }
+    .nav-item.active { background: #eee; }
+    .content { margin-left: 220px; padding: 20px; }
+    .section { border: 1px solid #999; padding: 15px; margin: 10px 0; display: none; }
+    .section.show { display: block; background: #f0f0f0; }
+    .console-log { border: 1px solid red; padding: 10px; margin: 10px 0; background: #ffe; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<h1>🔍 Payment Settings Click Test</h1>
+
+<div style="display: flex;">
+  <!-- Sidebar -->
+  <aside class="sidebar config-sidebar">
+    <h3>Navigation</h3>
+    <a href="#dashboard" class="nav-item active">Dashboard</a>
+    <a href="#financial" class="nav-item">Financial</a>
+    <a href="#floors" class="nav-item">Floors</a>
+    <a href="#payment-settings" class="nav-item">Payment Settings</a>
+    <a href="#maintenance" class="nav-item">Maintenance</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+    <div class="section show" id="dashboard-section">
+      <h2>Dashboard</h2>
+      <p>This is the dashboard section</p>
+    </div>
+
+    <div class="section" id="financial-section">
+      <h2>Financial</h2>
+      <p>This is the financial section</p>
+    </div>
+
+    <div class="section" id="floors-section">
+      <h2>Floors</h2>
+      <p>This is the floors section</p>
+    </div>
+
+    <div class="section payment-settings-section" id="payment-settings-section">
+      <h2>Payment Settings</h2>
+      <p>🎉 Payment Settings section is now visible!</p>
+      <form id="paymentSettingsForm">
+        <input type="text" id="upiId" placeholder="Enter UPI ID">
+        <button type="submit">Save</button>
+      </form>
+    </div>
+
+    <div class="section" id="maintenance-section">
+      <h2>Maintenance</h2>
+      <p>This is the maintenance section</p>
+    </div>
+  </main>
+</div>
+
+<!-- Console Log Display -->
+<div class="console-log">
+  <strong>Console Output:</strong>
+  <div id="logOutput"></div>
+</div>
+
+<script>
+// Override console.log to show in page
+const originalLog = console.log;
+const logOutput = document.getElementById('logOutput');
+console.log = function(...args) {
+  originalLog.apply(console, args);
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+  ).join(' ');
+  logOutput.innerHTML += `<div>${message}</div>`;
+  logOutput.parentElement.scrollTop = logOutput.parentElement.scrollHeight;
+};
+
+// Test Navigation
+console.log('🚀 Page loaded, initializing...');
+
+function setupNavigationHandlers() {
+  console.log('===== setupNavigationHandlers STARTED =====');
+  
+  const sidebar = document.querySelector('.config-sidebar');
+  console.log('✓ Sidebar found:', !!sidebar);
+  
+  if (!sidebar) {
+    console.error('❌ Sidebar not found!');
+    return;
+  }
+  
+  sidebar.addEventListener('click', function(e) {
+    console.log('CLICK EVENT DETECTED');
+    console.log('Event target:', e.target.tagName, e.target.textContent);
+    
+    const navItem = e.target.closest('a.nav-item');
+    console.log('Nav item found:', !!navItem, navItem ? navItem.getAttribute('href') : 'N/A');
+    
+    if (!navItem) return;
+    
+    const href = navItem.getAttribute('href');
+    if (!href || !href.startsWith('#')) return;
+    
+    e.preventDefault();
+    console.log('Prevented default, routing to:', href);
+    
+    // Remove active from all
+    sidebar.querySelectorAll('a.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    
+    navItem.classList.add('active');
+    
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(section => {
+      section.classList.remove('show');
+    });
+    
+    // Show appropriate section
+    switch(href) {
+      case '#dashboard':
+        console.log('→ Showing dashboard');
+        document.getElementById('dashboard-section').classList.add('show');
+        break;
+      case '#financial':
+        console.log('→ Showing financial');
+        document.getElementById('financial-section').classList.add('show');
+        break;
+      case '#floors':
+        console.log('→ Showing floors');
+        document.getElementById('floors-section').classList.add('show');
+        break;
+      case '#payment-settings':
+        console.log('🎯 PAYMENT SETTINGS SELECTED 🎯');
+        document.getElementById('payment-settings-section').classList.add('show');
+        console.log('Payment settings section shown');
+        break;
+      case '#maintenance':
+        console.log('→ Showing maintenance');
+        document.getElementById('maintenance-section').classList.add('show');
+        break;
+      default:
+        console.log('Unknown:', href);
+    }
+  });
+  
+  console.log('===== setupNavigationHandlers COMPLETED =====');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded event fired');
+  setupNavigationHandlers();
+  console.log('Setup complete, try clicking navigation items');
+});
+
+// Also test direct selector
+setTimeout(() => {
+  console.log('\n📋 DIAGNOSTIC CHECK:');
+  console.log('Payment settings section element exists:', !!document.querySelector('.payment-settings-section'));
+  console.log('Payment settings link exists:', !!document.querySelector('a[href="#payment-settings"]'));
+  console.log('Sidebar exists:', !!document.querySelector('.config-sidebar'));
+}, 100);
+</script>
+
+</body>
+</html>

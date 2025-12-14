@@ -4,12 +4,14 @@ import com.Flatery.dto.payment.OwnerPaymentInfoDto;
 import com.Flatery.model.User;
 import com.Flatery.repository.UserRepository;
 import com.Flatery.service.payment.OwnerPaymentInfoService;
+import com.Flatery.service.storage.S3StorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/owner-payment-info")
@@ -18,19 +20,42 @@ public class OwnerPaymentInfoController {
 
     private final OwnerPaymentInfoService service;
     private final UserRepository userRepository;
+    private final S3StorageService s3StorageService;
 
     /**
      * Get payment info for logged-in owner
      */
     @GetMapping
     public ResponseEntity<?> getPaymentInfo(Authentication authentication) {
+        System.out.println("=== CONTROLLER METHOD ENTERED ===");
         try {
+            System.out.println("=== Getting payment info ===");
+            System.out.println("Authentication: " + authentication);
+            
+            if (authentication == null) {
+                System.err.println("Authentication is NULL!");
+                return ResponseEntity.status(401).body(new ErrorResponse("Not authenticated"));
+            }
+            
+            System.out.println("Principal: " + authentication.getPrincipal());
+            System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
+            
             Long ownerId = getAuthenticatedUserId(authentication);
+            System.out.println("Owner ID: " + ownerId);
+            
             return service.getByOwnerId(ownerId)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.noContent().build());
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
+                    .map(dto -> {
+                        System.out.println("Found payment info: " + dto);
+                        return ResponseEntity.ok(dto);
+                    })
+                    .orElseGet(() -> {
+                        System.out.println("No payment info found for owner: " + ownerId);
+                        return ResponseEntity.noContent().build();
+                    });
+        } catch (Throwable ex) {
+            System.err.println("ERROR in getPaymentInfo: " + ex.getClass().getName() + ": " + ex.getMessage());
+            ex.printStackTrace();
+            return ResponseEntity.status(500).body(new ErrorResponse("Internal error: " + ex.getMessage()));
         }
     }
 
@@ -109,6 +134,63 @@ public class OwnerPaymentInfoController {
     }
 
     /**
+     * Upload QR code image for owner payment settings
+     */
+    @PostMapping("/upload-qr")
+    public ResponseEntity<?> uploadQRCode(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+        try {
+            System.out.println("=== Upload QR Code endpoint hit ===");
+            System.out.println("File: " + file.getOriginalFilename());
+            System.out.println("Size: " + file.getSize());
+            
+            Long ownerId = getAuthenticatedUserId(authentication);
+            System.out.println("Owner ID: " + ownerId);
+            
+            // Get existing payment info to check for old QR
+            service.getByOwnerId(ownerId).ifPresent(existingInfo -> {
+                if (existingInfo.getQrImageUrl() != null && !existingInfo.getQrImageUrl().isEmpty()) {
+                    System.out.println("Deleting old QR: " + existingInfo.getQrImageUrl());
+                    try {
+                        s3StorageService.deleteFile(existingInfo.getQrImageUrl());
+                    } catch (Exception e) {
+                        System.err.println("Failed to delete old QR: " + e.getMessage());
+                    }
+                }
+            });
+            
+            // Upload new QR to S3
+            String s3Url = s3StorageService.storeOwnerQRCode(file, ownerId);
+            System.out.println("S3 URL: " + s3Url);
+            
+            // Update payment info with new QR URL
+            service.getByOwnerId(ownerId).ifPresentOrElse(
+                existingInfo -> {
+                    existingInfo.setQrImageUrl(s3Url);
+                    service.saveOrUpdate(ownerId, existingInfo);
+                    System.out.println("Updated QR URL in database");
+                },
+                () -> {
+                    // Create new payment info with QR URL
+                    OwnerPaymentInfoDto newInfo = new OwnerPaymentInfoDto();
+                    newInfo.setOwnerId(ownerId);
+                    newInfo.setQrImageUrl(s3Url);
+                    newInfo.setIsActive(true);
+                    service.saveOrUpdate(ownerId, newInfo);
+                    System.out.println("Created new payment info with QR URL");
+                }
+            );
+            
+            return ResponseEntity.ok(new UploadResponse(s3Url));
+        } catch (Exception ex) {
+            System.err.println("Error uploading QR code: " + ex.getMessage());
+            ex.printStackTrace();
+            return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
+        }
+    }
+
+    /**
      * Helper method to get authenticated user's ID
      */
     private Long getAuthenticatedUserId(Authentication authentication) {
@@ -122,4 +204,5 @@ public class OwnerPaymentInfoController {
     public record ErrorResponse(String error) {}
     public record MessageResponse(String message) {}
     public record ExistsResponse(boolean exists) {}
+    public record UploadResponse(String url) {}
 }
