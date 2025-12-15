@@ -1329,6 +1329,18 @@ function closeQRModal() {
     document.getElementById('qrCodeModal').style.display = 'none';
 }
 
+// Open QR Full View
+function openQRFullView() {
+    const qrImage = document.getElementById('ownerQRCode').src;
+    document.getElementById('qrFullViewImage').src = qrImage;
+    document.getElementById('qrFullViewModal').style.display = 'flex';
+}
+
+// Close QR Full View
+function closeQRFullView() {
+    document.getElementById('qrFullViewModal').style.display = 'none';
+}
+
 // Handle Payment Proof Form Submission
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('paymentProofForm');

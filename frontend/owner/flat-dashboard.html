@@ -804,8 +804,69 @@
                 <div class="content-section" id="settingsContent">
                     <div class="section-header">
                         <h1>Settings</h1>
+                        <p>Manage your payment settings and QR code for rent collection</p>
                     </div>
-                    <p>Settings content will go here...</p>
+
+                    <!-- Payment Settings Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-credit-card"></i> Payment Settings</h3>
+                        </div>
+                        <form id="paymentSettingsForm" class="payment-settings-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="upiId">UPI ID</label>
+                                    <input type="text" id="upiId" placeholder="e.g., yourname@paytm" />
+                                    <small>Enter your UPI ID for tenant payments</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="preferredMode">Preferred Payment Mode</label>
+                                    <select id="preferredMode">
+                                        <option value="">Select Mode</option>
+                                        <option value="UPI">UPI</option>
+                                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                                        <option value="GATEWAY">Payment Gateway</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>QR Code for Payment</label>
+                                <div class="qr-upload-container">
+                                    <div class="qr-preview">
+                                        <img id="qrImage" src="" alt="QR Code" style="display: none; max-width: 200px; max-height: 200px; border: 2px solid #ddd; border-radius: 8px;" />
+                                        <div id="qrPlaceholder" class="qr-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 200px; height: 200px; border: 2px dashed #ddd; border-radius: 8px; background: #f9f9f9;">
+                                            <i class="fas fa-qrcode" style="font-size: 48px; color: #ccc; margin-bottom: 10px;"></i>
+                                            <p style="color: #999; font-size: 14px;">No QR code uploaded</p>
+                                        </div>
+                                    </div>
+                                    <div class="qr-actions">
+                                        <label for="qrCodeUpload" class="btn btn-primary">
+                                            <i class="fas fa-upload"></i> Upload QR Code
+                                        </label>
+                                        <input type="file" id="qrCodeUpload" accept="image/*" style="display: none;" onchange="handleQRUpload(event)" />
+                                        <button type="button" id="removeQRBtn" class="btn btn-danger" onclick="removeQRCode()" style="display: none;">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                                <small>Upload a QR code image that tenants can scan to pay rent</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="isActive" checked />
+                                    <span>Active (Allow tenants to see payment information)</span>
+                                </label>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
             </div>

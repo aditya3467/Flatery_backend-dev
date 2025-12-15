@@ -451,7 +451,7 @@
           </div>
           <div class="qr-code-content">
             <div class="qr-code-image">
-              <img id="ownerQRCode" src="" alt="Owner's QR Code" style="width: 200px; height: 200px; border: 2px solid #7A7AFF;">
+              <img id="ownerQRCode" src="" alt="Owner's QR Code" style="width: 200px; height: 200px; border: 2px solid #7A7AFF; cursor: pointer;" onclick="openQRFullView()" title="Click to view full size">
             </div>
             <div class="qr-code-details">
               <div class="qr-detail-item">
@@ -513,6 +513,14 @@
               <button class="btn-download"><i class="fas fa-download"></i></button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- QR Full View Modal -->
+      <div id="qrFullViewModal" class="payment-modal" style="display: none; background: rgba(0,0,0,0.95);">
+        <div style="position: relative; max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center;">
+          <button class="payment-modal-close" onclick="closeQRFullView()" style="position: absolute; top: 20px; right: 20px; z-index: 10; background: white; color: black; width: 40px; height: 40px; border-radius: 50%; font-size: 24px;">&times;</button>
+          <img id="qrFullViewImage" src="" alt="QR Code Full View" style="max-width: 90vw; max-height: 90vh; border: 3px solid #7A7AFF; border-radius: 10px;">
         </div>
       </div>
 

@@ -1061,6 +1061,11 @@ class FlatDashboard {
 
         const activities = this.generateRecentActivities().slice(0, 10);
 
+        if (activities.length === 0) {
+            feedContainer.innerHTML = '<div class="activity-empty">No recent activity yet.</div>';
+            return;
+        }
+
         feedContainer.innerHTML = activities.map(activity => `
             <div class="activity-item">
                 <div class="activity-icon ${activity.type}">
@@ -1141,25 +1146,6 @@ class FlatDashboard {
                     }
                 }
             });
-
-        // Add some sample activities for demonstration
-        const now = new Date();
-        activities.push(
-            {
-                type: 'reminder',
-                icon: 'fa-bell',
-                text: 'Reminder sent to tenants with pending payments',
-                time: this.getTimeAgo(new Date(now - 3 * 24 * 60 * 60 * 1000)),
-                date: new Date(now - 3 * 24 * 60 * 60 * 1000)
-            },
-            {
-                type: 'profile',
-                icon: 'fa-user-edit',
-                text: 'Tenant updated profile information',
-                time: this.getTimeAgo(new Date(now - 5 * 24 * 60 * 60 * 1000)),
-                date: new Date(now - 5 * 24 * 60 * 60 * 1000)
-            }
-        );
 
         return activities.sort((a, b) => b.date - a.date);
     }
@@ -1246,7 +1232,7 @@ class FlatDashboard {
     generateInsights() {
         const insights = [];
 
-        // Highest earning flat
+        // Highest earning flat (based on active tenant rent)
         const propertyEarnings = this.propertiesData.map(property => {
             const tenant = this.tenantsData.find(t => t.propertyId === property.id && t.status === 'ACTIVE');
             return {
@@ -1263,27 +1249,48 @@ class FlatDashboard {
             });
         }
 
-        // Longest vacant flat
+        // Vacancy insight
         const vacantFlats = this.propertiesData.filter(p => 
             !this.tenantsData.some(t => t.propertyId === p.id && t.status === 'ACTIVE')
         );
-
         if (vacantFlats.length > 0) {
-            // For demo, assume first vacant flat has been vacant for 20 days
+            const firstVacant = vacantFlats[0];
             insights.push({
-                icon: 'fa-calendar-times',
-                text: `Flat vacant longest: ${vacantFlats[0].name} (since 20 days)`
+                icon: 'fa-home',
+                text: `${vacantFlats.length} flat${vacantFlats.length > 1 ? 's' : ''} currently vacant (e.g. ${this.generateFlatName(firstVacant)})`
             });
         }
 
-        // Upcoming due dates
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        insights.push({
-            icon: 'fa-exclamation-circle',
-            text: `Upcoming due dates: 2 tenants (due tomorrow)`
-        });
+        // Pending approvals insight
+        const pendingApprovals = this.paymentsData.filter(p => p.status === 'PENDING').length;
+        if (pendingApprovals > 0) {
+            insights.push({
+                icon: 'fa-clock',
+                text: `${pendingApprovals} payment${pendingApprovals > 1 ? 's' : ''} awaiting approval`
+            });
+        }
+
+        // Due payments insight
+        const dueCount = this.calculateDuePayments();
+        if (dueCount > 0) {
+            insights.push({
+                icon: 'fa-exclamation-circle',
+                text: `${dueCount} tenant${dueCount > 1 ? 's' : ''} have rent due this month`
+            });
+        }
+
+        // Occupancy rate insight
+        const occupiedFlats = this.propertiesData.filter(property => 
+            this.tenantsData.some(tenant => tenant.propertyId === property.id && tenant.status === 'ACTIVE')
+        ).length;
+        const totalFlats = this.propertiesData.length;
+        if (totalFlats > 0) {
+            const occupancyRate = Math.round((occupiedFlats / totalFlats) * 100);
+            insights.push({
+                icon: 'fa-chart-line',
+                text: `Occupancy rate: ${occupancyRate}% (${occupiedFlats}/${totalFlats} flats occupied)`
+            });
+        }
 
         return insights;
     }
@@ -2345,9 +2352,165 @@ class FlatDashboard {
     }
 
     async loadSettingsSection() {
-        // Placeholder for settings functionality
-        console.log('[OwnerDashboard] Loading settings section...');
+        console.log('[FlatDashboard] Loading settings section...');
+        try {
+            // Setup payment settings form
+            this.setupPaymentSettingsForm();
+            // Load existing payment settings
+            await this.loadPaymentSettings();
+        } catch (error) {
+            console.error('[FlatDashboard] Error loading settings:', error);
+            this.showNotification('Error loading settings', 'error');
+        }
     }
+
+    // ===== PAYMENT SETTINGS FUNCTIONS =====
+    
+    setupPaymentSettingsForm() {
+        console.log('[FlatDashboard] Setting up payment settings form');
+        const form = document.getElementById('paymentSettingsForm');
+        if (!form) {
+            console.warn('[FlatDashboard] Payment settings form not found');
+            return;
+        }
+        
+        // Remove any existing listeners
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        
+        // Add submit handler
+        newForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.savePaymentSettings();
+        });
+        
+        console.log('[FlatDashboard] Payment settings form setup complete');
+    }
+
+    async loadPaymentSettings() {
+        try {
+            const data = await apiService.get('/owner-payment-info');
+            if (data) {
+                this.populatePaymentSettingsForm(data);
+            } else {
+                this.clearPaymentSettingsForm();
+            }
+        } catch (error) {
+            if (error.status === 204) {
+                console.log('[FlatDashboard] No payment info found - showing empty form');
+                this.clearPaymentSettingsForm();
+            } else {
+                console.error('[FlatDashboard] Error loading payment settings:', error);
+                this.showNotification('Error loading payment settings: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+    }
+
+    populatePaymentSettingsForm(data) {
+        document.getElementById('upiId').value = data.upiId || '';
+        document.getElementById('preferredMode').value = data.preferredMode || '';
+        document.getElementById('isActive').checked = data.isActive !== false;
+        
+        if (data.qrImageUrl) {
+            document.getElementById('qrImage').src = data.qrImageUrl;
+            document.getElementById('qrImage').style.display = 'block';
+            document.getElementById('qrPlaceholder').style.display = 'none';
+            document.getElementById('removeQRBtn').style.display = 'block';
+        } else {
+            this.clearQRPreview();
+        }
+    }
+
+    clearPaymentSettingsForm() {
+        document.getElementById('upiId').value = '';
+        document.getElementById('preferredMode').value = '';
+        document.getElementById('isActive').checked = true;
+        this.clearQRPreview();
+    }
+
+    clearQRPreview() {
+        document.getElementById('qrImage').style.display = 'none';
+        document.getElementById('qrImage').src = '';
+        document.getElementById('qrPlaceholder').style.display = 'flex';
+        document.getElementById('removeQRBtn').style.display = 'none';
+        this.currentQRFile = null;
+    }
+
+    async savePaymentSettings() {
+        try {
+            const upiId = document.getElementById('upiId').value.trim();
+            const preferredMode = document.getElementById('preferredMode').value;
+            const isActive = document.getElementById('isActive').checked;
+
+            if (upiId && !this.validateUpiId(upiId)) {
+                this.showNotification('Please enter a valid UPI ID (e.g., username@paytm)', 'error');
+                return;
+            }
+
+            if (this.currentQRFile) {
+                console.log('[FlatDashboard] Uploading QR code to S3...');
+                const qrImageUrl = await this.uploadQRCode(this.currentQRFile);
+                if (!qrImageUrl) {
+                    this.showNotification('Failed to upload QR code. Please try again.', 'error');
+                    return;
+                }
+                console.log('[FlatDashboard] QR code uploaded successfully:', qrImageUrl);
+            }
+
+            const payload = {
+                upiId: upiId || null,
+                preferredMode: preferredMode || null,
+                isActive: isActive
+            };
+
+            await apiService.post('/owner-payment-info', payload);
+            this.showNotification('Payment settings saved successfully!', 'success');
+            this.currentQRFile = null;
+            await this.loadPaymentSettings();
+        } catch (error) {
+            console.error('[FlatDashboard] Error saving payment settings:', error);
+            this.showNotification(error.message || 'Error saving payment settings', 'error');
+        }
+    }
+
+    async uploadQRCode(file) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const token = localStorage.getItem('authToken');
+            
+            if (!token || token === 'null' || token === 'undefined') {
+                throw new Error('Authentication required. Please log in again.');
+            }
+
+            const response = await fetch(`${apiService.baseURL}/owner-payment-info/upload-qr`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result.url;
+            } else {
+                const errorText = await response.text();
+                console.error('[FlatDashboard] Failed to upload QR code:', response.status, errorText);
+                return null;
+            }
+        } catch (error) {
+            console.error('[FlatDashboard] Error uploading QR code:', error);
+            throw error;
+        }
+    }
+
+    validateUpiId(upiId) {
+        const upiPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z]+$/;
+        return upiPattern.test(upiId);
+    }
+
 
     // Detail Views
     showPropertyDetails(propertyId) {

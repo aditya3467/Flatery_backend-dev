@@ -114,6 +114,30 @@ document.addEventListener('DOMContentLoaded', function () {
   // 🔹 HAMBURGER MENU LOGIC
   // =========================
 
+  // Smooth scroll for on-page anchor links (works across pages including index)
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const targetId = link.getAttribute('href').slice(1);
+      // Allow default if it is not an on-page anchor
+      if (!targetId) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        e.preventDefault();
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Close hamburger if open on mobile
+        const burgerToggle = document.getElementById('burger-toggle');
+        if (burgerToggle && burgerToggle.checked) {
+          burgerToggle.checked = false;
+        }
+      }
+    });
+  });
+
   /**
    * Closes hamburger menu when clicking outside of it
    */
