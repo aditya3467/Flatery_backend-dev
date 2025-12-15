@@ -1,0 +1,12 @@
+Please save the "Why Choose Flatery?" image that was shared in the chat as:
+/Users/mac/Documents/GitHub/Flatery_backend-dev/frontend/img/why-choose-flatery.png
+
+The image shows:
+- Title: "Why Choose Flatery?"
+- Subtitle: "Smarter renting & property management starts here."
+- 4 features with blue icons:
+  1. Verified Listings
+  2. Powerful Owner CRM  
+  3. Faster Tenant Discovery
+  4. Secure Rent Payments
+- Illustration of a person with laptop holding a house

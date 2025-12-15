@@ -2066,3 +2066,49 @@ body {
 @media (max-width: 600px) {
     .property-image { height:180px; }
 }
+
+/* ===== Footer Full Width Override ===== */
+/* Make footer span only the main content area, respecting the fixed sidebar */
+#footer-container {
+    width: calc(100% - 320px) !important;
+    margin-left: 320px !important;
+    padding: 0 !important;
+    clear: both !important;
+    position: relative !important;
+}
+
+@media (min-width: 1400px) {
+    #footer-container {
+        width: calc(100% - 400px) !important;
+        margin-left: 400px !important;
+    }
+}
+
+@media (max-width: 991px) {
+    #footer-container {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+
+.footer {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 50px 0 25px 0 !important;
+    background: var(--dark-bg) !important;
+}
+
+.footer .container {
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 30px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.footer .row {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}

@@ -345,9 +345,28 @@ async function enrichPropertiesWithNames() {
         try {
             console.log(`Fetching full details for property ${property.id}...`);
             
-            // Fetch basic details for name
+            // Fetch full details and merge with existing property data
             const details = await apiService.makeRequest(`/properties/${property.id}`, { includeAuth: false });
-            property.name = details.name;
+            
+            // Merge all details into the property object
+            Object.assign(property, {
+                name: details.name,
+                type: details.propertyType || details.type || property.type,
+                bhkType: details.bhkType || details.bhk,
+                pgSeater: details.pgSeater || details.seater || details.sharingType,
+                builtUpArea: details.builtUpAreaSqft || details.builtUpArea,
+                bathrooms: details.bathrooms || details.totalBathrooms,
+                expectedDeposit: details.expectedDeposit || details.securityDeposit,
+                maintenance: details.monthlyMaintenance || details.maintenanceCharges || details.maintenance,
+                currentFloor: details.currentFloor || details.floorNumber,
+                totalFloor: details.totalFloor || details.totalFloors,
+                furnishing: details.furnishing || details.furnishingStatus,
+                parking: details.parking || details.parkingAvailable,
+                preferredTenants: details.preferredTenants,
+                amenities: details.amenities,
+                propertyDescription: details.propertyDescription || details.description,
+                availableFrom: details.availableFrom || details.availabilityDate
+            });
             
             // Fetch all images using the same endpoint as property details page
             const images = await apiService.makeRequest(`/properties/${property.id}/images`, { includeAuth: false });
@@ -365,7 +384,14 @@ async function enrichPropertiesWithNames() {
                 normalized.sort((a, b) => (b.primary - a.primary) || (a.position - b.position));
                 
                 // Extract just the URLs for the carousel
-                property.images = normalized.map(img => img.url.startsWith('/') ? img.url : `/${img.url}`);
+                // Check if URL is already a full URL (http/https) or S3 URL, otherwise add leading slash
+                property.images = normalized.map(img => {
+                    const url = img.url;
+                    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
+                        return url;
+                    }
+                    return `/${url}`;
+                });
                 console.log(`✓ Property ${property.id} loaded with ${property.images.length} images:`, property.images);
             } else {
                 // Fallback to primary image

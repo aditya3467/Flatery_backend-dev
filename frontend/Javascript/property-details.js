@@ -65,6 +65,17 @@ async function loadPropertyDetails(propertyId) {
             throw new Error('No property data returned from server');
         }
         
+        // Normalize field names from API to match what the UI expects
+        if (!property.propertyType && property.type) {
+            property.propertyType = property.type;
+        }
+        if (!property.builtUpAreaSqft && property.builtUpArea) {
+            property.builtUpAreaSqft = property.builtUpArea;
+        }
+        if (!property.monthlyMaintenance && (property.maintenanceCharges || property.maintenance)) {
+            property.monthlyMaintenance = property.maintenanceCharges || property.maintenance;
+        }
+        
         currentProperty = property;
         
         // Handle images: always try to fetch full set and merge with any provided
@@ -622,8 +633,8 @@ function populateCTASidebar(property) {
                 <div class="owner-details">
                     <div class="owner-name" id="ownerName">${property.ownerName || property.contactPerson || 'Property Owner'}</div>
                     <div class="owner-contact">
-                        <div id="ownerPhoneText">📞 ${property.ownerPhone || property.contactNumber || '—'}</div>
-                        <div id="ownerEmailText">✉️ ${property.ownerEmail || property.contactEmail || '—'}</div>
+                        <div id="ownerPhoneText">📞 ${apiService.isAuthenticated() ? (property.ownerPhone || property.contactNumber || '—') : 'Login to view'}</div>
+                        <div id="ownerEmailText">✉️ ${apiService.isAuthenticated() ? (property.ownerEmail || property.contactEmail || '—') : 'Login to view'}</div>
                     </div>
                     <div class="owner-actions">
                         <button class="cta-btn call-btn" id="callOwnerBtn" disabled>
@@ -914,6 +925,14 @@ function syncWishlistButtons() {
  * Call owner function
  */
 function callOwner(phone) {
+    if (!apiService.isAuthenticated()) {
+        showToast('Please login to contact the owner', 'error');
+        setTimeout(() => {
+            document.getElementById('mainLoginBtn')?.click();
+        }, 1000);
+        return;
+    }
+    
     if (phone && phone !== '98765xxxxx') {
         window.location.href = `tel:${phone}`;
     } else {
@@ -925,8 +944,38 @@ function callOwner(phone) {
  * WhatsApp owner function
  */
 function whatsappOwner(phone) {
+    if (!apiService.isAuthenticated()) {
+        showToast('Please login to contact the owner', 'error');
+        setTimeout(() => {
+            document.getElementById('mainLoginBtn')?.click();
+        }, 1000);
+        return;
+    }
+    
     if (phone && phone !== '98765xxxxx') {
-        const message = encodeURIComponent(`Hi, I'm interested in your property: ${currentProperty.title}`);
+        const property = currentProperty;
+        const propertyTitle = property.title || property.name || 'Property';
+        const propertyType = property.propertyType || property.type || '';
+        const location = `${property.location || ''}, ${property.city || ''}`.trim().replace(/^,\s*/, '');
+        const rent = property.expectedRent || property.baseRent || property.rent || 0;
+        const bhk = property.bhkType || property.bhk || '';
+        const seater = property.pgSeater || property.seater || '';
+        const area = property.builtUpAreaSqft || property.builtUpArea || '';
+        
+        // Build property details string
+        let propertyDetails = `*${propertyTitle}*\n\n`;
+        if (propertyType) propertyDetails += `Type: ${propertyType}\n`;
+        if (location) propertyDetails += `Location: ${location}\n`;
+        if (propertyType === 'PG' && seater) {
+            propertyDetails += `Seater: ${seater}\n`;
+        } else if (bhk) {
+            propertyDetails += `BHK: ${bhk.replace('BHK_', '')}\n`;
+        }
+        if (area) propertyDetails += `Area: ${area} sqft\n`;
+        propertyDetails += `Rent: ₹${formatPrice(rent)}/month\n\n`;
+        propertyDetails += `I'm interested in this property. Can you provide more details?`;
+        
+        const message = encodeURIComponent(propertyDetails);
         window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
     } else {
         showToast('Phone number not available', 'error');
@@ -949,9 +998,14 @@ function initializeMobileCTA() {
                     <span class="mobile-price">₹${formatPrice(currentProperty.expectedRent || currentProperty.baseRent || currentProperty.rent || 0)}</span>
                     <span class="mobile-period">/month</span>
                 </div>
-                <button class="mobile-cta-btn" onclick="openMobileBookingModal()">
-                    Book Visit
-                </button>
+                <div class="mobile-cta-actions">
+                    <button class="mobile-cta-btn call-btn" onclick="callOwner('${(currentOwnerContact && currentOwnerContact.phone) || currentProperty.ownerPhone || currentProperty.contactNumber || ''}')">
+                        <i class="fas fa-phone"></i> Call
+                    </button>
+                    <button class="mobile-cta-btn whatsapp-btn" onclick="whatsappOwner('${(currentOwnerContact && currentOwnerContact.phone) || currentProperty.ownerPhone || currentProperty.contactNumber || ''}')">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                </div>
             </div>
         </div>
     `;
