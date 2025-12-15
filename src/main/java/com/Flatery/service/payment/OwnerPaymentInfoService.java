@@ -34,7 +34,9 @@ public class OwnerPaymentInfoService {
         // Set basic fields
         info.setOwnerId(ownerId);
         info.setUpiId(dto.getUpiId());
-        info.setQrImageUrl(dto.getQrImageUrl());
+        if (dto.getQrImageUrl() != null && !dto.getQrImageUrl().isBlank()) {
+            info.setQrImageUrl(dto.getQrImageUrl());
+        }
 
         if (dto.getPreferredMode() != null) {
             info.setPreferredMode(PaymentMode.valueOf(dto.getPreferredMode().toUpperCase()));

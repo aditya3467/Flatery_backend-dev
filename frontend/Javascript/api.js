@@ -622,6 +622,14 @@ class ApiService {
         });
     }
 
+    // Owner payment info (public) by ownerId – used by tenant dashboard to show QR
+    async getOwnerPaymentInfoByOwnerId(ownerId) {
+        return this.makeRequest(`/owner-payment-info/public/${ownerId}`, {
+            method: 'GET',
+            includeAuth: false
+        });
+    }
+
     // Get tenant's payment history
     async getTenantPayments() {
         return this.makeRequest('/transactions/tenant/my-payments', {

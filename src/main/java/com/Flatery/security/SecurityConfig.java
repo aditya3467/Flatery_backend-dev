@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/properties/**").permitAll() // Allow public property listing
                         .requestMatchers("/api/tenants/check-active-tenancy").permitAll() // Allow active tenancy check for frontend validation
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
+                        .requestMatchers("/api/owner-payment-info/public/**").permitAll() // Allow tenants to fetch owner QR/UPI
             .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
             .requestMatchers("/css/**", "/Javascript/**", "/img/**").permitAll() // static assets
             .requestMatchers("/").permitAll() // Allow access to root

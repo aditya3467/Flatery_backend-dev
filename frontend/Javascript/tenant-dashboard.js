@@ -906,8 +906,13 @@ function getDaySuffix(day) {
 // Load rent and payments section data
 async function loadRentPayments() {
     try {
+        const svc = window.apiService || (typeof ApiService === 'function' ? (window.apiService = new ApiService()) : null);
+        if (!svc) {
+            throw new Error('API service not ready');
+        }
+
         // Fetch real data from the comprehensive property API
-        const propertyDetails = await apiService.getTenantPropertyDetails();
+        const propertyDetails = await svc.getTenantPropertyDetails();
         
         console.log('🔍 Raw API Response:', propertyDetails);
         console.log('🔍 Property Details Keys:', Object.keys(propertyDetails || {}));
@@ -939,10 +944,22 @@ async function loadRentPayments() {
         window.currentOwnerName = rentData.ownerName;
         window.currentOwnerId = rentData.ownerId;
 
+        // Fetch owner's payment info (QR, UPI) from public endpoint
+        let ownerPaymentInfo = null;
+        if (rentData.ownerId) {
+            try {
+                ownerPaymentInfo = await svc.getOwnerPaymentInfoByOwnerId(rentData.ownerId);
+                console.log('🔍 Owner payment info:', ownerPaymentInfo);
+                window.currentOwnerPaymentInfo = ownerPaymentInfo;
+            } catch (err) {
+                console.warn('Failed to fetch owner payment info (QR):', err);
+            }
+        }
+
         // Fetch real transaction/payment data
         let transactions = [];
         try {
-            transactions = await apiService.getTenantPayments();
+            transactions = await svc.getTenantPayments();
             console.log('🔍 Fetched Transactions:', transactions);
         } catch (error) {
             console.warn('Failed to fetch transactions, using empty array:', error);
@@ -1260,23 +1277,34 @@ async function handleViewQRCode() {
         // Get the current rent amount from the DOM
         const rentAmountText = document.getElementById('monthlyRentAmount').textContent;
         const rentAmount = parseInt(rentAmountText.replace(/[₹,]/g, '')) || 6000;
-        
-        // In the future, this will fetch owner payment details from API
-        // const ownerPaymentInfo = await apiService.getOwnerPaymentInfo();
-        
-        // Mock QR data - will be fetched from API
-        const qrData = {
-            upiId: 'owner@paytm',
-            ownerName: window.currentOwnerName || 'Property Owner',
-            qrImageUrl: 'https://via.placeholder.com/200x200/7A7AFF/FFFFFF?text=QR+CODE',
-            rentAmount: rentAmount
-        };
 
-        document.getElementById('ownerUpiId').textContent = qrData.upiId;
-        document.getElementById('ownerPaymentName').textContent = qrData.ownerName;
-        document.getElementById('qrRentAmount').textContent = `₹${formatNumber(qrData.rentAmount)}`;
-        document.getElementById('qrAmountHint').textContent = formatNumber(qrData.rentAmount);
-        document.getElementById('ownerQRCode').src = qrData.qrImageUrl;
+        const svc = window.apiService || (typeof ApiService === 'function' ? (window.apiService = new ApiService()) : null);
+        let ownerInfo = window.currentOwnerPaymentInfo || {};
+
+        // Fetch on demand if not already loaded
+        if ((!ownerInfo || Object.keys(ownerInfo).length === 0) && window.currentOwnerId && svc) {
+            try {
+                ownerInfo = await svc.getOwnerPaymentInfoByOwnerId(window.currentOwnerId);
+                window.currentOwnerPaymentInfo = ownerInfo;
+            } catch (err) {
+                console.warn('Failed to fetch owner payment info on demand:', err);
+            }
+        }
+
+        const fallbackSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
+            <rect width='200' height='200' fill='%23f2f2f2'/>
+            <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'
+                  fill='%23888' font-family='Arial' font-size='14'>QR not uploaded</text>
+        </svg>`;
+        const qrImageUrl = ownerInfo?.qrImageUrl || `data:image/svg+xml;utf8,${encodeURIComponent(fallbackSvg)}`;
+        const upiId = ownerInfo?.upiId || 'UPI not provided';
+        const ownerName = window.currentOwnerName || 'Property Owner';
+
+        document.getElementById('ownerUpiId').textContent = upiId;
+        document.getElementById('ownerPaymentName').textContent = ownerName;
+        document.getElementById('qrRentAmount').textContent = `₹${formatNumber(rentAmount)}`;
+        document.getElementById('qrAmountHint').textContent = formatNumber(rentAmount);
+        document.getElementById('ownerQRCode').src = qrImageUrl;
 
         document.getElementById('qrCodeModal').style.display = 'flex';
         

@@ -120,6 +120,17 @@ public class OwnerPaymentInfoController {
     }
 
     /**
+     * Public read-only endpoint to fetch an owner's payment info (QR/UPI) by ownerId.
+     * Used by tenant-facing frontend; no authentication required.
+     */
+    @GetMapping("/public/{ownerId}")
+    public ResponseEntity<?> getPaymentInfoPublic(@PathVariable Long ownerId) {
+        return service.getByOwnerId(ownerId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
      * Check if payment info exists
      */
     @GetMapping("/exists")
