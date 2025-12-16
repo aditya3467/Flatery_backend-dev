@@ -18,7 +18,6 @@
 (function () {
   document.addEventListener('DOMContentLoaded', async function () {
     try {
-      console.log('[Owner Dashboard] Initializing...');
       
       // Ensure apiService is available
       if (typeof apiService === 'undefined') {
@@ -27,16 +26,12 @@
         return;
       }
 
-      console.log('[Owner Dashboard] Checking authentication...');
-      console.log('[Owner Dashboard] Is authenticated:', apiService.isAuthenticated());
       
       // Guard: Only authenticated ADMINs should access owner dashboard
       const roles = JSON.parse(localStorage.getItem('roles') || '[]');
-      console.log('[Owner Dashboard] User roles:', roles);
       
       if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
         // Notify and redirect
-        console.warn('[Owner Dashboard] Access denied - not authenticated or not ADMIN role');
         safeNotify('Please login as an owner to view the dashboard.', 'info');
         setTimeout(() => {
           window.location.href = '../index.html';
@@ -44,12 +39,9 @@
         return;
       }
 
-      console.log('[Owner Dashboard] Loading dashboard metrics...');
       // Load dashboard metrics and properties
       await loadDashboardMetrics();
-      console.log('[Owner Dashboard] Loading owner properties...');
       await loadOwnerProperties();
-      console.log('[Owner Dashboard] Initialization complete');
     } catch (err) {
       console.error('[Owner Dashboard] Failed to load owner dashboard:', err);
       safeNotify(err.message || 'Failed to load dashboard data.', 'error');
@@ -58,14 +50,12 @@
 
   // Listen for tenant added event and reload metrics
   window.addEventListener('tenantAdded', async () => {
-    console.log('Tenant added event received, reloading metrics...');
     await loadDashboardMetrics();
   });
 
   // Also reload when page becomes visible (user returns from another tab/page)
   document.addEventListener('visibilitychange', async () => {
     if (!document.hidden && apiService.isAuthenticated()) {
-      console.log('Page became visible, reloading metrics...');
       await loadDashboardMetrics();
     }
   });
@@ -314,7 +304,6 @@
 // ========================================================
 // Edit Property Page JS: prefill form, manage images, and submit updates
 (function() {
-  console.log('📦 owner.js EDIT PROPERTY section loaded');
   
   const $ = (id) => document.getElementById(id);
   const notify = (m,t='info') => typeof window.showNotification==='function'?window.showNotification(m,t):alert(m);
@@ -323,26 +312,19 @@
   let existingImages = [];
   let preventRedirect = false; // Flag to prevent auto-logout on errors
 
-  console.log('🎯 Adding DOMContentLoaded listener for edit property');
   document.addEventListener('DOMContentLoaded', init);
 
   async function init(){
-    console.log('🚀 Edit property init() called');
-    console.log('📍 Current pathname:', window.location.pathname);
-    console.log('📍 Full URL:', window.location.href);
     
     // Only run on edit-property page
     if (!window.location.pathname.includes('edit-property')) {
-      console.log('⏭️ Not on edit-property page, skipping init');
       return;
     }
     
-    console.log('✅ On edit-property page, continuing...');
     
     // Role guard
     try {
       const roles = JSON.parse(localStorage.getItem('roles') || '[]');
-      console.log('👤 User roles:', roles);
       if (!roles.includes('ADMIN')) {
         notify('Only owners (ADMIN) can edit properties.', 'error');
         window.location.href = '../index.html';
@@ -352,55 +334,40 @@
 
     const params = new URLSearchParams(window.location.search);
     propertyId = params.get('id');
-    console.log('🔑 Property ID from URL:', propertyId);
     
     if (!propertyId) { notify('Missing property id', 'error'); window.history.back(); return; }
 
-    console.log('⚙️ Setting up number steppers...');
     setupNumberSteppers();
-    console.log('⚙️ Setting up time slot toggle...');
     setupTimeSlotToggle();
-    console.log('⚙️ Setting up image upload...');
     setupUploadNewImages();
 
-    console.log('📥 Loading property data...');
     await loadProperty();
-    console.log('🖼️ Loading images...');
     await loadImages();
 
     const form = $('editPropertyForm');
     if (form) {
-      console.log('📝 Form found, attaching submit handler');
       form.addEventListener('submit', onSubmit);
     } else {
       console.error('❌ Form #editPropertyForm not found!');
     }
     
-    console.log('🎉 Init complete!');
   }
 
   async function loadProperty(){
     try {
-      console.log('🔍 Loading property ID:', propertyId);
       const d = await apiService.getMyProperty(propertyId);
-      console.log('✅ Property data received:', d);
-      console.log('📊 Property type:', d.type);
-      console.log('📊 Property bhkType:', d.bhkType);
       
       if (!d) {
         throw new Error('No property data received from server');
       }
       
       // Basic
-      console.log('Setting property type:', d.type);
       setSelect('propertyType', d.type);
       toggleTypeFields();
       if (d.type === 'PG') {
-        console.log('Setting PG seater:', d.pgSeater);
         setValue('seater', d.pgSeater);
       } else {
         const bhkValue = mapBhkTypeBack(d.bhkType);
-        console.log('Setting BHK type:', d.bhkType, '→', bhkValue);
         setSelect('bhkType', bhkValue);
       }
       setValue('propertyName', d.name || '');
@@ -452,7 +419,6 @@
       const typeEl = $('#propertyType');
       if (typeEl) typeEl.addEventListener('change', toggleTypeFields);
       
-      console.log('✅ Property loaded and form populated successfully!');
     } catch (e) {
       console.error('❌ Error loading property:', e);
       console.error('Error stack:', e.stack);
@@ -470,7 +436,6 @@
       existingImages = Array.isArray(imgs)?imgs:[];
       renderExistingImages();
     } catch (e) {
-      console.warn('Failed to load images', e);
       const container = $('existingImages');
       if (container) container.innerHTML = '<div style="padding:10px;color:#999;">No images available.</div>';
     }
@@ -517,8 +482,6 @@
     e.stopPropagation();
     
     const id = e.currentTarget.getAttribute('data-id');
-    console.log('🖼️ Make Primary clicked - Property ID:', propertyId, 'Image ID:', id);
-    console.log('🔑 Auth token exists:', !!localStorage.getItem('authToken'));
     
     if (!id || !propertyId) {
       notify('Missing image or property ID', 'error');
@@ -536,9 +499,7 @@
     e.currentTarget.textContent = 'Setting...';
     
     try {
-      console.log('📤 Calling setPrimaryPropertyImage API...');
       const result = await apiService.setPrimaryPropertyImage(propertyId, id);
-      console.log('✅ Primary image set successfully:', result);
       notify('Primary image updated successfully!', 'success');
       
       // Reload images to show updated primary status
@@ -551,7 +512,6 @@
       
       // Restore auth state if it was cleared
       if (authToken && !localStorage.getItem('authToken')) {
-        console.warn('⚠️ Auth token was cleared, restoring...');
         localStorage.setItem('authToken', authToken);
         localStorage.setItem('roles', roles);
         localStorage.setItem('username', username);
@@ -731,7 +691,6 @@
   function setValue(id, v){ 
     const el = $(id); 
     if (!el) {
-      console.warn(`⚠️ Element not found: ${id}`);
       return;
     }
     el.value = v ?? ''; 
@@ -739,7 +698,6 @@
   function setNumber(id, v){ 
     const el = $(id); 
     if (!el) {
-      console.warn(`⚠️ Element not found: ${id}`);
       return;
     }
     el.value = Number.isFinite(v)? v : ''; 
@@ -747,11 +705,9 @@
   function setSelect(id, v){ 
     const el = $(id); 
     if (!el) {
-      console.warn(`⚠️ Element not found: ${id}`);
       return;
     }
     el.value = v ?? ''; 
-    console.log(`Set ${id} = ${v}`);
   }
   function intval(id){ const el = $(id); return el ? (parseInt(el.value) || 0) : 0; }
 

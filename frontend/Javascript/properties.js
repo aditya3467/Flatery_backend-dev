@@ -133,7 +133,6 @@ function initializeMobileFilterBar() {
  * Apply sort filter
  */
 function applySortFilter(sortType) {
-    console.log('Applying sort:', sortType);
     
     switch(sortType) {
         case 'rent_low_high':
@@ -156,7 +155,6 @@ function applySortFilter(sortType) {
  * Apply mobile filters (same logic as desktop but using mobile elements)
  */
 function applyMobileFilters() {
-    console.log('Applying mobile filters...');
     
     const propertyType = document.getElementById('mobileFilterPropertyType')?.value || '';
     const city = document.getElementById('mobileFilterCity')?.value?.toLowerCase() || '';
@@ -167,7 +165,6 @@ function applyMobileFilters() {
     const selectedFlatTypes = Array.from(document.querySelectorAll('.mobile-filter-checkbox[data-filter="flatType"]:checked')).map(cb => cb.value);
     const selectedAmenities = Array.from(document.querySelectorAll('.mobile-filter-checkbox[data-filter="amenities"]:checked')).map(cb => cb.value);
     
-    console.log('Mobile filter values:', {
         propertyType, city, maxRent, furnishing,
         selectedFlatTypes, selectedAmenities
     });
@@ -201,7 +198,6 @@ function applyMobileFilters() {
         return matchType && matchCity && matchRent && matchFurnishing && matchFlatType && matchAmenities;
     });
     
-    console.log('Mobile filtered properties:', filteredProperties.length);
     
     currentPage = 1;
     displayProperties();
@@ -338,12 +334,10 @@ async function loadProperties() {
  * Fetch full details for all properties to get their names and all images
  */
 async function enrichPropertiesWithNames() {
-    console.log('Starting to enrich properties with full details...');
     
     // Fetch details in parallel for all properties to get names and full image arrays
     const detailsPromises = allProperties.map(async (property) => {
         try {
-            console.log(`Fetching full details for property ${property.id}...`);
             
             // Fetch full details and merge with existing property data
             const details = await apiService.makeRequest(`/properties/${property.id}`, { includeAuth: false });
@@ -392,14 +386,11 @@ async function enrichPropertiesWithNames() {
                     }
                     return `/${url}`;
                 });
-                console.log(`✓ Property ${property.id} loaded with ${property.images.length} images:`, property.images);
             } else {
                 // Fallback to primary image
                 property.images = property.primaryImageUrl ? [property.primaryImageUrl] : [];
-                console.log(`⚠ Property ${property.id} has no images from /images endpoint, using primary:`, property.images);
             }
         } catch (error) {
-            console.warn(`Failed to fetch details for property ${property.id}:`, error);
             // Keep original images if any, or use primary
             if (!property.images && property.primaryImageUrl) {
                 property.images = [property.primaryImageUrl];
@@ -408,7 +399,6 @@ async function enrichPropertiesWithNames() {
     });
     
     await Promise.all(detailsPromises);
-    console.log('Finished enriching properties with all images');
 }
 
 /**
@@ -558,7 +548,6 @@ function displayProperties() {
     setupCarouselEventListeners();
     initializeCarousels();
     
-    console.log('Properties rendered:', currentProperties.length);
     // Setup event listeners for manual carousel controls
     setupCarouselEventListeners();
     
@@ -588,7 +577,6 @@ function createPropertyCard(property) {
         title = property.location || property.city || 'Property';
     }
     // Images array from property data
-    console.log(`Creating card for property ${property.id}:`, {
         originalImages: property.images,
         isArray: Array.isArray(property.images),
         length: property.images?.length,
@@ -599,7 +587,6 @@ function createPropertyCard(property) {
         ? property.images
         : [property.primaryImageUrl || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'];
         
-    console.log(`Property ${property.id} final images for card:`, images);
     
     const firstImage = images[0];
     const availableDate = property.availableFrom ? new Date(property.availableFrom).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Available Now';
@@ -700,7 +687,6 @@ function toggleBhkSeaterFilter() {
  * Apply filters
  */
 function applyFilters() {
-    console.log('applyFilters() called');
     
     // Get filter values from actual HTML structure
     const propertyType = document.getElementById('filterPropertyType')?.value || '';
@@ -715,11 +701,9 @@ function applyFilters() {
     const selectedAmenities = Array.from(document.querySelectorAll('input[data-filter="amenities"]:checked')).map(cb => cb.value);
     const selectedPreferredTenants = Array.from(document.querySelectorAll('input[data-filter="preferredTenants"]:checked')).map(cb => cb.value);
     
-    console.log('Filter values:', {
         propertyType, city, maxRent, furnishing,
         selectedFlatTypes, selectedPgTypes, selectedSharing, selectedAmenities, selectedPreferredTenants
     });
-    console.log('Total properties before filtering:', allProperties.length);
     
     const today = new Date();
     
@@ -771,7 +755,6 @@ function applyFilters() {
         return matchType && matchCity && matchRent && matchFurnishing && matchFlatType && matchPgType && matchSharing && matchAmenities && matchPreferredTenants;
     });
     
-    console.log('Filtered properties count:', filteredProperties.length);
     
     currentPage = 1;
     displayProperties();
@@ -815,7 +798,6 @@ function setupPagination() {
     const pageNumbers = document.getElementById('pageNumbers');
     
     if (!pagination || !pageNumbers) {
-        console.warn('Pagination elements not found');
         return;
     }
     
@@ -878,7 +860,6 @@ function previousPage() {
  * View property details
  */
 function viewPropertyDetails(propertyId) {
-    console.log('Viewing property:', propertyId);
     window.location.href = `property-details.html?id=${propertyId}`;
 }
 
@@ -973,14 +954,12 @@ function setupCarouselEventListeners() {
         });
     });
     
-    console.log('Carousel event listeners set up');
 }
 
 // Carousel helpers
 let carouselIntervals = new Map(); // Store intervals for each carousel
 
 function initializeCarousels() {
-    console.log('Initializing carousels...');
     
     // Clear existing intervals
     carouselIntervals.forEach(interval => clearInterval(interval));
@@ -988,11 +967,9 @@ function initializeCarousels() {
     
     // Initialize auto-scroll for each carousel with multiple images
     const imageWrappers = document.querySelectorAll('.property-image');
-    console.log(`Found ${imageWrappers.length} image wrappers`);
     
     imageWrappers.forEach(imageWrapper => {
         const encoded = imageWrapper.getAttribute('data-images');
-        console.log('Checking wrapper:', imageWrapper, 'data-images:', encoded);
         if (!encoded) return;
         
         try {
@@ -1006,12 +983,10 @@ function initializeCarousels() {
                 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
             ];
             
-            console.log(`Property has ${testImages.length} images (${images.length} original + demo)`, testImages);
             
             // Initialize auto-scroll for any carousel (even single images for consistency)
             if (images.length >= 1) {
                 const propertyId = imageWrapper.getAttribute('data-property-id');
-                console.log(`Starting auto-scroll for property ${propertyId}`);
                 
                 // Start auto-scroll every 4 seconds
                 const interval = setInterval(() => {
@@ -1035,7 +1010,6 @@ function initializeCarousels() {
                     if (interval) {
                         clearInterval(interval);
                         carouselIntervals.delete(propertyId);
-                        console.log(`Paused auto-scroll for property ${propertyId}`);
                     }
                 });
                 
@@ -1055,7 +1029,6 @@ function initializeCarousels() {
                                 }
                             }, 4000);
                             carouselIntervals.set(propertyId, newInterval);
-                            console.log(`Resumed auto-scroll for property ${propertyId}`);
                         }
                     }, 500); // Small delay before restarting
                 });
@@ -1072,7 +1045,6 @@ function isElementVisible(element) {
 }
 
 function changeCarouselImage(button, direction) {
-    console.log('changeCarouselImage called with:', button, direction);
     const imageWrapper = button ? button.closest('.property-image') : null;
     if (!imageWrapper) {
         console.error('Image wrapper not found');
@@ -1081,7 +1053,6 @@ function changeCarouselImage(button, direction) {
     
     const img = imageWrapper.querySelector('img');
     const encoded = imageWrapper.getAttribute('data-images');
-    console.log('Found data-images:', encoded);
     
     if (!encoded) {
         console.error('No images data found');
@@ -1092,12 +1063,10 @@ function changeCarouselImage(button, direction) {
         const images = JSON.parse(decodeURIComponent(encoded));
         let index = parseInt(imageWrapper.getAttribute('data-image-index')) || 0;
         
-        console.log('Current index:', index, 'Direction:', direction, 'Images count:', images.length);
         
         // Calculate new index
         index = (index + direction + images.length) % images.length;
         
-        console.log('New index:', index);
         
         // Update image and index
         imageWrapper.setAttribute('data-image-index', index);
@@ -1106,7 +1075,6 @@ function changeCarouselImage(button, direction) {
         // Update dots
         updateCarouselDots(imageWrapper, index);
         
-        console.log(`Changed to image ${index + 1}/${images.length}`);
     } catch (error) {
         console.error('Error changing carousel image:', error);
     }
@@ -1131,7 +1099,6 @@ function jumpToCarouselImage(dotEl, targetIndex) {
         // Update dots
         updateCarouselDots(imageWrapper, targetIndex);
         
-        console.log(`Jumped to image ${targetIndex + 1}/${images.length}`);
     } catch (error) {
         console.error('Error jumping to carousel image:', error);
     }
@@ -1148,32 +1115,26 @@ function updateCarouselDots(wrapper, activeIndex) {
 }
 
 function setupCarouselEventListeners() {
-    console.log('Setting up carousel event listeners...');
     
     // Setup carousel arrow buttons
     const prevButtons = document.querySelectorAll('.carousel-btn.prev');
     const nextButtons = document.querySelectorAll('.carousel-btn.next');
     const dots = document.querySelectorAll('.carousel-dot');
     
-    console.log('Found carousel elements:', {
         prevButtons: prevButtons.length,
         nextButtons: nextButtons.length,
         dots: dots.length
     });
     
     prevButtons.forEach(btn => {
-        console.log('Adding prev listener to:', btn);
         btn.addEventListener('click', (e) => {
-            console.log('Prev button clicked!', btn);
             e.stopPropagation();
             changeCarouselImage(btn, -1);
         });
     });
     
     nextButtons.forEach(btn => {
-        console.log('Adding next listener to:', btn);
         btn.addEventListener('click', (e) => {
-            console.log('Next button clicked!', btn);
             e.stopPropagation();
             changeCarouselImage(btn, 1);
         });
@@ -1181,16 +1142,13 @@ function setupCarouselEventListeners() {
     
     // Setup carousel dots
     dots.forEach(dot => {
-        console.log('Adding dot listener to:', dot);
         dot.addEventListener('click', (e) => {
-            console.log('Dot clicked!', dot);
             e.stopPropagation();
             const index = parseInt(dot.getAttribute('data-index'));
             jumpToCarouselImage(dot, index);
         });
     });
     
-    console.log('Carousel event listeners setup complete');
 }
 // Expose carousel functions
 window.changeCarouselImage = changeCarouselImage;
@@ -1212,4 +1170,3 @@ window.addEventListener('beforeunload', () => {
     carouselIntervals.clear();
 });
 
-console.log('Properties page initialized');

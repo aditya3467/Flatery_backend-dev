@@ -3,18 +3,14 @@ let propertiesCache = [];
 let currentPropertyType = null; // 'FLAT' | 'PG' | null
 
 document.addEventListener('DOMContentLoaded', async function() {
-  console.log('[Add Tenant] Page loaded, initializing...');
   // Ensure authenticated and owner role
   const ok = await ensureOwnerSession();
   if (!ok) {
-    console.log('[Add Tenant] Authentication failed');
     return;
   }
-  console.log('[Add Tenant] Authentication successful');
   await loadOwnerProperties();
   // Hide both main sections until a property is chosen
   toggleSections(null);
-  console.log('[Add Tenant] Initialization complete');
 });
 
 function onTenantCountChange(count) {
@@ -297,7 +293,6 @@ function toggleSections(type) {
 
 async function handleSubmit(e) {
   if (e) e.preventDefault();
-  console.log('[Add Tenant] Form submit triggered');
   
   // Check if apiService is available
   if (typeof apiService === 'undefined') {
@@ -308,12 +303,10 @@ async function handleSubmit(e) {
   
   const propertyId = document.getElementById('propertyId') ? document.getElementById('propertyId').value : '';
   if (!propertyId) { 
-    console.log('[Add Tenant] No property selected');
     showAlert('error','Please select a property first.'); 
     return; 
   }
   
-  console.log('[Add Tenant] Submit. Property:', propertyId, 'Type:', currentPropertyType, 'Tenants:', currentTenantCount);
   
   const form = document.getElementById('addTenantForm');
   const fd = new FormData(form);
@@ -334,17 +327,13 @@ async function handleSingleTenantSubmit(fd) {
   // For FLAT properties, use shared fields; for PG properties, use individual fields
   const isFlat = currentPropertyType === 'FLAT';
   
-  console.log('[Single Tenant] Property type:', currentPropertyType, 'isFlat:', isFlat);
-  console.log('[Single Tenant] Form data entries:');
   for (let [key, value] of fd.entries()) {
-    console.log(`  ${key}: ${value}`);
   }
   
   // Clean phone number: remove country code and non-digits
   const rawPhoneNumber = (fd.get('phoneNumber_0') || '').trim();
   const cleanPhoneNumber = rawPhoneNumber.replace(/^\+91/, '').replace(/\D/g, '');
   
-  console.log('[Debug] Phone number cleaning:', {
     raw: rawPhoneNumber,
     cleaned: cleanPhoneNumber,
     length: cleanPhoneNumber.length
@@ -370,10 +359,8 @@ async function handleSingleTenantSubmit(fd) {
 
   if (!validateTenantData(data, 0)) return;
 
-  console.log('[Single Tenant] Validation passed, data:', data);
 
   // Check for existing active tenancy before adding
-  console.log('[Single Tenant] Checking for existing active tenancy...');
   try {
     const activeTenancyCheck = await apiService.checkActiveTenancy(data.phoneNumber, data.emailAddress);
     if (activeTenancyCheck) {
@@ -394,22 +381,17 @@ async function handleSingleTenantSubmit(fd) {
   }
 
   try {
-    console.log('[Add Tenant] Calling API with data:', data);
     showAlert('info', 'Adding tenant...');
     const response = await apiService.post('/tenants', data);
-    console.log('[Add Tenant] Success:', response);
     
     // Check if initial rent was received and create payment
     const receivedRent = isFlat ? fd.get('sharedReceivedRent') === 'on' : fd.get('pgReceivedRent') === 'on';
     const initialRentAmount = isFlat ? fd.get('sharedInitialRentAmount') : fd.get('pgInitialRentAmount');
     
-    console.log('[Add Tenant] Payment check:', { receivedRent, initialRentAmount, responseId: response.id });
     
     if (receivedRent && initialRentAmount && response.id) {
       try {
-        console.log('[Add Tenant] Creating initial rent payment for tenant ID:', response.id);
         const paymentResult = await createInitialRentPayment(response.id, parseInt(initialRentAmount), data.leaseStartDate);
-        console.log('[Add Tenant] Payment created:', paymentResult);
         showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
       } catch (paymentError) {
         console.error('[Add Tenant] PAYMENT CREATION FAILED:', paymentError);
@@ -417,7 +399,6 @@ async function handleSingleTenantSubmit(fd) {
         showAlert('warning', `Tenant added successfully but FAILED to record initial payment: ${paymentError.message || 'Unknown error'}. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
       }
     } else {
-      console.log('[Add Tenant] Skipping payment creation - conditions not met');
       showAlert('success', `Tenant added successfully! Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
     }
     
@@ -483,7 +464,6 @@ async function handleMultipleTenantSubmit(fd) {
     if (!validateTenantData(tenantData, i)) return;
     
     // Check for existing active tenancy
-    console.log(`[Multiple Tenants] Checking active tenancy for tenant ${i + 1}...`);
     try {
       const activeTenancyCheck = await apiService.checkActiveTenancy(tenantData.phoneNumber, tenantData.emailAddress);
       if (activeTenancyCheck) {
@@ -513,10 +493,8 @@ async function handleMultipleTenantSubmit(fd) {
   }
 
   try {
-    console.log('[Add Multiple Tenants] Calling API with tenants:', { tenants });
     showAlert('info', `Adding ${tenants.length} tenants...`);
     const response = await apiService.post('/tenants/multiple', { tenants });
-    console.log('[Add Multiple Tenants] Success:', response);
     
     // Check if initial rent was received and create payment for primary tenant
     const receivedRent = fd.get('sharedReceivedRent') === 'on';
@@ -525,7 +503,6 @@ async function handleMultipleTenantSubmit(fd) {
     
     if (receivedRent && initialRentAmount && primaryTenant && primaryTenant.id) {
       try {
-        console.log('[Add Multiple Tenants] Creating initial rent payment for primary tenant...');
         await createInitialRentPayment(primaryTenant.id, parseInt(initialRentAmount), sharedLeaseStartDate);
       } catch (paymentError) {
         console.error('[Add Multiple Tenants] Failed to create initial payment:', paymentError);
@@ -559,10 +536,8 @@ async function handleMultipleTenantSubmit(fd) {
 }
 
 function validateTenantData(data, index) {
-  console.log(`[Validation] Tenant ${index + 1} data:`, data);
   
   if (!data.tenantName || !data.propertyId || isNaN(data.rentAmount) || isNaN(data.securityDeposit)) {
-    console.log(`[Validation] Failed basic validation - tenantName: '${data.tenantName}', propertyId: ${data.propertyId}, rentAmount: ${data.rentAmount}, securityDeposit: ${data.securityDeposit}`);
     showAlert('error', `Tenant ${index + 1}: Please fill all required fields (name, property, rent, deposit).`);
     return false;
   }
@@ -573,15 +548,12 @@ function validateTenantData(data, index) {
       // Check if there's a top-level flatRoomNumber
       const topLevelFlatRoom = document.querySelector('input[name="flatRoomNumber"]')?.value?.trim();
       if (topLevelFlatRoom) {
-        console.log(`[Validation] Using top-level flat room number: '${topLevelFlatRoom}'`);
         data.flatRoomNumber = topLevelFlatRoom; // Update the data object
       } else {
-        console.log(`[Validation] Failed room/unit validation - flatRoomNumber: '${data.flatRoomNumber}', unitId: ${data.unitId}`);
         showAlert('error', `Tenant ${index + 1}: Please provide a Flat/Room Number.`);
         return false;
       }
     } else {
-      console.log(`[Validation] Failed room/unit validation - flatRoomNumber: '${data.flatRoomNumber}', unitId: ${data.unitId}`);
       showAlert('error', `Tenant ${index + 1}: Please provide either a Flat/Room Number or assign a PG Unit.`);
       return false;
     }
@@ -589,13 +561,11 @@ function validateTenantData(data, index) {
   
   
   if (!data.rentDueDate || data.rentDueDate < 1 || data.rentDueDate > 31) {
-    console.log(`[Validation] Failed rent due date validation - rentDueDate: ${data.rentDueDate}`);
     showAlert('error', `Tenant ${index + 1}: Please pick a valid rent due date`);
     return false;
   }
   
   if (!data.leaseStartDate) {
-    console.log(`[Validation] Failed lease start date validation - leaseStartDate: '${data.leaseStartDate}'`);
     showAlert('error', `Tenant ${index + 1}: Please select lease start date`);
     return false;
   }
@@ -666,10 +636,8 @@ async function handlePGSubmit(fd) {
   if (!validateTenantData({ ...data, rentDueDate: data.rentDueDate, leaseStartDate: data.leaseStartDate }, 0)) return;
 
   try {
-    console.log('[Add Tenant PG] Calling API with data:', data);
     showAlert('info', 'Adding tenant...');
     const response = await apiService.post('/tenants', data);
-    console.log('[Add Tenant PG] Success:', response);
     
     // Check if initial rent was received and create payment
     const receivedRent = fd.get('pgReceivedRent') === 'on';
@@ -677,7 +645,6 @@ async function handlePGSubmit(fd) {
     
     if (receivedRent && initialRentAmount && response.id) {
       try {
-        console.log('[Add Tenant PG] Creating initial rent payment...');
         await createInitialRentPayment(response.id, parseInt(initialRentAmount), data.leaseStartDate);
         showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
       } catch (paymentError) {
@@ -771,7 +738,6 @@ async function lookupExistingUser() {
     // Check if this user already has a tenancy - wait for property selection
     checkDuplicateTenancy(user);
   } catch (err) {
-    console.warn('Lookup failed', err);
     existingUser = null;
     const resEl = document.getElementById('lookupResult');
     resEl.style.display = 'block';
@@ -869,7 +835,6 @@ async function checkDuplicateTenancy(user) {
         }
       }
     } catch (err) {
-      console.warn('Failed to check for duplicate tenancy', err);
     }
   };
   
@@ -1028,9 +993,7 @@ async function createInitialRentPayment(tenantId, amount, paymentDate) {
       upiRef: 'Initial rent payment - added by owner'
     };
     
-    console.log('[Initial Payment] Creating payment:', paymentData);
     const response = await apiService.post('/transactions/owner/create-approved', paymentData);
-    console.log('[Initial Payment] Payment created successfully:', response);
     return response;
   } catch (error) {
     console.error('[Initial Payment] Error creating payment:', error);

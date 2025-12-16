@@ -4,7 +4,6 @@
  */
 
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Home.js loaded - calling loadRecommendedProperties');
     loadRecommendedProperties();
     setupSearchButton();
 });
@@ -51,18 +50,14 @@ function setupSearchButton() {
  * Load recommended properties from API and display on homepage
  */
 async function loadRecommendedProperties() {
-    console.log('loadRecommendedProperties called');
     const container = document.getElementById('recommendedPropertiesGrid');
     
-    console.log('Container found:', container);
     
     if (!container) {
-        console.log('Recommended properties container not found');
         return;
     }
     
     try {
-        console.log('Fetching from:', `${apiService.baseURL}/properties/recommended`);
         // Show loading state
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; width: 100%;">
@@ -74,14 +69,12 @@ async function loadRecommendedProperties() {
         // Fetch recommended properties (latest 3) from the API
         const response = await fetch(`${apiService.baseURL}/properties/recommended`);
         
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
             throw new Error('Failed to fetch recommended properties');
         }
         
         const properties = await response.json();
-        console.log('Properties fetched:', properties);
         
         if (!properties || properties.length === 0) {
             container.innerHTML = `

@@ -14,14 +14,11 @@ let currentOwnerContact = null; // populated from owner-only endpoint
  * Initialize the property details page
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Property details page DOM loaded');
     
     // Use the global API service instance
     if (typeof apiService === 'undefined') {
-        console.warn('Global apiService not found, creating new instance');
         if (typeof ApiService !== 'undefined') {
             window.apiService = new ApiService();
-            console.log('Created new API service instance');
         } else {
             console.error('ApiService class not available. Make sure api.js is included before property-details.js');
             showError('API Service not available. Please refresh the page.');
@@ -29,14 +26,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    console.log('API service available:', apiService);
     
     // Get property ID from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const propertyId = urlParams.get('id');
     
-    console.log('Property ID from URL:', propertyId);
-    console.log('Full URL:', window.location.href);
     
     if (propertyId) {
         loadPropertyDetails(propertyId);
@@ -54,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function loadPropertyDetails(propertyId) {
     try {
-        console.log('Loading property details for ID:', propertyId);
         
         // Show loading state
         showLoadingState();
@@ -80,10 +73,8 @@ async function loadPropertyDetails(propertyId) {
         
         // Handle images: always try to fetch full set and merge with any provided
         try {
-            console.log('Fetching property images...');
             // api.js baseURL already includes '/api'
             const images = await apiService.makeRequest(`/properties/${propertyId}/images`, { includeAuth: false });
-            console.log('Images data received:', images);
 
             // Start with any images present on property payload
             const baseList = [];
@@ -143,15 +134,12 @@ async function loadPropertyDetails(propertyId) {
                 property.images = ['/img/properties/default.jpg'];
             }
 
-            console.log('Final images for gallery:', property.images);
         } catch (imageError) {
-            console.warn('Failed to fetch images, falling back to payload/default:', imageError);
             if (!Array.isArray(property.images) || property.images.length === 0) {
                 property.images = property.primaryImageUrl ? [property.primaryImageUrl] : ['/img/properties/default.jpg'];
             }
         }
         
-        console.log('Populating page sections...');
         
         // Populate all sections
         populateImageGallery(property);
@@ -169,12 +157,11 @@ async function loadPropertyDetails(propertyId) {
         initializeMobileCTA();
 
     // Load owner contact details from authenticated endpoint (owner-only)
-    loadOwnerContact(propertyId).catch(err => console.warn('Owner contact not loaded (non-owner or auth missing):', err?.message || err));
+    loadOwnerContact(propertyId).catch(err => {});
         
         // Hide loading state
         hideLoadingState();
         
-        console.log('Property details loaded successfully:', property);
         
     } catch (error) {
         console.error('Error loading property details:', error);
@@ -198,11 +185,9 @@ async function fetchPropertyFromBackend(propertyId) {
     ];
     for (const ep of endpoints) {
         try {
-            console.log('Attempting fetch:', ep);
             const data = await apiService.makeRequest(ep, { includeAuth: false });
             if (data) return data;
         } catch (e) {
-            console.warn('Fetch failed for', ep, e);
             continue;
         }
     }
@@ -701,8 +686,6 @@ function populateCTASidebar(property) {
  */
 async function loadOwnerContact(propertyId) {
     try {
-        console.log('[OwnerContact] Starting owner contact load for property:', propertyId);
-        console.log('[OwnerContact] Authenticated?', apiService.isAuthenticated());
         // We attempt tenant endpoint first regardless; unauth will 401 which we catch.
         const hintEl = document.getElementById('ownerContactHint');
         if (hintEl) hintEl.textContent = 'Loading owner contact...';
@@ -710,7 +693,6 @@ async function loadOwnerContact(propertyId) {
         try {
             const tenantProp = await apiService.getTenantPropertyDetails();
             if (tenantProp && (String(tenantProp.propertyId) === String(propertyId))) {
-                console.log('[OwnerContact] Tenant property match found:', tenantProp);
                 const ownerName = tenantProp.ownerName || 'Property Owner';
                 const phone = tenantProp.ownerPhone || '';
                 const email = tenantProp.ownerEmail || '';
@@ -720,25 +702,21 @@ async function loadOwnerContact(propertyId) {
                 return; // Done
             }
         } catch (e) {
-            console.warn('[OwnerContact] Tenant endpoint failed or mismatch:', e?.message || e);
         }
 
         // Fallback to owner context: /api/admin/properties/{id}
         try {
             if (!apiService.isAuthenticated()) {
-                console.log('[OwnerContact] Not authenticated, skipping owner/admin endpoint fetch.');
                 enhanceOwnerFallbackFromPublic();
                 if (hintEl) hintEl.textContent = 'Login to view full owner contact.';
                 return;
             }
             const myProperty = await apiService.getMyProperty(propertyId);
             if (!myProperty) {
-                console.warn('[OwnerContact] Owner endpoint returned no data');
                 enhanceOwnerFallbackFromPublic();
                 if (hintEl) hintEl.textContent = apiService.isAuthenticated() ? 'Owner contact unavailable.' : 'Login to view owner contact.';
                 return;
             }
-            console.log('[OwnerContact] Owner property data received:', myProperty);
 
             const ownerName = myProperty.ownerName || myProperty.contactPerson || (myProperty.owner && (myProperty.owner.name || myProperty.owner.fullName)) || 'Property Owner';
             const phone = myProperty.ownerPhone || myProperty.contactNumber || (myProperty.owner && (myProperty.owner.phone || myProperty.owner.mobile)) || '';
@@ -748,13 +726,11 @@ async function loadOwnerContact(propertyId) {
             updateOwnerContactDOM(ownerName, phone, email);
             if (hintEl) hintEl.textContent = phone ? 'Owner contact loaded.' : 'Owner contact partially available.';
         } catch(ownerErr) {
-            console.warn('[OwnerContact] Owner endpoint failed:', ownerErr?.message || ownerErr);
             enhanceOwnerFallbackFromPublic();
             if (hintEl) hintEl.textContent = apiService.isAuthenticated() ? 'Owner contact restricted.' : 'Login to view owner contact.';
         }
     } catch (err) {
         // Non-owner or protected route; don't block page rendering
-        console.warn('[OwnerContact] Overall contact load failed:', err?.message || err);
         enhanceOwnerFallbackFromPublic();
         const hintEl2 = document.getElementById('ownerContactHint');
         if (hintEl2) hintEl2.textContent = apiService.isAuthenticated() ? 'Owner contact unavailable.' : 'Login to view owner contact.';
@@ -1192,7 +1168,6 @@ function showLoadingState() {
     if (loadingOverlay) {
         loadingOverlay.style.display = 'flex';
     }
-    console.log('Loading state shown');
 }
 
 function hideLoadingState() {
@@ -1200,7 +1175,6 @@ function hideLoadingState() {
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';
     }
-    console.log('Loading state hidden');
 }
 
 function showError(message) {
@@ -1209,7 +1183,6 @@ function showError(message) {
     if (errorContainer && errorMessage) {
         errorMessage.textContent = message;
         errorContainer.style.display = 'flex';
-        console.log('Error shown:', message);
         hideLoadingState();
     } else {
         alert('Error: ' + message);

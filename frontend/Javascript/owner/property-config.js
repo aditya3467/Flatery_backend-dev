@@ -43,7 +43,6 @@ let navigationHandlersSetup = false;
 
 function setupNavigationHandlers() {
   if (navigationHandlersSetup) {
-    console.log('Navigation handlers already setup, skipping');
     return;
   }
   
@@ -726,6 +725,16 @@ function formatNumber(num) {
   return num.toLocaleString('en-IN');
 }
 
+// Helper function to get day suffix (1st, 2nd, 3rd, etc.)
+function getDaySuffix(day) {
+  if (!day) return '';
+  const dayNum = parseInt(day);
+  if (dayNum === 1 || dayNum === 21 || dayNum === 31) return 'st';
+  if (dayNum === 2 || dayNum === 22) return 'nd';
+  if (dayNum === 3 || dayNum === 23) return 'rd';
+  return 'th';
+}
+
 async function ensureOwnerSession() {
   try {
     if (typeof apiService === 'undefined') {
@@ -769,16 +778,12 @@ async function ensureOwnerSession() {
 
 async function loadPropertyConfig() {
   try {
-    console.log('===== loadPropertyConfig STARTED =====');
     
     // Load property details
-    console.log('Fetching property:', currentPropertyId);
     propertyData = await apiService.getMyProperty(currentPropertyId);
-    console.log('Property data received:', propertyData);
     
     // Guard: Only allow PG properties to access this page
     const pType = (propertyData?.type || '').toString().toUpperCase();
-    console.log('Property type:', pType);
     
     if (pType !== 'PG') {
       console.error('❌ Property is not PG type, aborting. Type is:', pType);
@@ -787,7 +792,6 @@ async function loadPropertyConfig() {
       return;
     }
     
-    console.log('✓ Property is PG type, continuing...');
     
     // Update UI with property name
     document.getElementById('propertyName').textContent = propertyData.name || 'Property';
@@ -798,9 +802,7 @@ async function loadPropertyConfig() {
     document.getElementById('userName').textContent = firstName;
     
     // Load floors and units from backend
-    console.log('Loading floors and units...');
     await loadFloorsAndUnitsFromApi();
-    console.log('Floors and units loaded');
     
     // Render the configuration
     renderFloorsAndUnits();
@@ -808,10 +810,8 @@ async function loadPropertyConfig() {
     populateFloorFilters();
     
     // Load dashboard by default
-    console.log('Showing dashboard section...');
     showDashboardSection();
     
-    console.log('===== loadPropertyConfig COMPLETED SUCCESSFULLY =====');
     
   } catch (error) {
     console.error('❌ Failed to load property configuration:', error);
@@ -851,7 +851,6 @@ async function loadFloorsAndUnitsFromApi() {
 
   // Console logs for debugging occupancy per unit and per floor
   units.forEach(u => {
-    console.log(`[PG] Unit ${u.number}: active tenants=${u.occupied}, capacity=${u.beds}, freeBeds=${u.free}`);
   });
   const byFloor = new Map();
   units.forEach(u => {
@@ -863,7 +862,6 @@ async function loadFloorsAndUnitsFromApi() {
     byFloor.set(key, prev);
   });
   byFloor.forEach((agg, floorNum) => {
-    console.log(`[PG] Floor ${floorNum}: tenants=${agg.tenants}, beds=${agg.beds}, freeBeds=${agg.free}`);
   });
 }
 
@@ -1243,13 +1241,11 @@ function toggleTenantMenu(tenantId) {
 
 function editTenant(tenantId) {
   // Will implement API later
-  console.log('Edit tenant:', tenantId);
   showAlert('info', 'Edit functionality will be implemented soon');
 }
 
 function removeTenant(tenantId) {
   // Will implement API later
-  console.log('Remove tenant:', tenantId);
   if (confirm('Are you sure you want to remove this tenant?')) {
     showAlert('info', 'Remove functionality will be implemented soon');
   }
@@ -1313,8 +1309,6 @@ async function loadFinancialData() {
         return sum + (t.securityDeposit || 0);
       }, 0);
       
-      console.log('Property tenants for security deposit:', propertyTenants);
-      console.log('Total security deposits for property:', financialData.securityDeposits);
     } catch (err) {
       console.error('Failed to fetch tenants for security deposits:', err);
       // Fallback to mock calculation if API fails
@@ -1698,7 +1692,6 @@ function handleAddExpense(e) {
   };
   
   // In production, call API to save expense
-  console.log('Adding expense:', expense);
   
   closeAddExpenseModal();
   showAlert('success', 'Expense added successfully');
@@ -1788,9 +1781,8 @@ async function loadTenants() {
       t.propertyId === parseInt(currentPropertyId)
     );
     
-    console.log(`Found ${propertyTenants.length} tenants for property ${currentPropertyId}`);
     
-    // Transform tenant data to include unit/bed info
+    // Transform tenant data to include unit/bed info and payment status
     allTenants = propertyTenants.map(tenant => {
       // Find the unit for this tenant
       const unit = units.find(u => u.id === tenant.unitId);
@@ -1805,6 +1797,7 @@ async function loadTenants() {
       
       return {
         id: tenant.id,
+        tenantId: tenant.tenantId,
         name: tenantName,
         phone: tenant.phoneNumber || '-',
         email: tenant.emailAddress || '-',
@@ -1817,6 +1810,11 @@ async function loadTenants() {
         dues: tenant.pendingDues || tenant.dues || 0,
         unitId: tenant.unitId,
         bedId: tenant.bedId,
+        // Payment status fields from backend
+        paymentStatus: tenant.paymentStatus || 'DUE',
+        isCurrentMonthPaid: tenant.isCurrentMonthPaid || false,
+        isOverdue: tenant.isOverdue || false,
+        nextDueDate: tenant.nextDueDate || null,
         // Additional fields for profile
         dateOfBirth: tenant.dateOfBirth || null,
         gender: tenant.gender || '-',
@@ -1832,6 +1830,11 @@ async function loadTenants() {
         rentDueDate: tenant.rentDueDate || 1
       };
     });
+    
+    console.log('Loaded tenants with payment status:', allTenants.length);
+    if (allTenants.length > 0) {
+      console.log('Sample tenant data:', allTenants[0]);
+    }
 
     renderTenantsTable(allTenants);
     
@@ -1859,20 +1862,53 @@ function renderTenantsTable(tenants) {
     return;
   }
 
-  console.log('Rendering tenants table with:', tenants.length, 'tenants');
-  console.log('First tenant data:', {
-    name: tenants[0].name,
-    roomNumber: tenants[0].roomNumber,
-    bedNumber: tenants[0].bedNumber,
-    checkInDate: tenants[0].checkInDate
-  });
-
   tbody.innerHTML = tenants.map(tenant => {
     const statusClass = tenant.status ? tenant.status.toLowerCase() : 'active';
     const duesAmount = tenant.dues || 0;
     const duesClass = duesAmount === 0 ? 'zero' : 'pending';
     const initials = tenant.name ? tenant.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'T';
-    // ...existing code...
+    
+    // Calculate payment status and days until due
+    let paymentStatusText = '-';
+    let paymentStatusClass = '';
+    let nextDueText = '-';
+    
+    if (tenant.isOverdue || (tenant.paymentStatus || '').toUpperCase() === 'OVERDUE') {
+      paymentStatusText = 'Overdue';
+      paymentStatusClass = 'overdue';
+    } else if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
+      paymentStatusText = 'Paid';
+      paymentStatusClass = 'paid';
+    } else if (tenant.nextDueDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = new Date(tenant.nextDueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = dueDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) {
+        paymentStatusText = 'Overdue';
+        paymentStatusClass = 'overdue';
+      } else if (diffDays === 0) {
+        paymentStatusText = 'Due Today';
+        paymentStatusClass = 'due-today';
+      } else if (diffDays === 1) {
+        paymentStatusText = 'Due Tomorrow';
+        paymentStatusClass = 'due-soon';
+      } else {
+        paymentStatusText = `Due in ${diffDays} days`;
+        paymentStatusClass = diffDays <= 7 ? 'due-soon' : 'upcoming';
+      }
+      
+      // Format next due date
+      nextDueText = dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } else if (tenant.rentDueDate) {
+      paymentStatusText = 'Due';
+      paymentStatusClass = 'upcoming';
+      nextDueText = `${tenant.rentDueDate}${getDaySuffix(tenant.rentDueDate)} of month`;
+    }
     
     return `
       <tr>
@@ -1891,7 +1927,8 @@ function renderTenantsTable(tenants) {
         <td>${tenant.checkInDate ? formatDate(tenant.checkInDate) : '-'}</td>
         <td><strong>₹${(tenant.rent || 0).toLocaleString()}</strong></td>
         <td><span class="status-badge ${statusClass}">${tenant.status || 'Active'}</span></td>
-        <td><span class="dues-amount ${duesClass}">₹${duesAmount.toLocaleString()}</span></td>
+        <td><span class="payment-status-badge ${paymentStatusClass}">${paymentStatusText}</span></td>
+        <td>${nextDueText}</td>
         <td>
           <div class="action-buttons">
             <button class="action-btn view" onclick="viewTenantProfile(${tenant.id})">
@@ -2248,7 +2285,6 @@ window.deactivateTenantAction = async function(btn) {
 // Export tenants to Excel
 function exportTenantsToExcel() {
   alert('Excel export functionality will be implemented with backend integration');
-  console.log('Exporting tenants to Excel:', allTenants);
 }
 
 // Send WhatsApp reminder
@@ -2269,7 +2305,6 @@ function sendWhatsAppReminder() {
 // Generate agreement
 function generateAgreement() {
   alert('Agreement generation functionality will be implemented with backend integration');
-  console.log('Generating agreement for tenant:', currentTenantId);
 }
 
 // Download rent receipts
@@ -2280,7 +2315,6 @@ function downloadRentReceipts() {
 // Download individual receipt
 function downloadReceipt(paymentId) {
   alert(`Downloading receipt for payment: ${paymentId}`);
-  console.log('Download receipt:', paymentId);
 }
 
 // Edit tenant profile
@@ -2302,13 +2336,11 @@ function removeTenantFromModal() {
 // View document
 function viewDocument(docType) {
   alert(`Viewing ${docType} document`);
-  console.log('View document:', docType);
 }
 
 // Download document
 function downloadDocument(docType) {
   alert(`Downloading ${docType} document`);
-  console.log('Download document:', docType);
 }
 
 // Helper function to format dates
@@ -2353,35 +2385,259 @@ let allPayments = [];
 let currentPaymentId = null;
 let rentCollectionChart = null;
 
-// Load and display payments
+// Load and display payments - NEW RENT COLLECTION VIEW
 async function loadPayments() {
   try {
-    // Generate mock payment data for now
-    allPayments = generateMockPayments();
+    // Ensure tenants are loaded first
+    if (!allTenants || allTenants.length === 0) {
+      await loadTenants();
+    }
     
-    // Update widgets
-    updatePaymentWidgets();
-    
-    // Populate room filter
-    populateRoomFilter();
-    
-    // Render chart
-    renderRentCollectionChart('6months');
-    
-    // Render table
-    renderPaymentsTable(allPayments);
+    // Load rent collection overview (new view)
+    await loadRentCollectionOverview();
     
     // Populate tenant dropdown in add payment modal
     populateTenantDropdown();
     
     // Set default date to today
-    document.getElementById('paymentDate').valueAsDate = new Date();
-    
-    console.log('Loaded payments:', allPayments.length);
+    const paymentDateInput = document.getElementById('paymentDate');
+    if (paymentDateInput) {
+      paymentDateInput.valueAsDate = new Date();
+    }
     
   } catch (error) {
     console.error('Failed to load payments:', error);
-    showAlert('error', 'Failed to load payments');
+    showAlert('error', 'Failed to load payments: ' + error.message);
+  }
+}
+
+// Load Rent Collection Overview - categorize tenants by payment status
+async function loadRentCollectionOverview() {
+  try {
+    console.log('Loading rent collection overview with', allTenants.length, 'tenants');
+    
+    // Calculate date ranges
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayEnd = new Date(today);
+    todayEnd.setHours(23, 59, 59, 999);
+    
+    const weekFromNow = new Date(today);
+    weekFromNow.setDate(weekFromNow.getDate() + 7);
+    
+    const monthFromNow = new Date(today);
+    monthFromNow.setDate(monthFromNow.getDate() + 30);
+    
+    // Categorize tenants
+    const overdueTenants = [];
+    const dueTodayTenants = [];
+    const dueThisWeekTenants = [];
+    const upcomingTenants = [];
+    const paidTenants = [];
+    
+    let totalExpected = 0;
+    let totalCollected = 0;
+    let totalPending = 0;
+    let totalOverdue = 0;
+    
+    allTenants.forEach(tenant => {
+      const rentAmount = tenant.rent || 0;
+      totalExpected += rentAmount;
+      
+      // Check payment status from backend
+      const paymentStatus = (tenant.paymentStatus || 'DUE').toUpperCase();
+      const isOverdue = tenant.isOverdue === true;
+      const nextDueDateStr = tenant.nextDueDate;
+      
+      // Parse next due date
+      let nextDueDate = null;
+      if (nextDueDateStr) {
+        nextDueDate = new Date(nextDueDateStr);
+        nextDueDate.setHours(0, 0, 0, 0);
+      }
+      
+      // Categorize by payment status and due date
+      if (paymentStatus === 'PAID' || tenant.isCurrentMonthPaid === true) {
+        paidTenants.push(tenant);
+        totalCollected += rentAmount;
+      } else if (isOverdue || paymentStatus === 'OVERDUE') {
+        overdueTenants.push(tenant);
+        totalOverdue += rentAmount;
+      } else if (nextDueDate) {
+        // Check date proximity
+        if (nextDueDate >= today && nextDueDate <= todayEnd) {
+          dueTodayTenants.push(tenant);
+          totalPending += rentAmount;
+        } else if (nextDueDate > today && nextDueDate <= weekFromNow) {
+          dueThisWeekTenants.push(tenant);
+          totalPending += rentAmount;
+        } else if (nextDueDate > weekFromNow && nextDueDate <= monthFromNow) {
+          upcomingTenants.push(tenant);
+          totalPending += rentAmount;
+        } else {
+          // Future due date beyond 30 days
+          upcomingTenants.push(tenant);
+          totalPending += rentAmount;
+        }
+      } else {
+        // No due date available - put in upcoming
+        upcomingTenants.push(tenant);
+        totalPending += rentAmount;
+      }
+    });
+    
+    console.log('Categorized tenants:', {
+      overdue: overdueTenants.length,
+      dueToday: dueTodayTenants.length,
+      dueThisWeek: dueThisWeekTenants.length,
+      upcoming: upcomingTenants.length,
+      paid: paidTenants.length
+    });
+    
+    // Update stats
+    updateCollectionStats(totalExpected, totalCollected, totalPending, totalOverdue, allTenants.length);
+    
+    // Render each category
+    renderTenantCategory('overdueTenantsContainer', overdueTenants, 'overdue');
+    renderTenantCategory('dueTodayContainer', dueTodayTenants, 'due-today');
+    renderTenantCategory('dueWeekContainer', dueThisWeekTenants, 'due-week');
+    renderTenantCategory('upcomingContainer', upcomingTenants, 'upcoming');
+    renderTenantCategory('paidContainer', paidTenants, 'paid');
+    
+    // Update category counts
+    const updateCount = (id, count) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = count;
+    };
+    
+    updateCount('overdueCount', overdueTenants.length);
+    updateCount('dueTodayCount', dueTodayTenants.length);
+    updateCount('dueWeekCount', dueThisWeekTenants.length);
+    updateCount('upcomingCount', upcomingTenants.length);
+    updateCount('paidCount', paidTenants.length);
+    
+  } catch (error) {
+    console.error('Failed to load rent collection overview:', error);
+    showAlert('error', 'Failed to load rent collection data');
+  }
+}
+
+// Update collection statistics
+function updateCollectionStats(expected, collected, pending, overdue, totalTenants) {
+  const collectionPercentage = expected > 0 ? Math.round((collected / expected) * 100) : 0;
+  
+  // Update stat cards
+  const updateStat = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+  
+  updateStat('totalExpectedRent', `₹${formatNumber(expected)}`);
+  updateStat('totalCollectedRent', `₹${formatNumber(collected)}`);
+  updateStat('collectedPercentage', `${collectionPercentage}%`);
+  updateStat('totalPendingRent', `₹${formatNumber(pending)}`);
+  updateStat('pendingTenantsCount', `${totalTenants - Math.floor(collected / (expected / totalTenants))} tenants`);
+  updateStat('totalOverdueRent', `₹${formatNumber(overdue)}`);
+  updateStat('overdueTenantsCount', `${Math.floor(overdue / (expected / totalTenants))} tenants`);
+}
+
+// Render tenant cards for a category
+function renderTenantCategory(containerId, tenants, categoryType) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.warn(`Container ${containerId} not found`);
+    return;
+  }
+  
+  if (!tenants || tenants.length === 0) {
+    container.innerHTML = '<div class="no-data-message">No tenants in this category</div>';
+    return;
+  }
+  
+  const html = tenants.map(tenant => {
+    const statusBadgeClass = (tenant.paymentStatus || 'DUE').toLowerCase();
+    const statusText = tenant.paymentStatus || 'DUE';
+    
+    // Format due date
+    let dueDateText = 'Not set';
+    if (tenant.nextDueDate) {
+      const dueDate = new Date(tenant.nextDueDate);
+      dueDateText = dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } else if (tenant.rentDueDate) {
+      dueDateText = `${tenant.rentDueDate}${getDaySuffix(tenant.rentDueDate)} of month`;
+    }
+    
+    // For paid tenants, show "Paid for [month]"
+    if (categoryType === 'paid') {
+      const currentMonth = new Date().toLocaleDateString('en-IN', { month: 'long' });
+      dueDateText = `Paid for ${currentMonth}`;
+    }
+    
+    const location = `Room ${tenant.roomNumber || '-'}, Bed ${tenant.bedNumber || '-'}`;
+    
+    return `
+      <div class="tenant-card ${categoryType}">
+        <div class="tenant-card-header">
+          <div>
+            <div class="tenant-card-name">${tenant.name || 'Unknown'}</div>
+            <div class="tenant-card-location">${location}</div>
+          </div>
+          <span class="payment-status-badge ${statusBadgeClass}">${statusText}</span>
+        </div>
+        <div class="tenant-card-body">
+          <div class="tenant-card-info">
+            <span class="label">Rent Amount:</span>
+            <span class="value">₹${formatNumber(tenant.rent || 0)}</span>
+          </div>
+          <div class="tenant-card-info">
+            <span class="label">${categoryType === 'paid' ? 'Paid On:' : 'Due Date:'}</span>
+            <span class="value">${dueDateText}</span>
+          </div>
+          <div class="tenant-card-info">
+            <span class="label">Contact:</span>
+            <span class="value">${tenant.phone || 'N/A'}</span>
+          </div>
+        </div>
+        <div class="tenant-card-footer">
+          ${categoryType !== 'paid' ? `
+            <button class="btn-small primary" onclick="sendPaymentReminder(${tenant.id})">
+              <i class="fas fa-bell"></i> Send Reminder
+            </button>
+          ` : ''}
+          <button class="btn-small secondary" onclick="viewTenantDetails(${tenant.id})">
+            <i class="fas fa-eye"></i> View Details
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+// Send payment reminder to tenant
+function sendPaymentReminder(tenantId) {
+  const tenant = allTenants.find(t => t.id === tenantId);
+  if (!tenant) {
+    showAlert('error', 'Tenant not found');
+    return;
+  }
+  
+  // TODO: Implement actual SMS/Email reminder via backend API
+  // For now, show success message
+  showAlert('success', `Payment reminder sent to ${tenant.name}`);
+  console.log('TODO: Send payment reminder to tenant:', tenant);
+}
+
+// View tenant details
+function viewTenantDetails(tenantId) {
+  // Reuse existing tenant profile view function
+  if (typeof viewTenantProfile === 'function') {
+    viewTenantProfile(tenantId);
+  } else {
+    console.error('viewTenantProfile function not found');
+    showAlert('info', 'Tenant details view not available');
   }
 }
 
@@ -2767,10 +3023,8 @@ let currentQRFile = null;
 
 // Setup payment settings form handler
 function setupPaymentSettingsForm() {
-  console.log('Setting up payment settings form');
   const form = document.getElementById('paymentSettingsForm');
   if (!form) {
-    console.warn('Payment settings form not found');
     return;
   }
   
@@ -2783,7 +3037,6 @@ function setupPaymentSettingsForm() {
     e.preventDefault();
     await savePaymentSettings();
   });
-  console.log('Payment settings form setup complete');
 }
 
 // Load payment settings from API
@@ -2798,7 +3051,6 @@ async function loadPaymentSettings() {
   } catch (error) {
     if (error.status === 204) {
       // No content - user hasn't set up payment info yet
-      console.log('No payment info found - showing empty form');
       clearPaymentSettingsForm();
     } else {
       console.error('Error loading payment settings:', error);
@@ -2893,13 +3145,11 @@ async function savePaymentSettings() {
 
     // Upload QR code if user selected a new file
     if (currentQRFile) {
-      console.log('Uploading QR code to S3...');
       const qrImageUrl = await uploadQRCode(currentQRFile);
       if (!qrImageUrl) {
         showAlert('error', 'Failed to upload QR code. Please try again.');
         return;
       }
-      console.log('QR code uploaded successfully:', qrImageUrl);
       // QR URL is now saved to database by the upload endpoint, no need to send it again
     }
 
@@ -2934,12 +3184,9 @@ async function uploadQRCode(file) {
     // Validate token exists and is not null
     if (!token || token === 'null' || token === 'undefined') {
       console.error('No valid authentication token found!');
-      console.log('Token value:', token);
       throw new Error('Authentication required. Please log in again.');
     }
     
-    console.log('Token exists:', !!token);
-    console.log('Token preview:', token.substring(0, 20) + '...');
 
     // Use the owner-payment-info QR upload endpoint
     const response = await fetch(`${apiService.baseURL}/owner-payment-info/upload-qr`, {
@@ -2951,11 +3198,9 @@ async function uploadQRCode(file) {
       body: formData
     });
 
-    console.log('Upload response status:', response.status);
 
     if (response.ok) {
       const result = await response.json();
-      console.log('Upload result:', result);
       return result.url;
     } else {
       const errorText = await response.text();

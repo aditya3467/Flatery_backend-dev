@@ -469,7 +469,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    console.log('Add Property form initialized');
 });
 
 // Add animations

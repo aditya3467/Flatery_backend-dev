@@ -159,7 +159,6 @@ async function handleSubmit(e) {
       return showAlert('error', 'This tenant is already assigned to this property. You can edit the tenancy details instead.');
     }
   } catch (err) {
-    console.warn('Could not verify duplicate tenant', err);
     // Continue with submission
   }
 
@@ -267,7 +266,6 @@ async function lookupExistingUser() {
     // Check if this user already has a tenancy - wait for property selection
     checkDuplicateTenancy(user);
   } catch (err) {
-    console.warn('Lookup failed', err);
     existingUser = null;
     const resEl = document.getElementById('lookupResult');
     resEl.style.display = 'block';
@@ -343,7 +341,6 @@ async function checkDuplicateTenancy(user) {
         if (submitBtn) submitBtn.disabled = false;
       }
     } catch (err) {
-      console.warn('Failed to check for duplicate tenancy', err);
     }
   };
   

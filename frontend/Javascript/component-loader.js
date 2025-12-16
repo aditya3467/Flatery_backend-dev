@@ -25,7 +25,6 @@ class ComponentLoader {
             if (targetElement) {
                 targetElement.innerHTML = html;
                 this.loadedComponents.add(componentPath);
-                console.log(`Component loaded: ${componentPath}`);
                 
                 // Reinitialize event listeners after component is loaded
                 this.reinitializeEventListeners();
@@ -175,7 +174,6 @@ class ComponentLoader {
             logoLink.href = indexPath;
             if (logoImg) logoImg.src = logoPath;
             if (footerLogoImg) footerLogoImg.src = logoPath;
-            console.log('Logo link set to:', indexPath, 'Logo src:', logoPath);
         }
     }
 
@@ -195,7 +193,6 @@ class ComponentLoader {
             newProfileIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
                 profileDropdown.classList.toggle('active');
-                console.log('Profile icon clicked, dropdown active:', profileDropdown.classList.contains('active'));
             });
 
             // Close dropdown if clicking outside
@@ -207,7 +204,6 @@ class ComponentLoader {
                 }, { once: false });
             }, 100);
         } else {
-            console.warn('Profile icon or dropdown not found in DOM');
         }
     }
 

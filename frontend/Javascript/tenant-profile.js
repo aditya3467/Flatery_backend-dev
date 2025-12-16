@@ -113,7 +113,6 @@ function loadSavedProfile() {
             // Payment
             if (profileData.paymentMode) document.getElementById('paymentMode').value = profileData.paymentMode;
             
-            console.log('Loaded saved profile data');
         } catch (error) {
             console.error('Error loading saved profile:', error);
         }
@@ -123,8 +122,6 @@ function loadSavedProfile() {
 async function loadTenantData() {
     try {
         const token = localStorage.getItem('authToken');
-        console.log('Token found:', token ? 'Yes' : 'No');
-        console.log('All localStorage keys:', Object.keys(localStorage));
         
         if (!token) {
             console.error('No auth token found, redirecting to login');
@@ -158,7 +155,6 @@ async function loadTenantData() {
 
         if (tenancyResponse.ok) {
             const tenancyData = await tenancyResponse.json();
-            console.log('Tenancy data loaded:', tenancyData);
             
             // Populate payment information section
             if (tenancyData.rentAmount) {

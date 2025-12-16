@@ -23,20 +23,17 @@ class NotificationManager {
     async init() {
         // Prevent double initialization
         if (this.isInitialized) {
-            console.log('[Notifications] Already initialized');
             return;
         }
 
         // Check if user is authenticated
         this.isAuthenticated = typeof apiService !== 'undefined' && apiService.isAuthenticated();
         if (!this.isAuthenticated) {
-            console.log('[Notifications] Skipping init: not authenticated');
             const section = document.getElementById('notificationSection');
             if (section) section.style.display = 'none';
             return;
         }
 
-        console.log('[Notifications] Initializing notification manager...');
         
         // Get DOM elements
         this.notificationSection = document.getElementById('notificationSection');
@@ -45,14 +42,8 @@ class NotificationManager {
         this.notificationDropdown = document.getElementById('notificationDropdown');
         this.notificationList = document.getElementById('notificationList');
 
-        console.log('[Notifications] Initial element check:');
-        console.log('  - notificationSection:', !!this.notificationSection);
-        console.log('  - notificationBell:', !!this.notificationBell);
-        console.log('  - notificationDropdown:', !!this.notificationDropdown);
-        console.log('  - notificationList:', !!this.notificationList);
 
         if (!this.notificationSection || !this.notificationBell || !this.notificationDropdown || !this.notificationList) {
-            console.warn('[Notifications] Required DOM elements missing; delaying init and retrying in 300ms...');
             // Retry after longer delay (component-loader may still be loading)
             setTimeout(() => {
                 this.notificationSection = document.getElementById('notificationSection');
@@ -61,14 +52,8 @@ class NotificationManager {
                 this.notificationDropdown = document.getElementById('notificationDropdown');
                 this.notificationList = document.getElementById('notificationList');
                 
-                console.log('[Notifications] Retry element check:');
-                console.log('  - notificationSection:', !!this.notificationSection);
-                console.log('  - notificationBell:', !!this.notificationBell);
-                console.log('  - notificationDropdown:', !!this.notificationDropdown);
-                console.log('  - notificationList:', !!this.notificationList);
                 
                 if (this.notificationSection && this.notificationBell && this.notificationDropdown && this.notificationList) {
-                    console.log('[Notifications] Elements found on retry; continuing init');
                     this.finalizeInit();
                 } else {
                     console.error('[Notifications] Initialization aborted: elements still missing after retry');
@@ -97,7 +82,6 @@ class NotificationManager {
 
         // Mark as initialized
         this.isInitialized = true;
-        console.log('Notification manager initialized successfully');
     }
 
     /**
@@ -162,8 +146,8 @@ class NotificationManager {
         if (!this.isAuthenticated) return;
         try {
             const [countResponse, notifications] = await Promise.all([
-                apiService.getUnreadNotificationCount().catch(e => { console.warn('[Notifications] Count failed', e); return { count: 0 }; }),
-                apiService.getAllNotifications().catch(e => { console.warn('[Notifications] List failed', e); return []; })
+                apiService.getUnreadNotificationCount().catch(e => { return { count: 0 }; }),
+                apiService.getAllNotifications().catch(e => { return []; })
             ]);
             this.unreadCount = (countResponse && countResponse.count) ? countResponse.count : 0;
             this.notifications = Array.isArray(notifications) ? notifications : [];
@@ -304,7 +288,6 @@ class NotificationManager {
             this.updateBadge();
             this.renderNotifications();
             
-            console.log('All notifications marked as read');
         } catch (error) {
             console.error('Failed to mark all as read:', error);
         }
@@ -325,7 +308,6 @@ class NotificationManager {
             this.notifications = this.notifications.filter(n => !n.isRead);
             this.renderNotifications();
             
-            console.log('Read notifications cleared');
         } catch (error) {
             console.error('Failed to clear notifications:', error);
         }

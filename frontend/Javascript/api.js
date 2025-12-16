@@ -50,22 +50,18 @@ class ApiService {
             ...options
         };
 
-        console.log('Making API request:', { url, config });
 
         try {
             const response = await fetch(url, config);
-            console.log('Response received:', { status: response.status, statusText: response.statusText, headers: Object.fromEntries(response.headers.entries()) });
             
             // Try parse JSON first
             let data = null;
             let text = null;
             try {
                 data = await response.json();
-                console.log('Response data:', data);
             } catch (e) {
                 // not JSON, capture raw text
                 try { text = await response.text(); } catch (e2) { text = null; }
-                console.log('Response text:', text);
             }
 
             if (!response.ok) {
@@ -230,7 +226,6 @@ class ApiService {
             }
 
             const url = `${this.baseURL}/admin/properties/${propertyId}/images`;
-            console.log('Uploading images:', { propertyId, filesCount: files?.length });
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {

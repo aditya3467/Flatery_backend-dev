@@ -19,7 +19,6 @@ class OwnerDashboard {
     }
 
     async init() {
-        console.log('[OwnerDashboard] Initializing...');
         
         // Check authentication
         if (!this.checkAuth()) {
@@ -32,7 +31,6 @@ class OwnerDashboard {
         // Load data
         await this.loadAllData();
         
-        console.log('[OwnerDashboard] Initialization complete');
     }
 
     checkAuth() {
@@ -45,7 +43,6 @@ class OwnerDashboard {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
         
         if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
-            console.warn('[OwnerDashboard] Access denied');
             setTimeout(() => {
                 window.location.href = '../index.html';
             }, 1500);
@@ -81,7 +78,6 @@ class OwnerDashboard {
 
     navigateTo(section) {
         // Navigation logic - can be expanded based on your app structure
-        console.log(`Navigating to: ${section}`);
         // For now, just log. You can implement actual navigation later
     }
 
@@ -116,7 +112,6 @@ class OwnerDashboard {
         try {
             const response = await apiService.makeRequest('/users/profile');
             this.ownerData = response;
-            console.log('[OwnerDashboard] Owner profile loaded:', this.ownerData);
         } catch (error) {
             console.error('[OwnerDashboard] Error loading profile:', error);
             // Set basic data from localStorage as fallback
@@ -143,9 +138,6 @@ class OwnerDashboard {
                 this.propertiesData = [];
             }
             
-            console.log('[OwnerDashboard] Properties loaded:', this.propertiesData.length);
-            console.log('[OwnerDashboard] First property sample:', this.propertiesData[0]);
-            console.log('[OwnerDashboard] Full properties data:', JSON.stringify(this.propertiesData, null, 2));
         } catch (error) {
             console.error('[OwnerDashboard] Error loading properties:', error);
             this.propertiesData = [];
@@ -167,7 +159,6 @@ class OwnerDashboard {
                 this.tenantsData = [];
             }
             
-            console.log('[OwnerDashboard] Tenants loaded:', this.tenantsData.length);
         } catch (error) {
             console.error('[OwnerDashboard] Error loading tenants:', error);
             this.tenantsData = [];
@@ -189,7 +180,6 @@ class OwnerDashboard {
                 this.paymentsData = [];
             }
             
-            console.log('[OwnerDashboard] Payments loaded:', this.paymentsData.length);
         } catch (error) {
             console.error('[OwnerDashboard] Error loading payments:', error);
             this.paymentsData = [];
@@ -234,8 +224,6 @@ class OwnerDashboard {
     renderPropertyGalaxy() {
         const container = document.getElementById('propertyGalaxy');
         
-        console.log('[OwnerDashboard] === RENDERING PROPERTY GALAXY ===');
-        console.log('[OwnerDashboard] Total properties:', this.propertiesData.length);
         
         if (this.propertiesData.length === 0) {
             container.innerHTML = `
@@ -276,7 +264,6 @@ class OwnerDashboard {
             const propertyStatus = rawStatus ? rawStatus.toString().toUpperCase() : 'ACTIVE';
             const isActive = propertyStatus === 'ACTIVE';
             
-            console.log(`[Property ${property.id}] Raw status:`, rawStatus, 'Normalized:', propertyStatus, 'isActive:', isActive);
             
             // Determine CRM link based on property type
             const crmLink = isPG ? `property-config.html?id=${property.id}` : `flat-dashboard.html?id=${property.id}`;
@@ -669,7 +656,6 @@ class OwnerDashboard {
             const report = await apiService.makeRequest('/reports/monthly');
             this.showSuccess('Report generated successfully!');
             // Handle report download/display
-            console.log('Report:', report);
             
             // If report has a download URL, open it
             if (report && report.downloadUrl) {
@@ -683,8 +669,6 @@ class OwnerDashboard {
 
     async togglePropertyStatus(propertyId, currentStatus) {
         try {
-            console.log(`[OwnerDashboard] Toggling status for property ${propertyId}, current: ${currentStatus}`);
-            console.log(`[OwnerDashboard] Making API call to: ${apiService.baseURL}/admin/properties/${propertyId}/status`);
             
             // Show loading feedback
             const btn = event?.target?.closest('.toggle-status-btn');
@@ -695,7 +679,6 @@ class OwnerDashboard {
             
             const response = await apiService.put(`/admin/properties/${propertyId}/status`, {});
             
-            console.log('[OwnerDashboard] Status toggle response:', response);
             
             const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
             this.showSuccess(`Property ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'} successfully!`);
@@ -727,7 +710,6 @@ class OwnerDashboard {
     }
 
     showLoading() {
-        console.log('[OwnerDashboard] Loading...');
     }
 
     showSuccess(message) {
@@ -752,10 +734,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wait for API service to be ready
     const initDashboard = () => {
         if (typeof apiService !== 'undefined') {
-            console.log('[OwnerDashboard] Initializing dashboard...');
             window.ownerDashboard = new OwnerDashboard();
         } else {
-            console.warn('[OwnerDashboard] API Service not ready, retrying...');
             setTimeout(initDashboard, 100);
         }
     };

@@ -75,13 +75,11 @@ class FlatDashboard {
             // Format the flat name: bhkNumber + "BHK" + "in" + locality + (flatRoomNumber)
             return `${bhkNumber} BHK in ${locality} (${flatRoomNumber})`;
         } catch (error) {
-            console.warn('[FlatDashboard] Error generating flat name for property:', property.id, error);
             return `Property ${property.id || 'Unknown'}`;
         }
     }
 
     async init() {
-        console.log('[FlatDashboard] Initializing dashboard...');
         
         // Check authentication and role
         if (!this.checkAuth()) {
@@ -105,7 +103,6 @@ class FlatDashboard {
         // Initialize notifications (handled by navbar component)
         this.initializeNotifications();
         
-        console.log('[FlatDashboard] Dashboard initialized successfully');
         
         // Expose dashboard instance globally for debugging
         window.flatDashboard = this;
@@ -121,7 +118,6 @@ class FlatDashboard {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
         
         if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
-            console.warn('[FlatDashboard] Access denied - not authenticated or not ADMIN role');
             this.showNotification('Please login as an owner to view the dashboard.', 'warning');
             setTimeout(() => {
                 window.location.href = '../index.html';
@@ -320,7 +316,6 @@ class FlatDashboard {
 
     // Navigation Methods
     navigateToSection(section) {
-        console.log(`[OwnerDashboard] Navigating to section: ${section}`);
         
         // Update active nav item
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -420,7 +415,6 @@ class FlatDashboard {
     // Profile Methods
     toggleProfileMenu() {
         // Sidebar profile section removed - profile functionality now in navbar
-        console.log('[FlatDashboard] Sidebar profile functionality removed, using navbar profile instead');
     }
 
     // Right Drawer Methods
@@ -467,7 +461,6 @@ class FlatDashboard {
     
     ensureDrawerClosed() {
         // Ensure right drawer is completely closed on initialization
-        console.log('[FlatDashboard] Ensuring right drawer is closed...');
         const drawer = document.getElementById('rightDrawer');
         const overlay = document.getElementById('rightDrawerOverlay');
 
@@ -510,33 +503,26 @@ class FlatDashboard {
     
     // Debug helper methods
     async debugRefreshTenants() {
-        console.log('[FlatDashboard] DEBUG: Refreshing tenant data...');
         try {
             const tenantsResponse = await apiService.getFlatTenants();
             this.tenantsData = tenantsResponse || [];
-            console.log('[FlatDashboard] DEBUG: Loaded', this.tenantsData.length, 'tenants');
             await this.loadTenantsSection();
-            console.log('[FlatDashboard] DEBUG: Tenant section refreshed');
         } catch (error) {
             console.error('[FlatDashboard] DEBUG: Error refreshing tenants:', error);
         }
     }
     
     async debugRefreshProperties() {
-        console.log('[FlatDashboard] DEBUG: Refreshing properties data...');
         try {
             const flatPropertiesResponse = await apiService.getFlatProperties(0, 100);
             this.propertiesData = (flatPropertiesResponse?.content || flatPropertiesResponse) || [];
-            console.log('[FlatDashboard] DEBUG: Loaded', this.propertiesData.length, 'properties');
             this.updatePropertiesTable();
-            console.log('[FlatDashboard] DEBUG: Properties table refreshed');
         } catch (error) {
             console.error('[FlatDashboard] DEBUG: Error refreshing properties:', error);
         }
     }
     
     async debugRefreshPayments() {
-        console.log('[FlatDashboard] DEBUG: Refreshing payments data...');
         try {
             const paymentsResponse = await apiService.get('/transactions/owner/all');
             const allPayments = paymentsResponse || [];
@@ -547,16 +533,13 @@ class FlatDashboard {
                 flatPropertyIds.includes(payment.propertyId)
             );
             
-            console.log('[FlatDashboard] DEBUG: Loaded', this.paymentsData.length, 'flat payments out of', allPayments.length, 'total');
             await this.loadPaymentsSection();
-            console.log('[FlatDashboard] DEBUG: Payments section refreshed');
         } catch (error) {
             console.error('[FlatDashboard] DEBUG: Error refreshing payments:', error);
         }
     }
     
     debugShowRightDrawer() {
-        console.log('[FlatDashboard] DEBUG: Testing right drawer...');
         this.openRightDrawer('Debug Test', '<p>This is a test of the right drawer functionality.</p>');
     }
 
@@ -566,7 +549,6 @@ class FlatDashboard {
             const response = await apiService.get('/auth/me');
             this.ownerData = response;
             
-            console.log('[FlatDashboard] Owner data loaded:', this.ownerData);
             // Profile display now handled by navbar component
 
         } catch (error) {
@@ -577,27 +559,19 @@ class FlatDashboard {
 
     async loadDashboardData() {
         try {
-            console.log('[FlatDashboard] Loading dashboard metrics...');
-            console.log('[FlatDashboard] API Base URL:', apiService.baseURL);
-            console.log('[FlatDashboard] Auth Token:', apiService.token ? 'Present' : 'Missing');
             
             // Test endpoint accessibility first
-            console.log('[FlatDashboard] Testing endpoint connectivity...');
             try {
                 const testUrl = `${apiService.baseURL}/admin/properties/flats?page=0&size=10`;
-                console.log('[FlatDashboard] Test URL:', testUrl);
                 
                 const response = await fetch(testUrl, {
                     method: 'GET',
                     headers: apiService.getHeaders()
                 });
                 
-                console.log('[FlatDashboard] Test response status:', response.status);
-                console.log('[FlatDashboard] Test response headers:', [...response.headers.entries()]);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('[FlatDashboard] Test successful, sample data:', data);
                 } else {
                     const errorText = await response.text();
                     console.error('[FlatDashboard] Test response error:', errorText);
@@ -607,17 +581,13 @@ class FlatDashboard {
             }
             
             // Load flat properties only - fetch more records
-            console.log('[FlatDashboard] Calling getFlatProperties...');
             try {
                 const flatPropertiesResponse = await apiService.getFlatProperties(0, 100); // Get up to 100 properties
-                console.log('[FlatDashboard] Raw flat properties response:', flatPropertiesResponse);
                 
                 this.propertiesData = (flatPropertiesResponse?.content || flatPropertiesResponse) || [];
-                console.log('[FlatDashboard] Loaded flat properties:', this.propertiesData.length);
                 
                 // Log first property structure for debugging
                 if (this.propertiesData.length > 0) {
-                    console.log('[FlatDashboard] First property structure:', this.propertiesData[0]);
                 }
             } catch (flatError) {
                 console.error('[FlatDashboard] Error loading flat properties:', flatError);
@@ -628,12 +598,10 @@ class FlatDashboard {
                 });
                 
                 // Fallback: try to load regular properties and filter
-                console.log('[FlatDashboard] Attempting fallback to regular properties...');
                 try {
                     const allPropertiesResponse = await apiService.getMyProperties();
                     const allProperties = allPropertiesResponse?.content || allPropertiesResponse || [];
                     this.propertiesData = allProperties.filter(p => p.type === 'FLAT');
-                    console.log('[FlatDashboard] Fallback: Filtered flat properties:', this.propertiesData.length);
                 } catch (fallbackError) {
                     console.error('[FlatDashboard] Fallback also failed:', fallbackError);
                     this.propertiesData = [];
@@ -641,26 +609,21 @@ class FlatDashboard {
             }
             
             // Load tenants (only from flat properties)
-            console.log('[FlatDashboard] Loading flat tenants...');
             try {
                 const tenantsResponse = await apiService.getFlatTenants();
                 this.tenantsData = tenantsResponse || [];
-                console.log('[FlatDashboard] Loaded flat tenants:', this.tenantsData.length);
                 
                 // Log first tenant structure for debugging
                 if (this.tenantsData.length > 0) {
-                    console.log('[FlatDashboard] First tenant structure:', this.tenantsData[0]);
                 }
             } catch (tenantError) {
                 console.error('[FlatDashboard] Error loading flat tenants:', tenantError);
-                console.log('[FlatDashboard] Attempting fallback to all tenants with filtering...');
                 try {
                     const allTenantsResponse = await apiService.getTenants();
                     const allTenants = allTenantsResponse || [];
                     // Filter tenants based on property IDs from loaded flat properties
                     const flatPropertyIds = this.propertiesData.map(p => p.id);
                     this.tenantsData = allTenants.filter(t => flatPropertyIds.includes(t.propertyId));
-                    console.log('[FlatDashboard] Fallback: Filtered flat tenants:', this.tenantsData.length);
                 } catch (fallbackError) {
                     console.error('[FlatDashboard] Tenant fallback also failed:', fallbackError);
                     this.tenantsData = [];
@@ -668,10 +631,8 @@ class FlatDashboard {
             }
             
             // Load payments (only for flat properties)
-            console.log('[FlatDashboard] Loading payments...');
             const paymentsResponse = await apiService.get('/transactions/owner/all');
             const allPayments = paymentsResponse || [];
-            console.log('[FlatDashboard] Raw payments response:', allPayments.length);
             
             // Filter payments to only include those for flat properties
             const flatPropertyIds = this.propertiesData.map(p => p.id);
@@ -681,12 +642,9 @@ class FlatDashboard {
                 return isForFlatProperty;
             });
             
-            console.log('[FlatDashboard] Loaded flat payments:', this.paymentsData.length, 'out of', allPayments.length, 'total payments');
-            console.log('[FlatDashboard] Flat property IDs:', flatPropertyIds);
             
             // Log first payment structure for debugging
             if (this.paymentsData.length > 0) {
-                console.log('[FlatDashboard] First flat payment structure:', this.paymentsData[0]);
             }
 
             // Update all dashboard widgets
@@ -733,7 +691,6 @@ class FlatDashboard {
                     try {
                         const paymentDate = new Date(payment.paymentDate || payment.createdAt);
                         if (isNaN(paymentDate.getTime())) {
-                            console.warn('[FlatDashboard] Invalid payment date for payment:', payment.id);
                             return false;
                         }
                         return payment.propertyId === property.id &&
@@ -741,7 +698,6 @@ class FlatDashboard {
                                paymentDate.getFullYear() === currentYear &&
                                (payment.status === 'VERIFIED' || payment.status === 'PENDING');
                     } catch (error) {
-                        console.warn('[FlatDashboard] Error parsing payment date:', error);
                         return false;
                     }
                 });
@@ -756,14 +712,12 @@ class FlatDashboard {
                     try {
                         const paymentDate = new Date(payment.paymentDate || payment.createdAt);
                         if (isNaN(paymentDate.getTime())) {
-                            console.warn('[FlatDashboard] Invalid payment date for payment:', payment.id);
                             return false;
                         }
                         return payment.status === 'VERIFIED' &&
                                paymentDate.getMonth() === currentMonth &&
                                paymentDate.getFullYear() === currentYear;
                     } catch (error) {
-                        console.warn('[FlatDashboard] Error parsing payment date:', error);
                         return false;
                     }
                 })
@@ -818,7 +772,6 @@ class FlatDashboard {
                            paymentDate.getMonth() === date.getMonth() &&
                            paymentDate.getFullYear() === date.getFullYear();
                 } catch (error) {
-                    console.warn('[FlatDashboard] Error parsing payment date in chart:', error);
                     return false;
                 }
             });
@@ -977,7 +930,6 @@ class FlatDashboard {
                            paymentDate.getFullYear() === currentYear &&
                            (payment.status === 'APPROVED' || payment.status === 'PENDING');
                 } catch (error) {
-                    console.warn('[FlatDashboard] Invalid date in current month check:', payment.id);
                     return false;
                 }
             });
@@ -1003,7 +955,6 @@ class FlatDashboard {
                             const dateB = new Date(b.paymentDate || b.createdAt);
                             return dateB - dateA;
                         } catch (error) {
-                            console.warn('[FlatDashboard] Error sorting payments in recent flats:', error);
                             return 0;
                         }
                     })[0];
@@ -1017,7 +968,6 @@ class FlatDashboard {
                             const date = new Date(latestPayment.paymentDate || latestPayment.createdAt);
                             return isNaN(date.getTime()) ? null : date;
                         } catch (error) {
-                            console.warn('[FlatDashboard] Invalid last activity date:', latestPayment.id);
                             return null;
                         }
                     })() : null
@@ -1089,7 +1039,6 @@ class FlatDashboard {
                     const date = new Date(payment.paymentDate || payment.createdAt);
                     return !isNaN(date.getTime());
                 } catch (error) {
-                    console.warn('[FlatDashboard] Invalid payment date in activities:', payment.id);
                     return false;
                 }
             })
@@ -1099,7 +1048,6 @@ class FlatDashboard {
                     const dateB = new Date(b.paymentDate || b.createdAt);
                     return dateB - dateA;
                 } catch (error) {
-                    console.warn('[FlatDashboard] Error sorting payments by date:', error);
                     return 0;
                 }
             })
@@ -1113,7 +1061,6 @@ class FlatDashboard {
                         try {
                             const date = new Date(payment.paymentDate || payment.createdAt);
                             if (isNaN(date.getTime())) {
-                                console.warn('[FlatDashboard] Invalid date for pending payment:', payment.id);
                                 return;
                             }
                             activities.push({
@@ -1124,13 +1071,11 @@ class FlatDashboard {
                                 date: date
                             });
                         } catch (error) {
-                            console.warn('[FlatDashboard] Error processing pending payment date:', error);
                         }
                     } else if (payment.status === 'APPROVED') {
                         try {
                             const date = new Date(payment.paymentDate || payment.createdAt);
                             if (isNaN(date.getTime())) {
-                                console.warn('[FlatDashboard] Invalid date for approved payment:', payment.id);
                                 return;
                             }
                             activities.push({
@@ -1141,7 +1086,6 @@ class FlatDashboard {
                                 date: date
                             });
                         } catch (error) {
-                            console.warn('[FlatDashboard] Error processing approved payment date:', error);
                         }
                     }
                 }
@@ -1423,7 +1367,6 @@ class FlatDashboard {
                     if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
                     return dateB - dateA;
                 } catch (error) {
-                    console.warn('[FlatDashboard] Error sorting recent payments:', error);
                     return 0;
                 }
             })
@@ -1441,7 +1384,6 @@ class FlatDashboard {
                 displayDate = isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
             } catch (error) {
                 displayDate = 'Invalid Date';
-                console.warn('[FlatDashboard] Invalid date in recent payments:', payment.id);
             }
             
             return `
@@ -1493,13 +1435,11 @@ class FlatDashboard {
     }
 
     async loadSectionData(section) {
-        console.log(`[FlatDashboard] Loading section data for: ${section}`);
         switch (section) {
             case 'properties':
                 await this.loadPropertiesSection();
                 break;
             case 'tenants':
-                console.log('[FlatDashboard] Loading tenants section with data:', this.tenantsData.length, 'tenants');
                 await this.loadTenantsSection();
                 break;
             case 'payments':
@@ -1518,20 +1458,17 @@ class FlatDashboard {
                 await this.loadSettingsSection();
                 break;
             default:
-                console.warn(`[FlatDashboard] Unknown section: ${section}`);
         }
     }
 
     async loadPropertiesSection() {
         try {
-            console.log('[FlatDashboard] Loading properties section...');
             
             // Show loading state
             this.showPropertiesLoadingState();
             
             // Refresh data if needed
             if (this.propertiesData.length === 0 || this.tenantsData.length === 0) {
-                console.log('[FlatDashboard] Insufficient data, reloading...');
                 await this.loadDashboardData();
             }
             
@@ -1576,7 +1513,6 @@ class FlatDashboard {
     }
 
     updatePropertiesSummary() {
-        console.log('[FlatDashboard] Updating properties summary with:', {
             properties: this.propertiesData.length,
             tenants: this.tenantsData.length,
             payments: this.paymentsData.length
@@ -1613,7 +1549,6 @@ class FlatDashboard {
             return sum + (primaryTenant?.rentAmount || 0);
         }, 0);
         
-        console.log('[FlatDashboard] Summary calculations:', {
             totalProperties: this.propertiesData.length,
             occupiedFlats,
             vacantFlats,
@@ -1667,7 +1602,6 @@ class FlatDashboard {
     }
 
     updatePropertiesTable() {
-        console.log('[FlatDashboard] Updating properties table...');
         const tableBody = document.getElementById('propertiesTableBody');
         const emptyState = document.getElementById('propertiesEmptyState');
         
@@ -1676,11 +1610,8 @@ class FlatDashboard {
             return;
         }
 
-        console.log('[FlatDashboard] Properties data available:', this.propertiesData.length);
-        console.log('[FlatDashboard] Properties data sample:', this.propertiesData.slice(0, 2));
 
         if (this.propertiesData.length === 0) {
-            console.log('[FlatDashboard] No properties data, showing empty state');
             tableBody.innerHTML = '';
             if (emptyState) emptyState.style.display = 'block';
             return;
@@ -1690,7 +1621,6 @@ class FlatDashboard {
 
         // Validate data structure before processing
         const firstProperty = this.propertiesData[0];
-        console.log('[FlatDashboard] First property field check:', {
             hasId: !!firstProperty.id,
             hasLocation: !!firstProperty.location,
             hasCity: !!firstProperty.city,
@@ -1699,7 +1629,6 @@ class FlatDashboard {
             propertyType: firstProperty.type
         });
 
-        console.log('[FlatDashboard] Updating properties table with data:', {
             propertiesCount: this.propertiesData.length,
             tenantsCount: this.tenantsData.length
         });
@@ -1718,7 +1647,6 @@ class FlatDashboard {
             const primaryTenant = propertyTenants.find(t => t.primary === true) || propertyTenants[0] || null;
             const otherTenants = propertyTenants.filter(t => t.primary !== true && t.id !== primaryTenant?.id);
 
-            console.log(`[FlatDashboard] Property ${property.id} - ${property.location}:`, {
                 propertyTenants: propertyTenants.length,
                 primaryTenant: primaryTenant?.tenantName,
                 otherTenants: otherTenants.length
@@ -1767,7 +1695,6 @@ class FlatDashboard {
                                 const date = new Date(lastPayment.paymentDate || lastPayment.createdAt);
                                 return isNaN(date.getTime()) ? '—' : this.formatDate(date);
                             } catch (error) {
-                                console.warn('[FlatDashboard] Invalid last payment date:', lastPayment.id);
                                 return '—';
                             }
                         })() : '—'}
@@ -1791,7 +1718,6 @@ class FlatDashboard {
             `;
         }).join('');
         
-        console.log('[FlatDashboard] Properties table populated successfully with', this.propertiesData.length, 'properties');
     }
 
     getPropertyPaymentStatus(property, primaryTenant) {
@@ -1802,19 +1728,15 @@ class FlatDashboard {
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
         
-        console.log(`[FlatDashboard] Checking payment status for property ${property.id} (${this.generateFlatName(property, primaryTenant)}) in ${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`);
-        console.log(`[FlatDashboard] Total payments data available:`, this.paymentsData.length);
         
         // Filter payments for this property first
         const propertyPayments = this.paymentsData.filter(payment => payment.propertyId === property.id);
-        console.log(`[FlatDashboard] Payments for property ${property.id}:`, propertyPayments.length, propertyPayments);
         
         // Check for approved/verified transactions in current month for this property
         const approvedTransaction = this.paymentsData.find(payment => {
             try {
                 const paymentDate = new Date(payment.paymentDate || payment.createdAt);
                 if (isNaN(paymentDate.getTime())) {
-                    console.log(`[FlatDashboard] Invalid payment date for payment ${payment.id}:`, payment.paymentDate, payment.createdAt);
                     return false;
                 }
                 
@@ -1824,7 +1746,6 @@ class FlatDashboard {
                 const isForThisProperty = payment.propertyId === property.id;
                 
                 if (isForThisProperty) {
-                    console.log(`[FlatDashboard] Payment ${payment.id} for property ${property.id}:`, {
                         propertyId: payment.propertyId,
                         status: payment.status,
                         paymentDate: paymentDate.toLocaleDateString(),
@@ -1840,13 +1761,11 @@ class FlatDashboard {
                 
                 return isForThisProperty && isCurrentMonth && isApproved;
             } catch (error) {
-                console.warn('[FlatDashboard] Error checking payment status date:', payment.id, error);
                 return false;
             }
         });
 
         if (approvedTransaction) {
-            console.log(`[FlatDashboard] ✅ Found approved transaction for property ${property.id}:`, approvedTransaction.id);
             return { class: 'approved', text: 'Paid' };
         }
 
@@ -1861,13 +1780,11 @@ class FlatDashboard {
                        paymentDate.getFullYear() === currentYear &&
                        payment.status === 'PENDING';
             } catch (error) {
-                console.warn('[FlatDashboard] Error checking pending payment:', payment.id, error);
                 return false;
             }
         });
 
         if (pendingTransaction) {
-            console.log(`[FlatDashboard] ⏳ Found pending transaction for property ${property.id}:`, pendingTransaction.id);
             return { class: 'pending', text: 'Pending' };
         }
 
@@ -1882,18 +1799,15 @@ class FlatDashboard {
                        paymentDate.getFullYear() === currentYear &&
                        payment.status === 'REJECTED';
             } catch (error) {
-                console.warn('[FlatDashboard] Error checking rejected payment:', payment.id, error);
                 return false;
             }
         });
 
         if (rejectedTransaction) {
-            console.log(`[FlatDashboard] ❌ Found rejected transaction for property ${property.id}:`, rejectedTransaction.id);
             return { class: 'rejected', text: 'Rejected' };
         }
 
         // No transaction found for current month - mark as due
-        console.log(`[FlatDashboard] 💸 No current month transactions found for property ${property.id} - marking as due`);
         return { class: 'due', text: 'Due' };
     }
 
@@ -1907,7 +1821,6 @@ class FlatDashboard {
                     if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
                     return dateB - dateA;
                 } catch (error) {
-                    console.warn('[FlatDashboard] Error sorting last payments:', error);
                     return 0;
                 }
             })[0];
@@ -1967,7 +1880,6 @@ class FlatDashboard {
     }
 
     async loadTenantsSection() {
-        console.log('[FlatDashboard] Loading tenants section...');
         const tableBody = document.getElementById('tenantsTableBody');
         
         if (!tableBody) {
@@ -1975,11 +1887,8 @@ class FlatDashboard {
             return;
         }
         
-        console.log('[FlatDashboard] Tenants data available:', this.tenantsData.length);
-        console.log('[FlatDashboard] Tenants data sample:', this.tenantsData.slice(0, 2));
 
         if (this.tenantsData.length === 0) {
-            console.log('[FlatDashboard] No tenants data, showing empty state');
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
@@ -1993,7 +1902,6 @@ class FlatDashboard {
 
         // Validate data structure before processing
         const firstTenant = this.tenantsData[0];
-        console.log('[FlatDashboard] First tenant field check:', {
             hasId: !!firstTenant.id,
             hasTenantName: !!firstTenant.tenantName,
             hasPhoneNumber: !!firstTenant.phoneNumber,
@@ -2002,9 +1910,7 @@ class FlatDashboard {
             statusValue: firstTenant.status
         });
 
-        console.log('[FlatDashboard] Generating tenant table rows...');
         tableBody.innerHTML = this.tenantsData.map((tenant, index) => {
-            console.log(`[FlatDashboard] Processing tenant ${index + 1}:`, tenant);
             
             // Handle field name mappings from TenantSummary to frontend expectations
             const displayName = tenant.tenantName || `${tenant.firstName || ''} ${tenant.lastName || ''}`.trim() || 'N/A';
@@ -2039,11 +1945,9 @@ class FlatDashboard {
             </tr>
             `;
         }).join('');
-        console.log('[FlatDashboard] Tenant table populated successfully');
     }
 
     async loadPaymentsSection() {
-        console.log('[FlatDashboard] Loading payments section...');
         const tableBody = document.getElementById('paymentsTableBody');
         
         if (!tableBody) {
@@ -2051,11 +1955,8 @@ class FlatDashboard {
             return;
         }
 
-        console.log('[FlatDashboard] Payments data available:', this.paymentsData.length);
-        console.log('[FlatDashboard] Payments data sample:', this.paymentsData.slice(0, 2));
 
         if (this.paymentsData.length === 0) {
-            console.log('[FlatDashboard] No flat payments data, showing empty state');
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
@@ -2069,7 +1970,6 @@ class FlatDashboard {
 
         // Validate data structure before processing
         const firstPayment = this.paymentsData[0];
-        console.log('[FlatDashboard] First payment field check:', {
             hasId: !!firstPayment.id,
             hasPaymentDate: !!firstPayment.paymentDate,
             hasCreatedAt: !!firstPayment.createdAt,
@@ -2082,9 +1982,7 @@ class FlatDashboard {
             actualFields: Object.keys(firstPayment)
         });
 
-        console.log('[FlatDashboard] Generating payment table rows...');
         tableBody.innerHTML = this.paymentsData.map((payment, index) => {
-            console.log(`[FlatDashboard] Processing payment ${index + 1}:`, payment);
             
             // Get property name from property ID
             const property = this.propertiesData.find(p => p.id === payment.propertyId);
@@ -2115,21 +2013,17 @@ class FlatDashboard {
             `;
         }).join('');
         
-        console.log('[FlatDashboard] Payments table populated successfully with', this.paymentsData.length, 'flat payments');
     }
 
     async loadMaintenanceSection() {
         // Placeholder for maintenance functionality
-        console.log('[OwnerDashboard] Loading maintenance section...');
     }
 
     async loadReportsSection() {
         // Placeholder for reports functionality
-        console.log('[OwnerDashboard] Loading reports section...');
     }
 
     async loadNotificationsSection() {
-        console.log('[OwnerDashboard] Loading notifications section...');
         
         // Setup notification section event listeners
         this.setupNotificationSectionListeners();
@@ -2352,7 +2246,6 @@ class FlatDashboard {
     }
 
     async loadSettingsSection() {
-        console.log('[FlatDashboard] Loading settings section...');
         try {
             // Setup payment settings form
             this.setupPaymentSettingsForm();
@@ -2367,10 +2260,8 @@ class FlatDashboard {
     // ===== PAYMENT SETTINGS FUNCTIONS =====
     
     setupPaymentSettingsForm() {
-        console.log('[FlatDashboard] Setting up payment settings form');
         const form = document.getElementById('paymentSettingsForm');
         if (!form) {
-            console.warn('[FlatDashboard] Payment settings form not found');
             return;
         }
         
@@ -2384,7 +2275,6 @@ class FlatDashboard {
             await this.savePaymentSettings();
         });
         
-        console.log('[FlatDashboard] Payment settings form setup complete');
     }
 
     async loadPaymentSettings() {
@@ -2397,7 +2287,6 @@ class FlatDashboard {
             }
         } catch (error) {
             if (error.status === 204) {
-                console.log('[FlatDashboard] No payment info found - showing empty form');
                 this.clearPaymentSettingsForm();
             } else {
                 console.error('[FlatDashboard] Error loading payment settings:', error);
@@ -2448,13 +2337,11 @@ class FlatDashboard {
             }
 
             if (this.currentQRFile) {
-                console.log('[FlatDashboard] Uploading QR code to S3...');
                 const qrImageUrl = await this.uploadQRCode(this.currentQRFile);
                 if (!qrImageUrl) {
                     this.showNotification('Failed to upload QR code. Please try again.', 'error');
                     return;
                 }
-                console.log('[FlatDashboard] QR code uploaded successfully:', qrImageUrl);
             }
 
             const payload = {
@@ -2798,7 +2685,6 @@ class FlatDashboard {
 
     initializeNotifications() {
         // Let the navbar component handle notifications naturally
-        console.log('[FlatDashboard] Allowing navbar component to handle notifications...');
         
         // The notifications.js will be loaded by the navbar component
         // We just need to update our sidebar notification badges
@@ -2807,9 +2693,7 @@ class FlatDashboard {
             // Setup profile dropdown after navbar is loaded
             if (typeof window.setupProfileDropdown === 'function') {
                 window.setupProfileDropdown();
-                console.log('[FlatDashboard] Profile dropdown setup completed');
             } else {
-                console.log('[FlatDashboard] Profile dropdown setup function not available');
             }
         }, 2000); // Wait for navbar and notifications to initialize
         
@@ -3159,8 +3043,6 @@ class FlatDashboard {
             if (!response.ok) throw new Error('Failed to fetch tenant details');
             
             const tenant = await response.json();
-            console.log('[FlatDashboard] Fetched tenant data from API:', tenant);
-            console.log('[FlatDashboard] Tenant rentDueDate value:', tenant.rentDueDate, 'Type:', typeof tenant.rentDueDate);
             
             // Populate form fields
             document.getElementById('editTenantId').value = tenant.id;
@@ -3169,7 +3051,6 @@ class FlatDashboard {
             
             // Set rent due date with proper conversion
             const dueDate = tenant.rentDueDate || 1;
-            console.log('[FlatDashboard] Setting rentDueDate dropdown to:', dueDate);
             document.getElementById('editRentDueDate').value = String(dueDate);
             
             // Format dates for input fields
@@ -3211,7 +3092,6 @@ class FlatDashboard {
             leaseEndDate: document.getElementById('editLeaseEndDate').value || null
         };
         
-        console.log('[FlatDashboard] Saving tenant data:', formData);
         
         try {
             const token = localStorage.getItem('authToken');

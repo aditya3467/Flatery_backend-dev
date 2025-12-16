@@ -29,7 +29,6 @@ class OwnerDashboard {
     }
 
     async init() {
-        console.log('[OwnerDashboard] Initializing dashboard...');
         
         // Check authentication and role
         if (!this.checkAuth()) {
@@ -50,7 +49,6 @@ class OwnerDashboard {
         // Initialize notifications (handled by navbar component)
         this.initializeNotifications();
         
-        console.log('[OwnerDashboard] Dashboard initialized successfully');
     }
 
     checkAuth() {
@@ -63,7 +61,6 @@ class OwnerDashboard {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
         
         if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
-            console.warn('[OwnerDashboard] Access denied - not authenticated or not ADMIN role');
             this.showNotification('Please login as an owner to view the dashboard.', 'warning');
             setTimeout(() => {
                 window.location.href = '../index.html';
@@ -268,7 +265,6 @@ class OwnerDashboard {
 
     // Navigation Methods
     navigateToSection(section) {
-        console.log(`[OwnerDashboard] Navigating to section: ${section}`);
         
         // Update active nav item
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -436,12 +432,10 @@ class OwnerDashboard {
 
     async loadDashboardData() {
         try {
-            console.log('[OwnerDashboard] Loading dashboard metrics...');
             
             // Load flat properties only
             const flatPropertiesResponse = await apiService.getFlatProperties();
             this.propertiesData = (flatPropertiesResponse?.content || flatPropertiesResponse) || [];
-            console.log('[OwnerDashboard] Loaded flat properties:', this.propertiesData.length);
             
             // Load tenants
             const tenantsResponse = await apiService.get('/api/tenants');
@@ -739,16 +733,13 @@ class OwnerDashboard {
 
     async loadMaintenanceSection() {
         // Placeholder for maintenance functionality
-        console.log('[OwnerDashboard] Loading maintenance section...');
     }
 
     async loadReportsSection() {
         // Placeholder for reports functionality
-        console.log('[OwnerDashboard] Loading reports section...');
     }
 
     async loadNotificationsSection() {
-        console.log('[OwnerDashboard] Loading notifications section...');
         
         // Setup notification section event listeners
         this.setupNotificationSectionListeners();
@@ -972,7 +963,6 @@ class OwnerDashboard {
 
     async loadSettingsSection() {
         // Placeholder for settings functionality
-        console.log('[OwnerDashboard] Loading settings section...');
     }
 
     // Detail Views
@@ -1261,7 +1251,6 @@ class OwnerDashboard {
 
     initializeNotifications() {
         // Let the navbar component handle notifications naturally
-        console.log('[OwnerDashboard] Allowing navbar component to handle notifications...');
         
         // The notifications.js will be loaded by the navbar component
         // We just need to update our sidebar notification badges

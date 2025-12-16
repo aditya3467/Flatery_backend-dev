@@ -351,8 +351,6 @@ class ComplaintManager {
      */
     isOwner() {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
-        console.log('Current roles in localStorage:', roles);
-        console.log('Token in localStorage:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
         return roles.includes('ADMIN') || roles.includes('SUPERADMIN');
     }
 
@@ -699,5 +697,4 @@ async function updateComplaintStatus(event) {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Complaint Manager initialized');
 });

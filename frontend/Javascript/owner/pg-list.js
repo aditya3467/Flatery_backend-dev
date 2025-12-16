@@ -24,7 +24,6 @@ class PGPortfolio {
     }
 
     async init() {
-        console.log('[PGPortfolio] Initializing...');
         
         // Check authentication
         if (!this.checkAuth()) {
@@ -37,7 +36,6 @@ class PGPortfolio {
         // Load PG properties
         await this.loadPGProperties();
         
-        console.log('[PGPortfolio] Initialization complete');
     }
 
     checkAuth() {
@@ -50,7 +48,6 @@ class PGPortfolio {
         const roles = JSON.parse(localStorage.getItem('roles') || '[]');
         
         if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
-            console.warn('[PGPortfolio] Access denied');
             setTimeout(() => {
                 window.location.href = '../index.html';
             }, 1500);
@@ -162,7 +159,6 @@ class PGPortfolio {
                 p.propertyType === 'Hostel'
             );
 
-            console.log('[PGPortfolio] PG properties loaded:', this.pgProperties.length);
 
             // Load tenants to calculate occupancy
             await this.loadTenantsData();
@@ -530,10 +526,8 @@ let pgPortfolio;
 document.addEventListener('DOMContentLoaded', () => {
     const initPGPortfolio = () => {
         if (typeof apiService !== 'undefined') {
-            console.log('[PGPortfolio] Initializing...');
             pgPortfolio = new PGPortfolio();
         } else {
-            console.warn('[PGPortfolio] API Service not ready, retrying...');
             setTimeout(initPGPortfolio, 100);
         }
     };

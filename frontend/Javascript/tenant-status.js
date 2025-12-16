@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function loadPageData() {
     try {
         const userData = await apiService.getCurrentUser();
-        console.log('Tenant user:', userData);
 
         // Load past stays history
         await loadPastStays();
@@ -23,7 +22,6 @@ async function loadPageData() {
 async function loadPastStays() {
     try {
         const pastStays = await apiService.getTenantPastStays();
-        console.log('Past stays:', pastStays);
 
         const container = document.getElementById('pastStaysContainer');
         const noStaysMsg = document.getElementById('noPastStaysMessage');
@@ -84,7 +82,6 @@ function createPastStayCard(stay) {
 
     // Add click handler to view details if needed
     card.addEventListener('click', () => {
-        console.log('Clicked on stay:', stay);
         // You can add modal or details page here
     });
 

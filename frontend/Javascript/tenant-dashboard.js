@@ -46,7 +46,6 @@ async function loadTenantProfile() {
         const userData = await apiService.getCurrentUser();
         const tenantData = await apiService.getCurrentTenantSummary();
         
-        console.log('Loading tenant profile with data:', { userData, tenantData });
         
         // Update user name
         document.getElementById('tenantUserName').textContent = userData.fullName || userData.username;
@@ -70,11 +69,7 @@ async function loadDashboardData() {
         
         try {
             // Use the comprehensive property API for all tenant data - MANDATORY
-            console.log('🔄 Calling API: /api/tenants/me/property');
             const propertyDetails = await apiService.getTenantPropertyDetails();
-            console.log('🔍 Main Dashboard - Raw API Response:', propertyDetails);
-            console.log('🔍 API Response Type:', typeof propertyDetails);
-            console.log('🔍 rentDueDate from API:', propertyDetails?.rentDueDate, typeof propertyDetails?.rentDueDate);
             
             if (!propertyDetails) {
                 throw new Error('API returned null/undefined data');
@@ -107,7 +102,6 @@ async function loadDashboardData() {
                 ownerPhone: propertyDetails.ownerPhone
             };
             
-            console.log('✅ Main Dashboard - Final tenant data with rentDueDate:', tenantData.rentDueDate);
             
         } catch (error) {
             console.error('❌ CRITICAL ERROR: Failed to load tenant data from API:', error);
@@ -129,14 +123,11 @@ async function loadDashboardData() {
                 const unit = await apiService.getTenantUnit();
                 if (unit && unit.code) {
                     unitName = unit.code;
-                    console.log('Loaded unit from API:', unitName);
                 }
             } catch (error) {
-                console.warn('Failed to load unit details, using fallback:', error);
                 unitName = tenantData.flatRoomNumber || `Unit ${tenantData.unitId}`;
             }
         }
-        console.log('Final unit name:', unitName);
         
         // Update sidebar property info
         const propertyName = tenantData.propertyName || 'Property Name';
@@ -186,8 +177,6 @@ async function loadDashboardData() {
         
         // Show consistent due day (not next calculated date)
         const dueDay = tenantData.rentDueDate || 1;
-        console.log('🚨 MAIN DASHBOARD - DUE DAY FROM API:', dueDay);
-        console.log('🚨 MAIN DASHBOARD - FULL TENANT DATA:', tenantData);
         
         const suffix = getDaySuffix(dueDay);
         document.getElementById('dueDate').textContent = `${dueDay}${suffix}`;
@@ -636,12 +625,9 @@ function handleViewReceipts() {
 // Load stay information data
 async function loadStayInformation() {
     try {
-        console.log('Loading stay information...');
         
         // Use the new comprehensive property endpoint for ALL data
         const propertyDetails = await apiService.getTenantPropertyDetails();
-        console.log('🚨 STAY INFO - Property details received:', propertyDetails);
-        console.log('🚨 STAY INFO - DUE DAY FROM API:', propertyDetails?.rentDueDate);
         
         // Load all sections with the comprehensive data
         await loadPropertyInformation(propertyDetails);
@@ -651,7 +637,6 @@ async function loadStayInformation() {
         await loadAmenities(propertyDetails.amenities);
         await loadPropertyRules(propertyDetails.rules);
         
-        console.log('Stay information loaded successfully');
     } catch (error) {
         console.error('Error loading stay information:', error);
         showNotification('Failed to load stay information', 'error');
@@ -665,14 +650,6 @@ async function loadPropertyInformation(propertyDetails) {
         document.getElementById('propertyAddress').textContent = `${propertyDetails.address || ''} ${propertyDetails.city || ''}`.trim() || 'N/A';
         document.getElementById('propertyType').textContent = propertyDetails.propertyType || 'PG';
         document.getElementById('totalFloors').textContent = propertyDetails.totalFloors || 'N/A';
-        
-        console.log('Property information loaded from comprehensive data:', {
-            name: propertyDetails.propertyName,
-            address: propertyDetails.address,
-            city: propertyDetails.city,
-            type: propertyDetails.propertyType,
-            floors: propertyDetails.totalFloors
-        });
     } catch (error) {
         console.error('Error loading property information:', error);
         // Fallback values
@@ -694,7 +671,6 @@ async function loadRoomDetails(tenantData, propertyDetails) {
         
         // Handle rent due date - it's a day of month (1-31), not a full date
         const dueDay = tenantData.rentDueDate;
-        console.log('🚨 ROOM DETAILS - DUE DAY FROM tenantData:', dueDay, typeof dueDay);
         if (dueDay && dueDay >= 1 && dueDay <= 31) {
             const suffix = getDaySuffix(dueDay);
             document.getElementById('rentDueDate').textContent = `${dueDay}${suffix} of every month`;
@@ -704,14 +680,6 @@ async function loadRoomDetails(tenantData, propertyDetails) {
             document.getElementById('rentDueDate').textContent = '1st of every month'; // Default
             document.getElementById('paymentCycle').textContent = 'Monthly (1st)';
         }
-        
-        console.log('Room details loaded:', {
-            unitCode: propertyDetails.unitCode,
-            bedIndex: tenantData.bedIndex,
-            floorName: propertyDetails.floorName,
-            unitType: propertyDetails.unitType,
-            dueDay: dueDay
-        });
     } catch (error) {
         console.error('Error loading room details:', error);
     }
@@ -729,12 +697,6 @@ async function loadOwnerInformation(propertyDetails) {
         if (propertyDetails.ownerName) {
             ownerAvatar.innerHTML = propertyDetails.ownerName.charAt(0).toUpperCase();
         }
-        
-        console.log('Owner information loaded:', {
-            name: propertyDetails.ownerName,
-            phone: propertyDetails.ownerPhone,
-            email: propertyDetails.ownerEmail
-        });
     } catch (error) {
         console.error('Error loading owner information:', error);
     }
@@ -753,7 +715,6 @@ async function loadStayDuration(propertyDetails) {
         
         // Update rent cycle to match due date
         const dueDay = propertyDetails.rentDueDate || 1;
-        console.log('🚨 STAY DURATION - DUE DAY FROM propertyDetails:', dueDay, typeof dueDay);
         const suffix = getDaySuffix(dueDay);
         document.getElementById('rentCycle').textContent = `Monthly (Due every ${dueDay}${suffix})`;
         
@@ -787,7 +748,6 @@ async function loadAmenities(amenities) {
             // Update both amenities grids
             updateAmenitiesGrid('amenitiesGrid', amenities.slice(0, 3)); // First 3 for property card
             updateAmenitiesGrid('fullAmenitiesGrid', amenities); // All for full section
-            console.log('Amenities loaded from comprehensive data:', amenities);
         } else {
             // Fallback to default amenities
             const defaultAmenities = [
@@ -800,7 +760,6 @@ async function loadAmenities(amenities) {
             
             updateAmenitiesGrid('amenitiesGrid', defaultAmenities.slice(0, 3));
             updateAmenitiesGrid('fullAmenitiesGrid', defaultAmenities);
-            console.log('Default amenities loaded');
         }
     } catch (error) {
         console.error('Error loading amenities:', error);
@@ -813,10 +772,8 @@ async function loadPropertyRules(rules) {
         const rulesList = document.getElementById('propertyRulesList');
         if (rules && rules.length > 0) {
             rulesList.innerHTML = rules.map(rule => `<li>${rule}</li>`).join('');
-            console.log('Property rules loaded:', rules);
         } else {
             // Keep default rules
-            console.log('Using default property rules');
         }
     } catch (error) {
         console.error('Error loading property rules:', error);
@@ -914,12 +871,6 @@ async function loadRentPayments() {
         // Fetch real data from the comprehensive property API
         const propertyDetails = await svc.getTenantPropertyDetails();
         
-        console.log('🔍 Raw API Response:', propertyDetails);
-        console.log('🔍 Property Details Keys:', Object.keys(propertyDetails || {}));
-        console.log('🔍 Rent Amount:', propertyDetails?.rentAmount);
-        console.log('🔍 Security Deposit:', propertyDetails?.securityDeposit);
-        console.log('🔍 Rent Due Date:', propertyDetails?.rentDueDate);
-        console.log('🔍 Owner Name:', propertyDetails?.ownerName);
         
         if (!propertyDetails) {
             throw new Error('Failed to fetch tenant property details');
@@ -938,7 +889,6 @@ async function loadRentPayments() {
             ownerId: propertyDetails.ownerId
         };
 
-        console.log('🔍 Processed Rent Data:', rentData);
 
         // Store owner info globally for QR modal and reminder functionality
         window.currentOwnerName = rentData.ownerName;
@@ -949,10 +899,8 @@ async function loadRentPayments() {
         if (rentData.ownerId) {
             try {
                 ownerPaymentInfo = await svc.getOwnerPaymentInfoByOwnerId(rentData.ownerId);
-                console.log('🔍 Owner payment info:', ownerPaymentInfo);
                 window.currentOwnerPaymentInfo = ownerPaymentInfo;
             } catch (err) {
-                console.warn('Failed to fetch owner payment info (QR):', err);
             }
         }
 
@@ -960,9 +908,7 @@ async function loadRentPayments() {
         let transactions = [];
         try {
             transactions = await svc.getTenantPayments();
-            console.log('🔍 Fetched Transactions:', transactions);
         } catch (error) {
-            console.warn('Failed to fetch transactions, using empty array:', error);
         }
 
         // Determine current month status and details from transactions
@@ -985,16 +931,6 @@ async function loadRentPayments() {
             currentMonthDetails.upiRef = currentMonthTransaction.upiRef;
             currentMonthDetails.paymentDate = currentMonthTransaction.paymentDate;
             rentData.currentStatus = currentMonthDetails.status;
-            
-            console.log('📊 Current Month Transaction Found:', {
-                month: currentMonthTransaction.paymentMonth,
-                status: currentMonthDetails.status,
-                amount: currentMonthDetails.amount,
-                mode: currentMonthDetails.paymentMode,
-                ref: currentMonthDetails.upiRef
-            });
-        } else {
-            console.log('📊 No transaction found for current month:', currentMonthStr);
         }
 
         // Calculate next due date based on actual rent due date
@@ -1033,14 +969,6 @@ async function loadRentPayments() {
         
         // Load analytics with real transactions
         await loadRentAnalytics(rentData.monthlyRent, transactions);
-
-        console.log('Rent payments loaded with real data:', {
-            rentAmount: rentData.monthlyRent,
-            dueDate: rentData.rentDueDate,
-            securityDeposit: rentData.securityDeposit,
-            nextDueDate: nextDueDate,
-            transactionCount: transactions.length
-        });
 
     } catch (error) {
         console.error('❌ CRITICAL ERROR: Failed to load rent payments data:', error);
@@ -1287,7 +1215,6 @@ async function handleViewQRCode() {
                 ownerInfo = await svc.getOwnerPaymentInfoByOwnerId(window.currentOwnerId);
                 window.currentOwnerPaymentInfo = ownerInfo;
             } catch (err) {
-                console.warn('Failed to fetch owner payment info on demand:', err);
             }
         }
 
@@ -1375,12 +1302,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const paidAmountInput = form.querySelector('#paidAmount');
                 const amount = paidAmountInput ? (parseFloat(paidAmountInput.value) || 0) : 0;
 
-                console.log('📤 Uploading payment proof file:', {
-                    fileName: file.name,
-                    fileSize: file.size,
-                    fileType: file.type
-                });
-
                 // Upload file first to get file URL
                 const uploadResp = await apiService.uploadPaymentProof(fd);
                 const fileUrl = uploadResp?.fileUrl || uploadResp?.url || uploadResp?.data?.fileUrl;
@@ -1389,7 +1310,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error('File upload succeeded but no URL returned');
                 }
 
-                console.log('✅ File uploaded successfully:', fileUrl);
 
                 // Build payment payload matching PaymentRequestDto on backend
                 // paymentMode must be one of: UPI, BANK_TRANSFER, GATEWAY, CASH (enum on backend)
@@ -1400,14 +1320,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     upiRef: form.querySelector('#upiRefId')?.value || null,
                     screenshotUrl: fileUrl
                 };
-
-                console.log('📤 Submitting payment payload:', {
-                    amount: paymentPayload.amount,
-                    paymentMonth: paymentPayload.paymentMonth,
-                    paymentMode: paymentPayload.paymentMode,
-                    upiRef: paymentPayload.upiRef,
-                    screenshotUrl: paymentPayload.screenshotUrl
-                });
 
                 await apiService.submitPayment(paymentPayload);
 
@@ -1710,7 +1622,6 @@ async function remindOwnerForPayment(paymentMonth, transactionId) {
             redirectUrl: '/owner/owner-dashboard.html#pending-payments'
         };
 
-        console.log('Sending reminder notification:', notificationData);
 
         // Show loading state
         const reminderButtons = document.querySelectorAll('.table-action-btn.remind');
@@ -1775,7 +1686,6 @@ async function withdrawPaymentRequest(transactionId, paymentMonth) {
     }
 
     try {
-        console.log('Withdrawing payment request:', { transactionId, paymentMonth });
 
         // Show loading state - find the withdraw button
         const withdrawButtons = document.querySelectorAll('.table-action-btn.withdraw');
@@ -1790,7 +1700,6 @@ async function withdrawPaymentRequest(transactionId, paymentMonth) {
 
         // Call API to withdraw
     const response = await apiService.withdrawPaymentSubmission(transactionId);
-    console.log('Withdraw response:', response);
 
         // Show success message
         showSuccess(`Payment request for ${paymentMonth} has been withdrawn successfully!`);
@@ -1979,7 +1888,6 @@ function closeMobileNav() {
 // Load complaints section
 async function loadComplaints() {
     try {
-        console.log('Loading complaints from API...');
         let complaints = [];
         if (window.complaintManager && typeof complaintManager.getComplaints === 'function') {
             complaints = await complaintManager.getComplaints();
@@ -1995,7 +1903,6 @@ async function loadComplaints() {
         displayComplaintsTable(complaints);
         displayResolvedComplaints(complaints);
         initializeComplaintFilters(complaints);
-        console.log('Complaints loaded successfully');
     } catch (error) {
         console.error('Error loading complaints:', error);
         showError('Failed to load complaints');
@@ -2032,7 +1939,6 @@ function updateComplaintsAnalytics(complaints) {
 function displayComplaintsTable(complaints, statusFilter = 'all') {
     // Robust cleanup: Remove all mobile-table-cards containers before any rendering
     document.querySelectorAll('.mobile-table-cards').forEach(el => el.remove());
-    console.log('[displayComplaintsTable] Called. Complaints:', complaints.length, 'Status filter:', statusFilter);
 
     const tableBody = document.getElementById('complaintsTableBody');
 
@@ -2081,7 +1987,6 @@ function displayComplaintsTable(complaints, statusFilter = 'all') {
 function generateMobileComplaintCards(complaints) {
     // Robust cleanup: Remove all mobile-table-cards containers before rendering
     document.querySelectorAll('.mobile-table-cards').forEach(el => el.remove());
-    console.log('[generateMobileComplaintCards] Called. Complaints:', complaints.length);
 
     // Create a new mobile cards container
     const tableWrapper = document.querySelector('.table-wrapper');
@@ -2275,7 +2180,6 @@ function closeComplaintDetailsModal() {
 
 // Mark complaint as resolved
 function markComplaintResolved(complaintId) {
-    console.log('Marking complaint as resolved:', complaintId);
     
     // Here you would make an API call to update the complaint status
     // For now, we'll just show a success message
