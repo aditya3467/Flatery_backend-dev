@@ -110,6 +110,7 @@ window.debugFlatDashboard = {
         
         if (drawer) {
             const computedStyles = window.getComputedStyle(drawer);
+            console.log('Right drawer styles:', {
                 display: computedStyles.display,
                 right: computedStyles.right,
                 zIndex: computedStyles.zIndex,
@@ -123,6 +124,7 @@ window.debugFlatDashboard = {
         
         if (overlay) {
             const overlayStyles = window.getComputedStyle(overlay);
+            console.log('Overlay styles:', {
                 opacity: overlayStyles.opacity,
                 pointerEvents: overlayStyles.pointerEvents,
                 zIndex: overlayStyles.zIndex

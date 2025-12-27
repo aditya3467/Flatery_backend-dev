@@ -650,6 +650,13 @@ async function loadPropertyInformation(propertyDetails) {
         document.getElementById('propertyAddress').textContent = `${propertyDetails.address || ''} ${propertyDetails.city || ''}`.trim() || 'N/A';
         document.getElementById('propertyType').textContent = propertyDetails.propertyType || 'PG';
         document.getElementById('totalFloors').textContent = propertyDetails.totalFloors || 'N/A';
+        
+            name: propertyDetails.propertyName,
+            address: propertyDetails.address,
+            city: propertyDetails.city,
+            type: propertyDetails.propertyType,
+            floors: propertyDetails.totalFloors
+        });
     } catch (error) {
         console.error('Error loading property information:', error);
         // Fallback values
@@ -680,6 +687,13 @@ async function loadRoomDetails(tenantData, propertyDetails) {
             document.getElementById('rentDueDate').textContent = '1st of every month'; // Default
             document.getElementById('paymentCycle').textContent = 'Monthly (1st)';
         }
+        
+            unitCode: propertyDetails.unitCode,
+            bedIndex: tenantData.bedIndex,
+            floorName: propertyDetails.floorName,
+            unitType: propertyDetails.unitType,
+            dueDay: dueDay
+        });
     } catch (error) {
         console.error('Error loading room details:', error);
     }
@@ -697,6 +711,11 @@ async function loadOwnerInformation(propertyDetails) {
         if (propertyDetails.ownerName) {
             ownerAvatar.innerHTML = propertyDetails.ownerName.charAt(0).toUpperCase();
         }
+        
+            name: propertyDetails.ownerName,
+            phone: propertyDetails.ownerPhone,
+            email: propertyDetails.ownerEmail
+        });
     } catch (error) {
         console.error('Error loading owner information:', error);
     }
@@ -931,6 +950,14 @@ async function loadRentPayments() {
             currentMonthDetails.upiRef = currentMonthTransaction.upiRef;
             currentMonthDetails.paymentDate = currentMonthTransaction.paymentDate;
             rentData.currentStatus = currentMonthDetails.status;
+            
+                month: currentMonthTransaction.paymentMonth,
+                status: currentMonthDetails.status,
+                amount: currentMonthDetails.amount,
+                mode: currentMonthDetails.paymentMode,
+                ref: currentMonthDetails.upiRef
+            });
+        } else {
         }
 
         // Calculate next due date based on actual rent due date
@@ -969,6 +996,13 @@ async function loadRentPayments() {
         
         // Load analytics with real transactions
         await loadRentAnalytics(rentData.monthlyRent, transactions);
+
+            rentAmount: rentData.monthlyRent,
+            dueDate: rentData.rentDueDate,
+            securityDeposit: rentData.securityDeposit,
+            nextDueDate: nextDueDate,
+            transactionCount: transactions.length
+        });
 
     } catch (error) {
         console.error('❌ CRITICAL ERROR: Failed to load rent payments data:', error);
@@ -1302,6 +1336,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const paidAmountInput = form.querySelector('#paidAmount');
                 const amount = paidAmountInput ? (parseFloat(paidAmountInput.value) || 0) : 0;
 
+                    fileName: file.name,
+                    fileSize: file.size,
+                    fileType: file.type
+                });
+
                 // Upload file first to get file URL
                 const uploadResp = await apiService.uploadPaymentProof(fd);
                 const fileUrl = uploadResp?.fileUrl || uploadResp?.url || uploadResp?.data?.fileUrl;
@@ -1320,6 +1359,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     upiRef: form.querySelector('#upiRefId')?.value || null,
                     screenshotUrl: fileUrl
                 };
+
+                    amount: paymentPayload.amount,
+                    paymentMonth: paymentPayload.paymentMonth,
+                    paymentMode: paymentPayload.paymentMode,
+                    upiRef: paymentPayload.upiRef,
+                    screenshotUrl: paymentPayload.screenshotUrl
+                });
 
                 await apiService.submitPayment(paymentPayload);
 

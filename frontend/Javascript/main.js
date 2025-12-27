@@ -114,30 +114,6 @@ document.addEventListener('DOMContentLoaded', function () {
   // 🔹 HAMBURGER MENU LOGIC
   // =========================
 
-  // Smooth scroll for on-page anchor links (works across pages including index)
-  document.querySelectorAll('a[href^="#"]').forEach(link => {
-    link.addEventListener('click', (e) => {
-      const targetId = link.getAttribute('href').slice(1);
-      // Allow default if it is not an on-page anchor
-      if (!targetId) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-
-      const targetEl = document.getElementById(targetId);
-      if (targetEl) {
-        e.preventDefault();
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        // Close hamburger if open on mobile
-        const burgerToggle = document.getElementById('burger-toggle');
-        if (burgerToggle && burgerToggle.checked) {
-          burgerToggle.checked = false;
-        }
-      }
-    });
-  });
-
   /**
    * Closes hamburger menu when clicking outside of it
    */
@@ -162,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
     profileIcon.addEventListener('click', (e) => {
       e.stopPropagation(); // Prevent click from closing the dropdown immediately
       profileDropdown.classList.toggle('active');
+      console.log('Profile dropdown toggled:', profileDropdown.classList.contains('active'));
     });
 
     // Close dropdown if clicking outside
@@ -171,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   } else {
+    console.log('Profile icon or dropdown not found on initial load');
   }
 
 });
@@ -251,6 +229,7 @@ function setupProfileDropdown() {
         newProfileIcon.addEventListener('click', (e) => {
             e.stopPropagation();
             profileDropdown.classList.toggle('active');
+            console.log('Profile dropdown active:', profileDropdown.classList.contains('active'));
         });
 
         // Setup click outside listener
@@ -262,7 +241,9 @@ function setupProfileDropdown() {
         
         document.addEventListener('click', handleOutsideClick);
         
+        console.log('Profile dropdown handlers setup complete');
     } else {
+        console.warn('Profile icon or dropdown not found');
     }
 }
 
@@ -458,6 +439,8 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     document.getElementById('signupModal')?.classList.remove('active');
 
     const roles = authResponse.roles || [];
+    console.log('User roles:', roles); // Debug log
+    console.log('Full auth response:', authResponse); // Debug log
     
     // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {
@@ -555,6 +538,7 @@ async function handleLogout() {
 function updateUIForLoggedInUser() {
   const username = localStorage.getItem('username') || 'User';
   const firstName = localStorage.getItem('firstName') || username;
+  console.log('Updating UI with firstName:', firstName);
   const loginNavItem = document.getElementById('loginNavItem');
   const profileSection = document.getElementById('profileSection');
   const burgerLoginBtn = document.getElementById('burgerLoginBtn');
@@ -569,7 +553,9 @@ function updateUIForLoggedInUser() {
     const dropdownUsername = document.getElementById('dropdownUsername');
     if (dropdownUsername) {
       dropdownUsername.textContent = `${firstName}`;
+      console.log('Dropdown username set to:', firstName);
     } else {
+      console.log('dropdownUsername element not found (this is expected in some pages)');
     }
     // Setup profile dropdown handlers after showing the profile section
     setTimeout(() => {

@@ -1873,24 +1873,43 @@ function renderTenantsTable(tenants) {
     let paymentStatusClass = '';
     let nextDueText = '-';
     
-    if (tenant.isOverdue || (tenant.paymentStatus || '').toUpperCase() === 'OVERDUE') {
-      paymentStatusText = 'Overdue';
-      paymentStatusClass = 'overdue';
-    } else if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
-      paymentStatusText = 'Paid';
-      paymentStatusClass = 'paid';
-    } else if (tenant.nextDueDate) {
+    // Determine the due date
+    let dueDate = null;
+    
+    if (tenant.nextDueDate) {
+      // Backend provided nextDueDate
+      dueDate = new Date(tenant.nextDueDate);
+    } else if (tenant.rentDueDate) {
+      // Calculate next due date from rentDueDate
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      const dueDay = parseInt(tenant.rentDueDate);
+      
+      dueDate = new Date(currentYear, currentMonth, dueDay);
+      
+      // If the due date has already passed this month, use next month
+      if (dueDate < today) {
+        dueDate = new Date(currentYear, currentMonth + 1, dueDay);
+      }
+    }
+    
+    // Calculate payment status based on due date
+    if (dueDate) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const dueDate = new Date(tenant.nextDueDate);
       dueDate.setHours(0, 0, 0, 0);
       
       const diffTime = dueDate - today;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      if (diffDays < 0) {
+      // Check if overdue
+      if (tenant.isOverdue || (tenant.paymentStatus || '').toUpperCase() === 'OVERDUE' || diffDays < 0) {
         paymentStatusText = 'Overdue';
         paymentStatusClass = 'overdue';
+      } else if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
+        paymentStatusText = 'Paid';
+        paymentStatusClass = 'paid';
       } else if (diffDays === 0) {
         paymentStatusText = 'Due Today';
         paymentStatusClass = 'due-today';
@@ -1904,10 +1923,18 @@ function renderTenantsTable(tenants) {
       
       // Format next due date
       nextDueText = dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    } else if (tenant.rentDueDate) {
-      paymentStatusText = 'Due';
-      paymentStatusClass = 'upcoming';
-      nextDueText = `${tenant.rentDueDate}${getDaySuffix(tenant.rentDueDate)} of month`;
+    } else {
+      // No due date available
+      if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
+        paymentStatusText = 'Paid';
+        paymentStatusClass = 'paid';
+      } else if (tenant.isOverdue || (tenant.paymentStatus || '').toUpperCase() === 'OVERDUE') {
+        paymentStatusText = 'Overdue';
+        paymentStatusClass = 'overdue';
+      } else {
+        paymentStatusText = 'Pending';
+        paymentStatusClass = 'upcoming';
+      }
     }
     
     return `

@@ -80,12 +80,16 @@ class FlatDashboard {
     }
 
     async init() {
+        console.log('[FlatDashboard] Initializing flat dashboard...');
         
         // Check authentication and role
         if (!this.checkAuth()) {
+            console.log('[FlatDashboard] Auth check failed, returning...');
             return;
         }
 
+        console.log('[FlatDashboard] Auth check passed, setting up components...');
+        
         // Initialize components
         this.setupEventListeners();
         this.setupSidebar();
@@ -96,9 +100,12 @@ class FlatDashboard {
         // Ensure right drawer is closed initially
         this.ensureDrawerClosed();
         
+        console.log('[FlatDashboard] Loading owner data...');
         // Load initial data
         await this.loadOwnerData();
+        console.log('[FlatDashboard] Owner data loaded, loading dashboard data...');
         await this.loadDashboardData();
+        console.log('[FlatDashboard] Dashboard data loaded successfully');
         
         // Initialize notifications (handled by navbar component)
         this.initializeNotifications();
@@ -558,7 +565,9 @@ class FlatDashboard {
     }
 
     async loadDashboardData() {
+        console.log('[FlatDashboard] loadDashboardData called');
         try {
+            console.log('[FlatDashboard] Starting data load...');
             
             // Test endpoint accessibility first
             try {
@@ -582,12 +591,16 @@ class FlatDashboard {
             
             // Load flat properties only - fetch more records
             try {
+                console.log('[FlatDashboard] Fetching flat properties...');
                 const flatPropertiesResponse = await apiService.getFlatProperties(0, 100); // Get up to 100 properties
+                console.log('[FlatDashboard] Flat properties response:', flatPropertiesResponse);
                 
                 this.propertiesData = (flatPropertiesResponse?.content || flatPropertiesResponse) || [];
+                console.log('[FlatDashboard] Loaded properties:', this.propertiesData.length);
                 
                 // Log first property structure for debugging
                 if (this.propertiesData.length > 0) {
+                    console.log('[FlatDashboard] Sample property:', this.propertiesData[0]);
                 }
             } catch (flatError) {
                 console.error('[FlatDashboard] Error loading flat properties:', flatError);
@@ -610,11 +623,15 @@ class FlatDashboard {
             
             // Load tenants (only from flat properties)
             try {
+                console.log('[FlatDashboard] Fetching flat tenants...');
                 const tenantsResponse = await apiService.getFlatTenants();
+                console.log('[FlatDashboard] Tenants response:', tenantsResponse);
                 this.tenantsData = tenantsResponse || [];
+                console.log('[FlatDashboard] Loaded tenants:', this.tenantsData.length);
                 
                 // Log first tenant structure for debugging
                 if (this.tenantsData.length > 0) {
+                    console.log('[FlatDashboard] Sample tenant:', this.tenantsData[0]);
                 }
             } catch (tenantError) {
                 console.error('[FlatDashboard] Error loading flat tenants:', tenantError);
@@ -1513,6 +1530,7 @@ class FlatDashboard {
     }
 
     updatePropertiesSummary() {
+        console.log('Updating properties summary:', {
             properties: this.propertiesData.length,
             tenants: this.tenantsData.length,
             payments: this.paymentsData.length
@@ -1549,6 +1567,7 @@ class FlatDashboard {
             return sum + (primaryTenant?.rentAmount || 0);
         }, 0);
         
+        console.log('Summary stats:', {
             totalProperties: this.propertiesData.length,
             occupiedFlats,
             vacantFlats,
@@ -1621,6 +1640,7 @@ class FlatDashboard {
 
         // Validate data structure before processing
         const firstProperty = this.propertiesData[0];
+        console.log('Property data structure:', {
             hasId: !!firstProperty.id,
             hasLocation: !!firstProperty.location,
             hasCity: !!firstProperty.city,
@@ -1629,6 +1649,7 @@ class FlatDashboard {
             propertyType: firstProperty.type
         });
 
+        console.log('Data counts:', {
             propertiesCount: this.propertiesData.length,
             tenantsCount: this.tenantsData.length
         });
@@ -1647,6 +1668,7 @@ class FlatDashboard {
             const primaryTenant = propertyTenants.find(t => t.primary === true) || propertyTenants[0] || null;
             const otherTenants = propertyTenants.filter(t => t.primary !== true && t.id !== primaryTenant?.id);
 
+            console.log('Tenant distribution:', {
                 propertyTenants: propertyTenants.length,
                 primaryTenant: primaryTenant?.tenantName,
                 otherTenants: otherTenants.length
@@ -1746,6 +1768,7 @@ class FlatDashboard {
                 const isForThisProperty = payment.propertyId === property.id;
                 
                 if (isForThisProperty) {
+                    console.log('Payment debug:', {
                         propertyId: payment.propertyId,
                         status: payment.status,
                         paymentDate: paymentDate.toLocaleDateString(),
@@ -1901,14 +1924,16 @@ class FlatDashboard {
         }
 
         // Validate data structure before processing
-        const firstTenant = this.tenantsData[0];
-            hasId: !!firstTenant.id,
-            hasTenantName: !!firstTenant.tenantName,
-            hasPhoneNumber: !!firstTenant.phoneNumber,
-            hasPropertyName: !!firstTenant.propertyName,
-            hasStatus: !!firstTenant.status,
-            statusValue: firstTenant.status
-        });
+            const firstTenant = this.tenantsData[0];
+            const structureCheck = {
+                hasId: !!firstTenant.id,
+                hasTenantName: !!firstTenant.tenantName,
+                hasPhoneNumber: !!firstTenant.phoneNumber,
+                hasPropertyName: !!firstTenant.propertyName,
+                hasStatus: !!firstTenant.status,
+                statusValue: firstTenant.status
+            };
+            console.log('Tenant structure:', structureCheck);
 
         tableBody.innerHTML = this.tenantsData.map((tenant, index) => {
             
@@ -1970,6 +1995,7 @@ class FlatDashboard {
 
         // Validate data structure before processing
         const firstPayment = this.paymentsData[0];
+        const structureCheck = {
             hasId: !!firstPayment.id,
             hasPaymentDate: !!firstPayment.paymentDate,
             hasCreatedAt: !!firstPayment.createdAt,
@@ -1980,7 +2006,8 @@ class FlatDashboard {
             hasStatus: !!firstPayment.status,
             hasPaymentMode: !!firstPayment.paymentMode,
             actualFields: Object.keys(firstPayment)
-        });
+        };
+        console.log('Payment structure:', structureCheck);
 
         tableBody.innerHTML = this.paymentsData.map((payment, index) => {
             

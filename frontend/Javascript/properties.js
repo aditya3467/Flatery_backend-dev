@@ -165,10 +165,6 @@ function applyMobileFilters() {
     const selectedFlatTypes = Array.from(document.querySelectorAll('.mobile-filter-checkbox[data-filter="flatType"]:checked')).map(cb => cb.value);
     const selectedAmenities = Array.from(document.querySelectorAll('.mobile-filter-checkbox[data-filter="amenities"]:checked')).map(cb => cb.value);
     
-        propertyType, city, maxRent, furnishing,
-        selectedFlatTypes, selectedAmenities
-    });
-    
     filteredProperties = allProperties.filter(property => {
         // Property Type filter
         const matchType = !propertyType || property.type === propertyType;
@@ -576,13 +572,8 @@ function createPropertyCard(property) {
     } else {
         title = property.location || property.city || 'Property';
     }
-    // Images array from property data
-        originalImages: property.images,
-        isArray: Array.isArray(property.images),
-        length: property.images?.length,
-        primaryImageUrl: property.primaryImageUrl
-    });
     
+    // Images array from property data
     const images = Array.isArray(property.images) && property.images.length > 0
         ? property.images
         : [property.primaryImageUrl || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'];
@@ -700,10 +691,6 @@ function applyFilters() {
     const selectedSharing = Array.from(document.querySelectorAll('input[data-filter="sharing"]:checked')).map(cb => parseInt(cb.value));
     const selectedAmenities = Array.from(document.querySelectorAll('input[data-filter="amenities"]:checked')).map(cb => cb.value);
     const selectedPreferredTenants = Array.from(document.querySelectorAll('input[data-filter="preferredTenants"]:checked')).map(cb => cb.value);
-    
-        propertyType, city, maxRent, furnishing,
-        selectedFlatTypes, selectedPgTypes, selectedSharing, selectedAmenities, selectedPreferredTenants
-    });
     
     const today = new Date();
     
@@ -1120,11 +1107,6 @@ function setupCarouselEventListeners() {
     const prevButtons = document.querySelectorAll('.carousel-btn.prev');
     const nextButtons = document.querySelectorAll('.carousel-btn.next');
     const dots = document.querySelectorAll('.carousel-dot');
-    
-        prevButtons: prevButtons.length,
-        nextButtons: nextButtons.length,
-        dots: dots.length
-    });
     
     prevButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
