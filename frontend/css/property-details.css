@@ -468,22 +468,36 @@ body {
 .map-container {
     background: var(--bg-tertiary);
     border-radius: 1rem;
-    padding: 2rem;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 1.5rem;
+    min-height: 240px;
 }
 
 .map-placeholder {
-    text-align: center;
-    color: var(--text-muted);
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: var(--bg-secondary);
 }
 
-.map-placeholder i {
+.map-placeholder.has-map {
+    padding: 0;
+}
+
+.map-placeholder:not(.has-map) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    gap: 0.5rem;
+}
+
+.map-placeholder:not(.has-map) i {
     font-size: 3rem;
     color: var(--accent-violet);
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .directions-btn {

@@ -145,6 +145,7 @@ public class PropertyService {
     private void merge(Property p, UpdatePropertyRequest r) {
         if (r.getType() != null) p.setType(r.getType());
         if (r.getName() != null) p.setName(r.getName());
+        if (r.getFlatNumber() != null) p.setFlatNumber(r.getFlatNumber());
         if (r.getBhkType() != null) p.setBhkType(r.getBhkType());
         if (r.getPgSeater() != null) p.setPgSeater(r.getPgSeater());
         if (r.getCurrentFloor() != null) p.setCurrentFloor(r.getCurrentFloor());
@@ -157,6 +158,8 @@ public class PropertyService {
             if (r.getLocality().getCity() != null) p.setCity(r.getLocality().getCity());
             if (r.getLocality().getLocation() != null) p.setLocation(r.getLocality().getLocation());
             if (r.getLocality().getLandmark() != null) p.setLandmark(r.getLocality().getLandmark());
+            if (r.getLocality().getLatitude() != null) p.setLatitude(r.getLocality().getLatitude());
+            if (r.getLocality().getLongitude() != null) p.setLongitude(r.getLocality().getLongitude());
         }
 
         if (r.getRental() != null) {

@@ -14,4 +14,9 @@ public class LocalityDto {
 
     @Size(max = 200)
     private String landmark;
+
+    // Geographic coordinates for map pinning
+    private Double latitude;
+    
+    private Double longitude;
 }

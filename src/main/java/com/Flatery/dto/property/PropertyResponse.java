@@ -14,6 +14,7 @@ public class PropertyResponse {
     private PropertyType type;
     private PropertyStatus status;
     private String name;
+    private String flatNumber;
     private BhkType bhkType;
     private Integer pgSeater;
 
@@ -26,6 +27,8 @@ public class PropertyResponse {
     private String city;
     private String location;
     private String landmark;
+    private Double latitude;
+    private Double longitude;
 
     private Integer expectedRent;
     private Integer expectedDeposit;

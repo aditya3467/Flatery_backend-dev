@@ -10,10 +10,14 @@ public class PropertySummary {
     private Long id;
     private PropertyType type;
     private PropertyStatus status;
+    private String name;
+    private String flatNumber;
     private BhkType bhkType;
     private String city;
     private String location;
     private Integer builtUpAreaSqft;
+    private Double latitude;
+    private Double longitude;
     private Integer expectedRent;
     private Furnishing furnishing;
     private Parking parking;

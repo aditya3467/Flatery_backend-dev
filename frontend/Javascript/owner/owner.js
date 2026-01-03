@@ -371,6 +371,7 @@
         setSelect('bhkType', bhkValue);
       }
       setValue('propertyName', d.name || '');
+      setValue('flatNumber', d.flatNumber || '');
       setNumber('currentFloor', d.currentFloor);
       setNumber('totalFloor', d.totalFloor);
       setSelect('propertyAge', mapAgeBack(d.age));
@@ -382,6 +383,17 @@
       setValue('city', d.city);
       setValue('location', d.location);
       setValue('landmark', d.landmark);
+      
+      // Set latitude and longitude if available
+      if (d.latitude !== null && d.latitude !== undefined) {
+        setValue('propertyLatitude', d.latitude);
+      }
+      if (d.longitude !== null && d.longitude !== undefined) {
+        setValue('propertyLongitude', d.longitude);
+      }
+      
+      // Initialize map after data is loaded
+      initializePropertyMap();
 
       // Rental
       setNumber('expectedRent', d.expectedRent);
@@ -619,18 +631,23 @@
     if (!typeEl) return;
     const type = typeEl.value;
     const nameGroup = $('propertyNameGroup');
+    const flatNumberGroup = $('flatNumberGroup');
     const bhkGroup = $('bhkTypeGroup');
     const seaterGroup = $('seaterGroup');
+    
     if (type === 'PG') {
       if (nameGroup) nameGroup.style.display = 'block';
+      if (flatNumberGroup) flatNumberGroup.style.display = 'none';
       if (seaterGroup) seaterGroup.style.display = 'block';
       if (bhkGroup) bhkGroup.style.display = 'none';
     } else if (type === 'APARTMENT') {
       if (nameGroup) nameGroup.style.display = 'block';
+      if (flatNumberGroup) flatNumberGroup.style.display = 'none';
       if (seaterGroup) seaterGroup.style.display = 'none';
       if (bhkGroup) bhkGroup.style.display = 'block';
     } else { // FLAT
       if (nameGroup) nameGroup.style.display = 'none';
+      if (flatNumberGroup) flatNumberGroup.style.display = 'block';
       if (seaterGroup) seaterGroup.style.display = 'none';
       if (bhkGroup) bhkGroup.style.display = 'block';
     }
@@ -654,6 +671,7 @@
     const data = {
       type,
       name: $('propertyName').value || null,
+      flatNumber: $('flatNumber')?.value || null,
       bhkType: type === 'PG' ? null : mapBhkType($('bhkType').value),
       pgSeater: type === 'PG' ? parseInt($('seater').value) : null,
       currentFloor: intval('currentFloor'),
@@ -665,24 +683,37 @@
       amenities: getSelectedAmenities(),
       balcony: isBalconyChecked(),
 
-      city: $('city').value,
-      location: $('location').value,
-      landmark: $('landmark').value,
+      locality: {
+        city: $('city').value,
+        location: $('location').value,
+        landmark: $('landmark').value,
+        latitude: parseFloat($('propertyLatitude').value) || null,
+        longitude: parseFloat($('propertyLongitude').value) || null
+      },
 
-      expectedRent: intval('expectedRent'),
-      expectedDeposit: intval('expectedDeposit'),
-      negotiable: $('rentNegotiable').value === 'Yes',
-      monthlyMaintenance: intval('monthlyMaintenance') || 0,
-      availableFrom: $('availableFrom').value,
-      preferredTenants: [mapPreferredTenant($('preferredTenant').value)],
-      furnishing: $('furnishing').value.toUpperCase().replace('-', '_'),
-      parking: $('parking').value.toUpperCase(),
-      description: $('propertyDescription').value,
+      rental: {
+        expectedRent: intval('expectedRent'),
+        expectedDeposit: intval('expectedDeposit'),
+        negotiable: $('rentNegotiable').value === 'Yes',
+        monthlyMaintenance: intval('monthlyMaintenance') || 0,
+        availableFrom: $('availableFrom').value,
+        preferredTenants: [mapPreferredTenant($('preferredTenant').value)],
+        furnishing: $('furnishing').value.toUpperCase().replace('-', '_'),
+        parking: $('parking').value.toUpperCase(),
+        description: $('propertyDescription').value
+      },
 
-      availability: mapAvailability($('availability').value),
-      allDay: $('timeSlot').value === 'All Day',
-      startTime: $('timeSlot').value === 'Custom' ? $('startTime').value : null,
-      endTime: $('timeSlot').value === 'Custom' ? $('endTime').value : null,
+      showing: {
+        whoShows: mapWhoShows($('propertyShower').value),
+        currentCondition: mapCurrentCondition($('propertyCondition').value)
+      },
+
+      schedule: {
+        availability: mapAvailability($('availability').value),
+        allDay: $('timeSlot').value === 'All Day',
+        startTime: $('timeSlot').value === 'Custom' ? $('startTime').value : null,
+        endTime: $('timeSlot').value === 'Custom' ? $('endTime').value : null
+      }
     };
     return data;
   }
@@ -724,7 +755,9 @@
   function mapParkingBack(v){ const m = {BIKE:'Bike',CAR:'Car',BOTH:'Both',NONE:'None'}; return m[v] || ''; }
   function mapAvailability(x){ const m = {Everyday:'EVERYDAY',Weekdays:'WEEKDAYS',Weekend:'WEEKEND'}; return m[x] || null; }
   function mapAvailabilityBack(x){ const m = {EVERYDAY:'Everyday',WEEKDAYS:'Weekdays',WEEKEND:'Weekend'}; return m[x] || ''; }
+  function mapWhoShows(v){ const m = {Myself:'MYSELF',Neighbour:'NEIGHBOUR',Tenant:'TENANT','Friend/Family':'FRIEND_FAMILY','Need Help':'NEED_HELP',Others:'OTHERS'}; return m[v] || null; }
   function mapWhoShowsBack(v){ const m = {MYSELF:'Myself',NEIGHBOUR:'Neighbour',TENANT:'Tenant',FRIEND_FAMILY:'Friend/Family',NEED_HELP:'Need Help',OTHERS:'Others'}; return m[v] || ''; }
+  function mapCurrentCondition(v){ const m = {'Newly Built':'NEWLY_BUILT',Vacant:'VACANT','Tenant on Notice Period':'TENANT_NOTICE','Need Help to Manage':'NEED_MANAGEMENT_HELP'}; return m[v] || null; }
   function mapCurrentConditionBack(v){ const m = {NEWLY_BUILT:'Newly Built',VACANT:'Vacant',TENANT_NOTICE:'Tenant on Notice Period',NEED_MANAGEMENT_HELP:'Need Help to Manage'}; return m[v] || ''; }
 
   function isBalconyChecked(){
@@ -755,4 +788,251 @@
     const balcony = document.querySelector('input[name="amenities"][value="Balcony"]');
     if (balcony) balcony.checked = !!balconyBool;
   }
+
+  // ========================================================
+  // MAP FUNCTIONALITY FOR LOCATION PICKER
+  // ========================================================
+  let propertyMap = null;
+  let propertyMarker = null;
+
+  function initializePropertyMap() {
+    const mapEl = document.getElementById('propertyMap');
+    if (!mapEl) return;
+    if (typeof L === 'undefined') {
+      console.warn('Leaflet not loaded, map unavailable');
+      setTimeout(initializePropertyMap, 500);
+      return;
+    }
+
+    // Default center - India approximate
+    const defaultCenter = [20.59, 78.96];
+    const latInput = document.getElementById('propertyLatitude');
+    const lngInput = document.getElementById('propertyLongitude');
+    const latVal = parseFloat(latInput?.value);
+    const lngVal = parseFloat(lngInput?.value);
+
+    // Initialize map
+    propertyMap = L.map(mapEl).setView(defaultCenter, 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(propertyMap);
+
+    // If coordinates exist, place marker
+    if (!isNaN(latVal) && !isNaN(lngVal)) {
+      propertyMarker = L.marker([latVal, lngVal], { draggable: true }).addTo(propertyMap);
+      propertyMap.setView([latVal, lngVal], 15);
+      propertyMarker.on('dragend', onMarkerDragEnd);
+    }
+
+    // Click to place marker
+    propertyMap.on('click', function(e) {
+      const { lat, lng } = e.latlng;
+      if (!propertyMarker) {
+        propertyMarker = L.marker([lat, lng], { draggable: true }).addTo(propertyMap);
+        propertyMarker.on('dragend', onMarkerDragEnd);
+      } else {
+        propertyMarker.setLatLng([lat, lng]);
+      }
+      updateLatLngInputs(lat, lng);
+    });
+
+    // Invalidate size to ensure proper rendering
+    setTimeout(() => {
+      if (propertyMap) {
+        propertyMap.invalidateSize();
+      }
+    }, 100);
+
+    // Setup location search
+    setupLocationSearch();
+    
+    // Setup locate me button
+    setupLocateMeButton();
+  }
+
+  function onMarkerDragEnd() {
+    const pos = propertyMarker.getLatLng();
+    updateLatLngInputs(pos.lat, pos.lng);
+  }
+
+  function updateLatLngInputs(lat, lng) {
+    const latInput = document.getElementById('propertyLatitude');
+    const lngInput = document.getElementById('propertyLongitude');
+    if (latInput) latInput.value = lat;
+    if (lngInput) lngInput.value = lng;
+  }
+
+  function setupLocationSearch() {
+    const locationSearchInput = document.getElementById('locationSearch');
+    const searchResultsDiv = document.getElementById('searchResults');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    let searchTimeout = null;
+
+    if (locationSearchInput) {
+      locationSearchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (clearSearchBtn) {
+          clearSearchBtn.style.display = query ? 'block' : 'none';
+        }
+        
+        if (searchTimeout) clearTimeout(searchTimeout);
+        
+        if (query.length < 3) {
+          searchResultsDiv.style.display = 'none';
+          return;
+        }
+        
+        searchTimeout = setTimeout(() => searchLocation(query), 500);
+      });
+      
+      if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+          locationSearchInput.value = '';
+          searchResultsDiv.style.display = 'none';
+          this.style.display = 'none';
+        });
+      }
+    }
+
+    async function searchLocation(query) {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`,
+          {
+            headers: {
+              'User-Agent': 'Flatery Property Management'
+            }
+          }
+        );
+        
+        if (!response.ok) throw new Error('Search failed');
+        
+        const results = await response.json();
+        displaySearchResults(results);
+      } catch (error) {
+        console.error('Location search error:', error);
+        searchResultsDiv.innerHTML = '<div class="search-result-item error">Search failed. Please try again.</div>';
+        searchResultsDiv.style.display = 'block';
+      }
+    }
+
+    function displaySearchResults(results) {
+      if (!results || results.length === 0) {
+        searchResultsDiv.innerHTML = '<div class="search-result-item no-results">No locations found. Try a different search.</div>';
+        searchResultsDiv.style.display = 'block';
+        return;
+      }
+      
+      const html = results.map(result => `
+        <div class="search-result-item" data-lat="${result.lat}" data-lon="${result.lon}">
+          <i class="fas fa-map-marker-alt"></i>
+          <div class="result-details">
+            <div class="result-name">${result.display_name}</div>
+          </div>
+        </div>
+      `).join('');
+      
+      searchResultsDiv.innerHTML = html;
+      searchResultsDiv.style.display = 'block';
+      
+      searchResultsDiv.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const lat = parseFloat(this.dataset.lat);
+          const lon = parseFloat(this.dataset.lon);
+          const name = this.querySelector('.result-name').textContent;
+          
+          selectLocation(lat, lon, name);
+        });
+      });
+    }
+
+    function selectLocation(lat, lon, name) {
+      updateLatLngInputs(lat, lon);
+      
+      if (propertyMap) {
+        propertyMap.setView([lat, lon], 15);
+        
+        if (!propertyMarker) {
+          propertyMarker = L.marker([lat, lon], { draggable: true }).addTo(propertyMap);
+          propertyMarker.on('dragend', onMarkerDragEnd);
+        } else {
+          propertyMarker.setLatLng([lat, lon]);
+        }
+      }
+      
+      if (locationSearchInput) {
+        locationSearchInput.value = name;
+      }
+      
+      searchResultsDiv.style.display = 'none';
+      
+      notify('Location pinned successfully! You can drag the marker to adjust.', 'success');
+    }
+  }
+
+  function setupLocateMeButton() {
+    const locateMeBtn = document.getElementById('locateMeBtn');
+    if (locateMeBtn) {
+      locateMeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!navigator.geolocation) {
+          notify('Geolocation is not supported by your browser', 'error');
+          return;
+        }
+        
+        this.classList.add('locating');
+        const icon = this.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'fas fa-spinner';
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            if (propertyMap) {
+              propertyMap.setView([lat, lon], 15);
+              
+              if (!propertyMarker) {
+                propertyMarker = L.marker([lat, lon], { draggable: true }).addTo(propertyMap);
+                propertyMarker.on('dragend', onMarkerDragEnd);
+              } else {
+                propertyMarker.setLatLng([lat, lon]);
+              }
+            }
+            
+            updateLatLngInputs(lat, lon);
+            
+            locateMeBtn.classList.remove('locating');
+            icon.className = originalClass;
+            
+            notify('Location detected! You can drag the marker to adjust.', 'success');
+          },
+          (error) => {
+            locateMeBtn.classList.remove('locating');
+            icon.className = originalClass;
+            
+            let errorMsg = 'Unable to get your location';
+            if (error.code === error.PERMISSION_DENIED) {
+              errorMsg = 'Location permission denied. Please enable location access.';
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+              errorMsg = 'Location information unavailable.';
+            } else if (error.code === error.TIMEOUT) {
+              errorMsg = 'Location request timed out.';
+            }
+            notify(errorMsg, 'error');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      });
+    }
+  }
+
 })();

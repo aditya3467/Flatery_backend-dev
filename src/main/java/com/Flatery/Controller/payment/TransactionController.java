@@ -111,6 +111,13 @@ public class TransactionController {
         return ResponseEntity.ok(transactions);
     }
 
+    @GetMapping("/owner")
+    public ResponseEntity<List<TransactionResponseDto>> getOwnerTransactions(Authentication authentication) {
+        Long ownerId = getAuthenticatedUserId(authentication);
+        List<TransactionResponseDto> transactions = transactionService.getTransactionsByOwnerId(ownerId);
+        return ResponseEntity.ok(transactions);
+    }
+
     /**
      * Tenant fetches their own transaction history
      */

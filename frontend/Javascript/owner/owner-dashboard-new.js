@@ -113,7 +113,10 @@ class OwnerDashboard {
             const response = await apiService.makeRequest('/users/profile');
             this.ownerData = response;
         } catch (error) {
-            console.error('[OwnerDashboard] Error loading profile:', error);
+            // Silently handle missing profile endpoint (404) - use localStorage fallback
+            if (error.status !== 404) {
+                console.error('[OwnerDashboard] Error loading profile:', error);
+            }
             // Set basic data from localStorage as fallback
             this.ownerData = {
                 firstName: localStorage.getItem('firstName') || 'Owner',
@@ -181,7 +184,10 @@ class OwnerDashboard {
             }
             
         } catch (error) {
-            console.error('[OwnerDashboard] Error loading payments:', error);
+            // Silently handle missing transactions endpoint (404)
+            if (error.status !== 404) {
+                console.error('[OwnerDashboard] Error loading payments:', error);
+            }
             this.paymentsData = [];
         }
     }
@@ -236,6 +242,11 @@ class OwnerDashboard {
         }
 
         container.innerHTML = this.propertiesData.map(property => {
+            // Temporary debug logging
+            if (property.type === 'PG') {
+                console.log('PG Property Object:', JSON.stringify(property, null, 2));
+            }
+            
             // Handle image URLs - check for full URL or relative path
             let imageUrl = property.primaryImageUrl || property.imageUrl;
             if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
@@ -245,14 +256,37 @@ class OwnerDashboard {
                 imageUrl = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500';
             }
             
-            // Build property title - show property name for PG
+            // Build property title
             const isPG = property.type === 'PG' || property.type === 'Hostel' || property.propertyType === 'PG' || property.propertyType === 'Hostel';
-            const title = isPG && property.name 
-                         ? property.name 
-                         : property.name || property.propertyName || 
-                           (property.flatNumber ? `Flat ${property.flatNumber}` : `Property ${property.id}`);
-            
             const bhkType = property.bhkType || property.bhk;
+            
+            let title = '';
+            if (isPG) {
+                // For PG: show PG name (property.name field)
+                const pgName = property.name && property.name.trim() ? property.name.trim() : null;
+                title = pgName || property.propertyName || `PG Property ${property.id}`;
+            } else if (property.type === 'FLAT') {
+                // For FLAT: Always show format "Flat [number] - [BHK] BHK, [location]"
+                const flatNum = property.flatNumber || property.id;
+                const bhkPart = bhkType ? `${bhkType} BHK` : 'Flat';
+                const locationPart = property.location ? `, ${property.location}` : '';
+                
+                if (property.flatNumber) {
+                    title = `Flat ${property.flatNumber} - ${bhkPart}${locationPart}`;
+                } else {
+                    title = bhkType ? `${bhkPart}${locationPart}` : `Flat ${property.id}`;
+                }
+            } else if (property.type === 'APARTMENT') {
+                // For APARTMENT: show building name with BHK if available
+                title = property.name || property.propertyName || `Apartment ${property.id}`;
+                if (bhkType) {
+                    title += ` - ${bhkType} BHK`;
+                }
+            } else {
+                // Fallback
+                title = property.name || property.propertyName || `Property ${property.id}`;
+            }
+            
             const tenants = this.tenantsData.filter(t => 
                 t.flatId === property.id || t.propertyId === property.id || t.propertyId === property.propertyId
             );
@@ -298,6 +332,12 @@ class OwnerDashboard {
                         <div class="property-action-buttons" style="position: relative; z-index: 10; pointer-events: auto;">
                             <button class="manage-crm-btn" onclick="event.stopPropagation(); ${!isActive ? 'return false;' : `window.location.href='${crmLink}'`}" style="${!isActive ? 'pointer-events: none; opacity: 0.5; cursor: not-allowed;' : ''}">
                                 Manage CRM <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="edit-property-btn" 
+                                    onclick="event.stopPropagation(); window.location.href='edit-property.html?id=${property.id}'"
+                                    title="Edit property details">
+                                <i class="fas fa-edit"></i>
+                                Edit
                             </button>
                             <button class="toggle-status-btn ${isActive ? 'deactivate' : 'activate'}" 
                                     onclick="event.stopPropagation(); if(window.ownerDashboard) { window.ownerDashboard.togglePropertyStatus(${property.id}, '${propertyStatus}'); } else { alert('Dashboard not ready'); }"

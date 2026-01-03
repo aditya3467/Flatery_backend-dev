@@ -12,6 +12,7 @@ public class UpdatePropertyRequest {
 
     private PropertyType type;
     private String name;
+    private String flatNumber;
     private BhkType bhkType;
     private Integer pgSeater;
 

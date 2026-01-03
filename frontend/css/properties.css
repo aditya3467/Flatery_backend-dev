@@ -535,6 +535,9 @@ body {
 /* Results Header */
 .results-header {
     margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .results-info h1 {
@@ -546,6 +549,49 @@ body {
 .results-info p {
     color: var(--text-secondary);
     font-size: 1rem;
+}
+
+/* View Toggle Buttons */
+.view-toggle {
+    display: flex;
+    gap: 10px;
+}
+
+.view-btn {
+    padding: 10px 20px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.view-btn i {
+    margin-right: 8px;
+}
+
+.view-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--accent-violet);
+}
+
+.view-btn.active {
+    background: linear-gradient(135deg, var(--accent-violet) 0%, #6B6BEE 100%);
+    color: white;
+    border-color: var(--accent-violet);
+}
+
+/* Properties Map */
+#propertiesMap {
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    z-index: 1;
 }
 
 /* Properties List */
@@ -991,6 +1037,21 @@ body {
     .filters-sidebar {
         width: 100%;
         top: 70px;
+    }
+
+    .results-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .view-toggle {
+        width: 100%;
+    }
+
+    .view-btn {
+        flex: 1;
+        justify-content: center;
     }
     
     .results-info h1 {

@@ -348,6 +348,14 @@ async function enrichPropertiesWithNames() {
                 bathrooms: details.bathrooms || details.totalBathrooms,
                 expectedDeposit: details.expectedDeposit || details.securityDeposit,
                 maintenance: details.monthlyMaintenance || details.maintenanceCharges || details.maintenance,
+                rent: details.expectedRent || property.expectedRent || property.rent,
+                expectedRent: details.expectedRent || property.expectedRent,
+                latitude: details.latitude !== undefined ? details.latitude : property.latitude,
+                longitude: details.longitude !== undefined ? details.longitude : property.longitude,
+                city: details.city || property.city,
+                location: details.location || property.location,
+                landmark: details.landmark || property.landmark,
+                primaryImageUrl: details.primaryImageUrl || property.primaryImageUrl,
                 currentFloor: details.currentFloor || details.floorNumber,
                 totalFloor: details.totalFloor || details.totalFloors,
                 furnishing: details.furnishing || details.furnishingStatus,
@@ -1145,6 +1153,8 @@ window.nextPage = nextPage;
 window.previousPage = previousPage;
 window.toggleFavorite = toggleFavorite;
 window.toggleBhkSeaterFilter = toggleBhkSeaterFilter;
+window.switchToListView = switchToListView;
+window.switchToMapView = switchToMapView;
 
 // Clean up intervals when page is about to unload
 window.addEventListener('beforeunload', () => {
@@ -1152,3 +1162,218 @@ window.addEventListener('beforeunload', () => {
     carouselIntervals.clear();
 });
 
+// Map View Variables
+let propertiesMap = null;
+let mapMarkers = [];
+let leafletReadyPromise = null; // memoized loader for Leaflet script
+
+/**
+ * Switch to list view
+ */
+function switchToListView() {
+    const listViewBtn = document.getElementById('listViewBtn');
+    const mapViewBtn = document.getElementById('mapViewBtn');
+    const propertiesList = document.getElementById('propertiesList');
+    const propertiesMapDiv = document.getElementById('propertiesMap');
+    const paginationContainer = document.getElementById('paginationContainer');
+
+    // Toggle active class
+    listViewBtn.classList.add('active');
+    mapViewBtn.classList.remove('active');
+
+    // Show list, hide map
+    propertiesList.style.display = 'flex';
+    propertiesMapDiv.style.display = 'none';
+
+    // Show pagination
+    if (filteredProperties.length > itemsPerPage) {
+        paginationContainer.style.display = 'flex';
+    }
+}
+
+/**
+ * Switch to map view
+ */
+async function switchToMapView() {
+    console.log('Switching to map view...');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const mapViewBtn = document.getElementById('mapViewBtn');
+    const propertiesList = document.getElementById('propertiesList');
+    const propertiesMapDiv = document.getElementById('propertiesMap');
+    const paginationContainer = document.getElementById('paginationContainer');
+
+    console.log('Map container found:', !!propertiesMapDiv);
+    console.log('Filtered properties count:', filteredProperties.length);
+
+    // Toggle active class
+    listViewBtn.classList.remove('active');
+    mapViewBtn.classList.add('active');
+
+    // Hide list, show map
+    propertiesList.style.display = 'none';
+    propertiesMapDiv.style.display = 'block';
+    paginationContainer.style.display = 'none';
+
+    // Ensure Leaflet is loaded before initializing the map
+    try {
+        await ensureLeafletLoaded();
+        // Initialize or update map
+        setTimeout(() => {
+            initializePropertiesMap();
+        }, 100);
+    } catch (err) {
+        console.error('Failed to load Leaflet library:', err);
+    }
+}
+
+/**
+ * Ensure Leaflet library is loaded (handles CDN load failures gracefully)
+ */
+function ensureLeafletLoaded() {
+    if (typeof L !== 'undefined') return Promise.resolve();
+
+    if (leafletReadyPromise) return leafletReadyPromise;
+
+    leafletReadyPromise = new Promise((resolve, reject) => {
+        // Avoid double-inserting the script
+        const existing = document.querySelector('script[data-leaflet="true"]');
+        if (existing) {
+            existing.addEventListener('load', () => resolve());
+            existing.addEventListener('error', (e) => reject(e));
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+        script.crossOrigin = '';
+        script.dataset.leaflet = 'true';
+        script.onload = () => resolve();
+        script.onerror = (e) => reject(e);
+        document.body.appendChild(script);
+    });
+
+    return leafletReadyPromise;
+}
+
+/**
+ * Initialize map with all properties
+ */
+function initializePropertiesMap() {
+    console.log('Initializing properties map...');
+    
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+        console.error('Leaflet library not loaded!');
+        alert('Map library not loaded. Please refresh the page.');
+        return;
+    }
+    
+    const mapContainer = document.getElementById('propertiesMap');
+    
+    if (!mapContainer) {
+        console.error('Map container not found!');
+        return;
+    }
+
+    // Initialize map if not already done
+    if (!propertiesMap) {
+        console.log('Creating new Leaflet map...');
+        try {
+            propertiesMap = L.map('propertiesMap').setView([20.5937, 78.9629], 5); // Center of India
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(propertiesMap);
+            
+            console.log('Map created successfully');
+        } catch (error) {
+            console.error('Error creating map:', error);
+            return;
+        }
+    }
+
+    // Clear existing markers
+    mapMarkers.forEach(marker => marker.remove());
+    mapMarkers = [];
+
+    // Filter properties with valid coordinates
+    const propertiesWithLocation = filteredProperties.filter(p => 
+        p.latitude && p.longitude && 
+        !isNaN(p.latitude) && !isNaN(p.longitude)
+    );
+
+    console.log('Properties with location:', propertiesWithLocation.length);
+    console.log('Sample property:', propertiesWithLocation[0]);
+
+    if (propertiesWithLocation.length === 0) {
+        // No properties with location
+        console.warn('No properties have location data');
+        return;
+    }
+
+    // Add markers for each property
+    propertiesWithLocation.forEach(property => {
+        const lat = parseFloat(property.latitude);
+        const lng = parseFloat(property.longitude);
+
+        console.log(`Adding marker for property ${property.id}: [${lat}, ${lng}]`);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+            // Create marker
+            const marker = L.marker([lat, lng]).addTo(propertiesMap);
+
+            // Create popup content
+            const bhkType = property.bhkType || property.bhk;
+            const seater = property.pgSeater || property.seater;
+            let title;
+            if ((property.type === 'PG' || property.type === 'APARTMENT') && property.name) {
+                title = property.name;
+            } else if (property.type === 'FLAT' && bhkType) {
+                const bhkNumber = bhkType.replace('BHK_', '');
+                const locationName = property.location || property.city || 'Property';
+                title = `${bhkNumber} BHK in ${locationName}`;
+            } else {
+                title = property.location || property.city || 'Property';
+            }
+
+            const rent = property.rent ? `₹${formatNumber(property.rent)}/mo` : 'Contact for price';
+            const typeDisplay = property.type || 'Property';
+            const ocupDisplay = property.type === 'PG' ? (seater ? `${seater} Seater` : '') : (bhkType ? `${bhkType.replace('BHK_', '')} BHK` : '');
+
+            const popupContent = `
+                <div style="min-width: 200px;">
+                    <h4 style="margin: 0 0 8px 0; color: #0D1321; font-size: 1rem;">${title}</h4>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9rem;">
+                        <strong>${typeDisplay}</strong> ${ocupDisplay ? '• ' + ocupDisplay : ''}
+                    </p>
+                    <p style="margin: 0 0 8px 0; color: #7A7AFF; font-weight: bold; font-size: 1rem;">${rent}</p>
+                    <p style="margin: 0 0 8px 0; color: #666; font-size: 0.85rem;">
+                        <i class="fas fa-map-marker-alt"></i> ${property.location || property.city || 'Location'}
+                    </p>
+                    <a href="property-details.html?id=${property.id}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #7A7AFF 0%, #6B6BEE 100%); 
+                              color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; 
+                              font-size: 0.85rem; font-weight: 600; margin-top: 5px;">
+                        View Details →
+                    </a>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            mapMarkers.push(marker);
+        }
+    });
+
+    // Fit map bounds to show all markers
+    if (mapMarkers.length > 0) {
+        const group = L.featureGroup(mapMarkers);
+        propertiesMap.fitBounds(group.getBounds().pad(0.1));
+    }
+
+    // Fix map display issue
+    setTimeout(() => {
+        propertiesMap.invalidateSize();
+    }, 100);
+}

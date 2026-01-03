@@ -45,6 +45,9 @@ public class Property {
     @Column(length = 120)
     private String name; // required if APARTMENT/PG
 
+    @Column(name = "flat_number", length = 20)
+    private String flatNumber; // required if FLAT
+
     @Enumerated(EnumType.STRING)
     @Column(name = "bhk_type", length = 12)
     private BhkType bhkType; // required if FLAT/APARTMENT
@@ -78,6 +81,13 @@ public class Property {
 
     @Column(length = 200)
     private String landmark;
+
+    // Geographic coordinates for map display
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
 
     // Rental
     @Column(name = "expected_rent", nullable = false)

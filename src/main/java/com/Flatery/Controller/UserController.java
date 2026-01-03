@@ -5,6 +5,8 @@ import com.Flatery.model.User;
 import com.Flatery.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,6 +55,26 @@ public class UserController {
         }
 
         return found
+                .map(u -> ResponseEntity.ok(new UserLookupResponse(
+                        u.getId(), u.getUsername(), u.getEmail(), u.getPhoneNumber(), u.getFirstName(), u.getLastName(), u.getRoles()
+                )))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        // Get authenticated username (phone number)
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
+
+        // Fetch user by username
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            // Fallback: try phone number
+            userOpt = userRepository.findByPhoneNumber(username);
+        }
+
+        return userOpt
                 .map(u -> ResponseEntity.ok(new UserLookupResponse(
                         u.getId(), u.getUsername(), u.getEmail(), u.getPhoneNumber(), u.getFirstName(), u.getLastName(), u.getRoles()
                 )))

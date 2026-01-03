@@ -569,23 +569,84 @@ function populateLocationSection(property) {
     const locationContainer = document.getElementById('propertyLocation');
     if (!locationContainer) return;
     
+    const hasCoords = property.latitude !== undefined && property.latitude !== null &&
+                      property.longitude !== undefined && property.longitude !== null;
+
     const locationHTML = `
         <div class="location-section">
             <h2 class="section-title">📍 Location</h2>
             <div class="location-details">
-                <p class="location-address">${property.location || 'Location not specified'}</p>
+                <p class="location-address">${property.location || property.city || 'Location not specified'}</p>
                 <div class="map-container">
-                    <div class="map-placeholder">
+                    <div id="propertyMap" class="map-placeholder${hasCoords ? ' has-map' : ''}">
+                        ${hasCoords ? '' : `
                         <i class="fas fa-map-marker-alt"></i>
                         <p>Map view will be displayed here</p>
-                        <button class="directions-btn">Get Directions</button>
+                        `}
                     </div>
                 </div>
+                <button class="directions-btn" id="directionsBtn" ${hasCoords ? '' : 'disabled'}>
+                    Get Directions
+                </button>
             </div>
         </div>
     `;
     
     locationContainer.innerHTML = locationHTML;
+
+    if (hasCoords) {
+        // Initialize map after DOM update
+        setTimeout(() => initPropertyLocationMap(property), 50);
+    }
+}
+
+/**
+ * Initialize Leaflet map for property location
+ */
+function initPropertyLocationMap(property) {
+    if (typeof L === 'undefined') {
+        console.error('Leaflet library not loaded for property map');
+        return;
+    }
+
+    const mapEl = document.getElementById('propertyMap');
+    if (!mapEl) return;
+
+    const lat = parseFloat(property.latitude);
+    const lng = parseFloat(property.longitude);
+    if (isNaN(lat) || isNaN(lng)) {
+        console.warn('Invalid coordinates for property map');
+        return;
+    }
+
+    // Ensure map element has height
+    if (!mapEl.style.height) {
+        mapEl.style.height = '320px';
+    }
+
+    // Create map
+    const map = L.map(mapEl).setView([lat, lng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    const marker = L.marker([lat, lng]).addTo(map);
+    const title = property.name || property.location || property.city || 'Property';
+    marker.bindPopup(`<b>${title}</b><br>${property.location || ''}`).openPopup();
+
+    // Hook directions button
+    const btn = document.getElementById('directionsBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.addEventListener('click', () => {
+            const label = encodeURIComponent(title);
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=&travelmode=driving&dir_action=navigate&query=${label}`,'_blank');
+        });
+    }
+
+    // Fix tile sizing after render
+    setTimeout(() => map.invalidateSize(), 200);
 }
 
 /**
@@ -688,7 +749,13 @@ async function loadOwnerContact(propertyId) {
     try {
         // We attempt tenant endpoint first regardless; unauth will 401 which we catch.
         const hintEl = document.getElementById('ownerContactHint');
-        if (hintEl) hintEl.textContent = 'Loading owner contact...';
+        if (!apiService.isAuthenticated()) {
+            enhanceOwnerFallbackFromPublic();
+            if (hintEl) hintEl.textContent = 'Login to view owner contact.';
+            return;
+        }
+
+        if (hintEl) hintEl.textContent = '';
         // First try tenant context: /api/tenants/me/property (used in tenant-dashboard)
         try {
             const tenantProp = await apiService.getTenantPropertyDetails();
@@ -702,6 +769,8 @@ async function loadOwnerContact(propertyId) {
                 return; // Done
             }
         } catch (e) {
+            // Silently fail - user might not be a tenant
+            console.log('User is not a tenant, trying owner context...');
         }
 
         // Fallback to owner context: /api/admin/properties/{id}

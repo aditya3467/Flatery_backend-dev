@@ -21,6 +21,7 @@ public class PropertyMapper {
 
         p.setType(req.getType());
         p.setName(req.getName());
+        p.setFlatNumber(req.getFlatNumber());
         p.setBhkType(req.getBhkType());
         p.setPgSeater(req.getPgSeater());
 
@@ -33,6 +34,8 @@ public class PropertyMapper {
         p.setCity(req.getLocality().getCity());
         p.setLocation(req.getLocality().getLocation());
         p.setLandmark(req.getLocality().getLandmark());
+        p.setLatitude(req.getLocality().getLatitude());
+        p.setLongitude(req.getLocality().getLongitude());
 
         p.setExpectedRent(req.getRental().getExpectedRent());
         p.setExpectedDeposit(req.getRental().getExpectedDeposit());
@@ -71,6 +74,7 @@ public class PropertyMapper {
         res.setType(p.getType());
         res.setStatus(p.getStatus());
         res.setName(p.getName());
+        res.setFlatNumber(p.getFlatNumber());
         res.setBhkType(p.getBhkType());
         res.setPgSeater(p.getPgSeater());
         res.setCurrentFloor(p.getCurrentFloor());
@@ -81,6 +85,8 @@ public class PropertyMapper {
         res.setCity(p.getCity());
         res.setLocation(p.getLocation());
         res.setLandmark(p.getLandmark());
+        res.setLatitude(p.getLatitude());
+        res.setLongitude(p.getLongitude());
         res.setExpectedRent(p.getExpectedRent());
         res.setExpectedDeposit(p.getExpectedDeposit());
         res.setNegotiable(p.isNegotiable());
@@ -117,10 +123,14 @@ public class PropertyMapper {
         s.setId(p.getId());
         s.setType(p.getType());
         s.setStatus(p.getStatus());
+        s.setName(p.getName());
+        s.setFlatNumber(p.getFlatNumber());
         s.setBhkType(p.getBhkType());
         s.setCity(p.getCity());
         s.setLocation(p.getLocation());
         s.setBuiltUpAreaSqft(p.getBuiltUpAreaSqft());
+        s.setLatitude(p.getLatitude());
+        s.setLongitude(p.getLongitude());
         s.setExpectedRent(p.getExpectedRent());
         s.setFurnishing(p.getFurnishing());
         s.setParking(p.getParking());

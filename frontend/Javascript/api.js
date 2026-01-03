@@ -74,7 +74,10 @@ class ApiService {
 
             return data;
         } catch (error) {
-            console.error('API Request failed:', error);
+            // Only log errors that are not 404 or 400 (to avoid noise from optional endpoints)
+            if (error.status !== 404 && error.status !== 400) {
+                console.error('API Request failed:', error);
+            }
             throw error;
         }
     }

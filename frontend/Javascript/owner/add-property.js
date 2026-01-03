@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const bhkTypeGroup = document.getElementById('bhkTypeGroup');
     const seaterGroup = document.getElementById('seaterGroup');
     const propertyNameGroup = document.getElementById('propertyNameGroup');
+    const flatNumberGroup = document.getElementById('flatNumberGroup');
     const timeSlotSelect = document.getElementById('timeSlot');
     const customTimeGroup = document.getElementById('customTimeGroup');
     const propertyImagesInput = document.getElementById('propertyImages');
@@ -46,6 +47,15 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             propertyNameGroup.style.display = 'none';
             document.getElementById('propertyName').value = '';
+        }
+
+        if (propertyType === 'FLAT') {
+            flatNumberGroup.style.display = 'block';
+            document.getElementById('flatNumber').setAttribute('required', 'required');
+        } else {
+            flatNumberGroup.style.display = 'none';
+            document.getElementById('flatNumber').removeAttribute('required');
+            document.getElementById('flatNumber').value = '';
         }
 
         if (propertyType === 'PG') {
@@ -189,6 +199,289 @@ document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
     availableFromInput.setAttribute('min', today);
 
+    // Initialize Leaflet map for picking property location (if Leaflet loaded)
+    let propertyMap = null;
+    let propertyMarker = null;
+    function initPropertyMap() {
+        const mapEl = document.getElementById('propertyMap');
+        if (!mapEl) return;
+        if (typeof L === 'undefined') {
+            console.warn('Leaflet not loaded, map unavailable');
+            return;
+        }
+
+        // Default center - India approximate
+        const defaultCenter = [20.59, 78.96];
+        propertyMap = L.map(mapEl).setView(defaultCenter, 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(propertyMap);
+
+        // Try to initialize marker from hidden inputs if present
+        const latInput = document.getElementById('propertyLatitude');
+        const lngInput = document.getElementById('propertyLongitude');
+        const latVal = parseFloat(latInput?.value);
+        const lngVal = parseFloat(lngInput?.value);
+
+        if (!isNaN(latVal) && !isNaN(lngVal)) {
+            propertyMarker = L.marker([latVal, lngVal], { draggable: true }).addTo(propertyMap);
+            propertyMap.setView([latVal, lngVal], 15);
+            propertyMarker.on('dragend', onMarkerDragEnd);
+        }
+
+        // Click to place marker
+        propertyMap.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            if (!propertyMarker) {
+                propertyMarker = L.marker([lat, lng], { draggable: true }).addTo(propertyMap);
+                propertyMarker.on('dragend', onMarkerDragEnd);
+            } else {
+                propertyMarker.setLatLng([lat, lng]);
+            }
+            updateLatLngInputs(lat, lng);
+        });
+
+        // If no marker set and geolocation available, try to center map
+        if (!propertyMarker && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                propertyMap.setView([pos.coords.latitude, pos.coords.longitude], 13);
+            }, () => {});
+        }
+
+        function onMarkerDragEnd() {
+            const pos = propertyMarker.getLatLng();
+            updateLatLngInputs(pos.lat, pos.lng);
+        }
+
+        function onMarkerDragEnd() {
+            const pos = propertyMarker.getLatLng();
+            updateLatLngInputs(pos.lat, pos.lng);
+        }
+    }
+
+    // Location Search Functionality
+    const locationSearchInput = document.getElementById('locationSearch');
+    const searchResultsDiv = document.getElementById('searchResults');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    let searchTimeout = null;
+
+    if (locationSearchInput) {
+        locationSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            // Show/hide clear button
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = query ? 'block' : 'none';
+            }
+            
+            // Clear previous timeout
+            if (searchTimeout) clearTimeout(searchTimeout);
+            
+            if (query.length < 3) {
+                searchResultsDiv.style.display = 'none';
+                return;
+            }
+            
+            // Debounce search
+            searchTimeout = setTimeout(() => searchLocation(query), 500);
+        });
+        
+        // Clear search
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', function() {
+                locationSearchInput.value = '';
+                searchResultsDiv.style.display = 'none';
+                this.style.display = 'none';
+            });
+        }
+    }
+
+    async function searchLocation(query) {
+        try {
+            // Using Nominatim (OpenStreetMap) geocoding service
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`,
+                {
+                    headers: {
+                        'User-Agent': 'Flatery Property Management'
+                    }
+                }
+            );
+            
+            if (!response.ok) throw new Error('Search failed');
+            
+            const results = await response.json();
+            displaySearchResults(results);
+        } catch (error) {
+            console.error('Location search error:', error);
+            searchResultsDiv.innerHTML = '<div class="search-result-item error">Search failed. Please try again.</div>';
+            searchResultsDiv.style.display = 'block';
+        }
+    }
+
+    function displaySearchResults(results) {
+        if (!results || results.length === 0) {
+            searchResultsDiv.innerHTML = '<div class="search-result-item no-results">No locations found. Try a different search.</div>';
+            searchResultsDiv.style.display = 'block';
+            return;
+        }
+        
+        const html = results.map(result => `
+            <div class="search-result-item" data-lat="${result.lat}" data-lon="${result.lon}">
+                <i class="fas fa-map-marker-alt"></i>
+                <div class="result-details">
+                    <div class="result-name">${result.display_name}</div>
+                </div>
+            </div>
+        `).join('');
+        
+        searchResultsDiv.innerHTML = html;
+        searchResultsDiv.style.display = 'block';
+        
+        // Add click handlers to results
+        searchResultsDiv.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const lat = parseFloat(this.dataset.lat);
+                const lon = parseFloat(this.dataset.lon);
+                const name = this.querySelector('.result-name').textContent;
+                
+                selectLocation(lat, lon, name);
+            });
+        });
+    }
+
+    function selectLocation(lat, lon, name) {
+        // Update hidden inputs
+        updateLatLngInputs(lat, lon);
+        
+        // Update map
+        if (propertyMap) {
+            propertyMap.setView([lat, lon], 15);
+            
+            if (!propertyMarker) {
+                propertyMarker = L.marker([lat, lon], { draggable: true }).addTo(propertyMap);
+                propertyMarker.on('dragend', function() {
+                    const pos = propertyMarker.getLatLng();
+                    updateLatLngInputs(pos.lat, pos.lng);
+                });
+            } else {
+                propertyMarker.setLatLng([lat, lon]);
+            }
+        }
+        
+        // Update search input with selected location
+        if (locationSearchInput) {
+            locationSearchInput.value = name;
+        }
+        
+        // Hide results
+        searchResultsDiv.style.display = 'none';
+        
+        // Show success message
+        showNotification('Location pinned successfully! You can drag the marker to adjust.', 'success');
+    }
+
+    function updateLatLngInputs(lat, lng) {
+        const latInput = document.getElementById('propertyLatitude');
+        const lngInput = document.getElementById('propertyLongitude');
+        if (latInput) latInput.value = lat;
+        if (lngInput) lngInput.value = lng;
+    }
+
+    // Locate Me functionality
+    const locateMeBtn = document.getElementById('locateMeBtn');
+    if (locateMeBtn) {
+        locateMeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!navigator.geolocation) {
+                showNotification('Geolocation is not supported by your browser', 'error');
+                return;
+            }
+            
+            // Show loading state
+            this.classList.add('locating');
+            const icon = this.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-spinner';
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    // Update map and marker
+                    if (propertyMap) {
+                        propertyMap.setView([lat, lon], 15);
+                        
+                        if (!propertyMarker) {
+                            propertyMarker = L.marker([lat, lon], { draggable: true }).addTo(propertyMap);
+                            propertyMarker.on('dragend', function() {
+                                const pos = propertyMarker.getLatLng();
+                                updateLatLngInputs(pos.lat, pos.lng);
+                            });
+                        } else {
+                            propertyMarker.setLatLng([lat, lon]);
+                        }
+                    }
+                    
+                    // Update hidden inputs
+                    updateLatLngInputs(lat, lon);
+                    
+                    // Reset button state
+                    locateMeBtn.classList.remove('locating');
+                    icon.className = originalClass;
+                    
+                    showNotification('Location detected! You can drag the marker to adjust.', 'success');
+                },
+                (error) => {
+                    // Reset button state
+                    locateMeBtn.classList.remove('locating');
+                    icon.className = originalClass;
+                    
+                    let errorMsg = 'Unable to get your location';
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorMsg = 'Location permission denied. Please enable location access.';
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        errorMsg = 'Location information unavailable.';
+                    } else if (error.code === error.TIMEOUT) {
+                        errorMsg = 'Location request timed out.';
+                    }
+                    showNotification(errorMsg, 'error');
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        });
+    }
+
+    // Initialize map after ensuring Leaflet is loaded
+    function waitForLeafletAndInitMap() {
+        if (typeof L !== 'undefined') {
+            try { 
+                initPropertyMap(); 
+                // Invalidate size after a short delay to ensure proper rendering
+                setTimeout(() => {
+                    if (propertyMap) {
+                        propertyMap.invalidateSize();
+                    }
+                }, 100);
+            } catch (e) { 
+                console.error('Map init error', e); 
+            }
+        } else {
+            // Retry after 100ms if Leaflet not loaded yet
+            setTimeout(waitForLeafletAndInitMap, 100);
+        }
+    }
+    
+    // Start checking for Leaflet
+    setTimeout(waitForLeafletAndInitMap, 100);
+
     // Form submission
     addPropertyForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -274,6 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = {
             type: propertyType, // PG, FLAT, APARTMENT
             name: document.getElementById('propertyName').value || null,
+            flatNumber: document.getElementById('flatNumber').value || null,
             currentFloor: parseInt(document.getElementById('currentFloor').value),
             totalFloor: parseInt(document.getElementById('totalFloor').value),
             age: mapPropertyAge(document.getElementById('propertyAge').value),
@@ -287,6 +581,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 location: document.getElementById('location').value,
                 landmark: document.getElementById('landmark').value || null
             },
+
+            // include lat/lng if set by the map
+            latitude: (function(){ const v=document.getElementById('propertyLatitude')?.value; return v? parseFloat(v): null; })(),
+            longitude: (function(){ const v=document.getElementById('propertyLongitude')?.value; return v? parseFloat(v): null; })(),
             rental: {
                 expectedRent: parseInt(document.getElementById('expectedRent').value),
                 expectedDeposit: parseInt(document.getElementById('expectedDeposit').value),

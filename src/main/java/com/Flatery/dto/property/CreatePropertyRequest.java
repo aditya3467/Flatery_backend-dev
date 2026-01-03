@@ -18,6 +18,10 @@ public class CreatePropertyRequest {
     @Size(min = 2, max = 120)
     private String name;
 
+    // Required if type = FLAT
+    @Size(min = 1, max = 20)
+    private String flatNumber;
+
     // Required if type = FLAT/APARTMENT; must be null for PG
     private BhkType bhkType;
 
