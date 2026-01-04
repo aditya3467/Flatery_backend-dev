@@ -585,6 +585,64 @@ body {
     border-color: var(--accent-violet);
 }
 
+/* Location search bar */
+.location-search-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.location-search-bar input {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.location-search-bar select {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.location-search-bar .btn-primary {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent-violet) 0%, #6B6BEE 100%);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.location-search-bar .btn-outline {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.location-status {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.distance-notice {
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
 /* Properties Map */
 #propertiesMap {
     background: var(--bg-card);
@@ -769,6 +827,17 @@ body {
     font-size: 0.85rem;
     margin-top: 2px;
     flex-shrink: 0;
+}
+
+.property-distance {
+    color: var(--accent-violet);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-top: -4px;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 /* Key Info Details (Icons with text) */

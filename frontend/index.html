@@ -57,11 +57,15 @@
                     <div class="search-bar">
                         <div class="wrap">
                             <div class="search">
-                                <input type="text" id="locationInput" class="searchTerm" placeholder="Enter city or location">
+                                <input type="text" id="locationInput" class="searchTerm" placeholder="Enter city or locality">
+                                <button type="button" id="detectLocationBtn" class="detectButton" aria-label="Detect my location">
+                                    <i class="fas fa-location-arrow"></i>
+                                </button>
                                 <button type="button" id="searchButton" class="searchButton">
                                     <i class="fa fa-search"></i>
                                 </button>
                             </div>
+                            <div id="locationSuggestions" class="location-suggestions" role="listbox" aria-label="Location suggestions"></div>
                         </div>
                     </div>
                     <div class="search-btn"></div>

@@ -8,10 +8,49 @@ let allProperties = [];
 let filteredProperties = [];
 let currentPage = 1;
 const itemsPerPage = 9;
+const LOCATION_STORAGE_KEY = 'flatery:lastSearchLocation';
+let userLocation = null; // { lat, lng, label, radiusKm }
+let activeRadiusKm = null;
+
+/**
+ * Convert relative or partial image URLs to full URLs
+ * S3 URLs and other absolute URLs are returned as-is
+ */
+function normalizeImageUrl(url) {
+    if (!url) return null;
+    // If already a full URL (http/https), return as-is (includes S3 URLs)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    // For relative paths starting with /, return as-is (static file from server root)
+    if (url.startsWith('/')) {
+        return url;
+    }
+    // For paths without leading slash, prepend API base URL
+    return `${apiService.baseURL.replace('/api', '')}/${url}`;
+}
+
+/**
+ * Get fallback URL for S3 images that might be stored locally
+ * Converts S3 URLs to local /uploads/ paths
+ */
+function getLocalFallbackUrl(s3Url) {
+    if (!s3Url) return null;
+    // Check if it's an S3 URL with properties path
+    const s3Pattern = /https:\/\/[\w-]+\.s3\.amazonaws\.com\/properties\/(\d+)\/(.+)/;
+    const match = s3Url.match(s3Pattern);
+    if (match) {
+        const [, propertyId, filename] = match;
+        return `/uploads/properties/${propertyId}/${filename}`;
+    }
+    return null;
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Set filter values from URL first
     setFilterValuesFromUrl();
+    // Initialize location controls and restore last search
+    initLocationControls();
     // Then load properties
     loadProperties();
     // Initialize mobile filter bar
@@ -129,6 +168,34 @@ function initializeMobileFilterBar() {
     }
 }
 
+function buildRadiiList() {
+    const base = userLocation?.radiusKm ? [userLocation.radiusKm, 2, 5, 10] : [2, 5, 10];
+    // Ensure uniqueness and sorted ascending
+    const unique = Array.from(new Set(base)).sort((a, b) => a - b);
+    return unique.length ? unique : [5];
+}
+
+function updateDistanceMessaging(usedFallback) {
+    if (!userLocation) {
+        setDistanceNotice('');
+        return;
+    }
+
+    const label = userLocation.label || 'selected area';
+    const radius = activeRadiusKm || userLocation.radiusKm || 5;
+
+    if (allProperties.length === 0) {
+        setDistanceNotice(`No properties near ${label}.`);
+        return;
+    }
+
+    if (usedFallback) {
+        setDistanceNotice(`No properties in ${label}. Showing options within ${radius} km.`);
+    } else {
+        setDistanceNotice(`Showing results near ${label}${radius ? ` within ${radius} km` : ''}.`);
+    }
+}
+
 /**
  * Apply sort filter
  */
@@ -239,6 +306,156 @@ function resetMobileFilters() {
 }
 
 /**
+ * Location controls: init, storage, and handlers
+ */
+function initLocationControls() {
+    restoreLocationFromStorage();
+
+    const searchBtn = document.getElementById('locationSearchBtn');
+    const detectBtn = document.getElementById('detectLocationBtn');
+    const radiusSelect = document.getElementById('radiusSelect');
+    const searchInput = document.getElementById('locationSearchInput');
+
+    if (radiusSelect && userLocation?.radiusKm) {
+        radiusSelect.value = String(userLocation.radiusKm);
+    }
+
+    if (searchInput && userLocation?.label) {
+        searchInput.value = userLocation.label;
+    }
+
+    if (searchBtn && searchInput) {
+        searchBtn.addEventListener('click', async () => {
+            const query = searchInput.value.trim();
+            if (!query) {
+                updateLocationStatus('Enter a city/locality to search.', 'warn');
+                return;
+            }
+            const radius = getSelectedRadius();
+            await handleManualLocationSearch(query, radius);
+        });
+    }
+
+    if (detectBtn) {
+        detectBtn.addEventListener('click', async () => {
+            const radius = getSelectedRadius();
+            await handleDetectLocation(radius);
+        });
+    }
+
+    if (radiusSelect) {
+        radiusSelect.addEventListener('change', async () => {
+            if (userLocation) {
+                userLocation.radiusKm = getSelectedRadius();
+                persistLocation();
+                updateLocationStatus('Updating search radius...', 'info');
+                await loadProperties();
+            }
+        });
+    }
+}
+
+function getSelectedRadius() {
+    const radiusSelect = document.getElementById('radiusSelect');
+    const val = radiusSelect ? parseFloat(radiusSelect.value) : 5;
+    return isNaN(val) ? 5 : val;
+}
+
+function persistLocation() {
+    if (userLocation) {
+        localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(userLocation));
+    }
+}
+
+function restoreLocationFromStorage() {
+    try {
+        const raw = localStorage.getItem(LOCATION_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.lat && parsed.lng) {
+            userLocation = parsed;
+            activeRadiusKm = parsed.radiusKm || null;
+            updateLocationStatus(`Using last searched area: ${parsed.label || 'Saved location'}`, 'info');
+        }
+    } catch (e) {
+        // ignore
+    }
+}
+
+async function handleManualLocationSearch(query, radiusKm) {
+    updateLocationStatus('Searching location...', 'info');
+    try {
+        const results = await geocodeLocation(query);
+        if (!results || results.length === 0) {
+            updateLocationStatus('No results for that location.', 'warn');
+            return;
+        }
+        const best = results[0];
+        userLocation = {
+            lat: parseFloat(best.lat),
+            lng: parseFloat(best.lon),
+            label: best.display_name || query,
+            radiusKm: radiusKm || 5
+        };
+        persistLocation();
+        updateLocationStatus(`Searching near ${userLocation.label}`, 'info');
+        await loadProperties();
+    } catch (e) {
+        console.error('Geocode error', e);
+        updateLocationStatus('Failed to search location. Try again.', 'error');
+    }
+}
+
+async function handleDetectLocation(radiusKm) {
+    if (!navigator.geolocation) {
+        updateLocationStatus('Geolocation not supported in this browser.', 'error');
+        return;
+    }
+    updateLocationStatus('Detecting your location...', 'info');
+    return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            userLocation = {
+                lat: latitude,
+                lng: longitude,
+                label: 'Your location',
+                radiusKm: radiusKm || 5
+            };
+            persistLocation();
+            updateLocationStatus('Location detected. Fetching nearby properties...', 'info');
+            await loadProperties();
+            resolve();
+        }, (err) => {
+            console.error('Geolocation error', err);
+            updateLocationStatus('Permission denied or unavailable.', 'error');
+            resolve();
+        }, { enableHighAccuracy: true, timeout: 8000 });
+    });
+}
+
+async function geocodeLocation(query) {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error('Geocode failed');
+    return res.json();
+}
+
+function updateLocationStatus(message, type = 'info') {
+    const statusEl = document.getElementById('locationStatus');
+    if (statusEl) {
+        statusEl.textContent = message || '';
+        statusEl.dataset.type = type;
+    }
+}
+
+function setDistanceNotice(message) {
+    const noticeEl = document.getElementById('distanceNotice');
+    if (noticeEl) {
+        noticeEl.textContent = message || '';
+    }
+}
+
+/**
  * Set filter input values from URL parameters (before properties load)
  */
 function setFilterValuesFromUrl() {
@@ -297,13 +514,73 @@ async function loadProperties() {
     const propertiesGrid = document.getElementById('propertiesGrid');
     
     try {
-        // Call the public properties API
-        const response = await apiService.getProperties();
-        
+        // If navigated with a city/locality query but no lat/lng yet, geocode once to anchor search
+        const urlParams = new URLSearchParams(window.location.search);
+        const cityParam = urlParams.get('city');
+        if (!userLocation && cityParam) {
+            try {
+                const results = await geocodeLocation(cityParam);
+                if (results && results.length > 0) {
+                    const best = results[0];
+                    userLocation = {
+                        lat: parseFloat(best.lat),
+                        lng: parseFloat(best.lon),
+                        label: best.display_name || cityParam,
+                        radiusKm: getSelectedRadius()
+                    };
+                    persistLocation();
+                    updateLocationStatus(`Searching near ${userLocation.label}`, 'info');
+                }
+            } catch (e) {
+                // fall through to normal search
+            }
+        }
+
+        const radii = buildRadiiList();
+        let usedFallback = false;
+        let chosenRadius = null;
+        let baseContent = [];
+
+        if (userLocation && userLocation.lat && userLocation.lng) {
+            // If user has explicitly set a radius, use only that
+            const userSetRadius = userLocation.radiusKm;
+            if (userSetRadius) {
+                const response = await apiService.getProperties({
+                    lat: userLocation.lat,
+                    lng: userLocation.lng,
+                    radiusKm: userSetRadius
+                });
+                baseContent = response.content || [];
+                chosenRadius = userSetRadius;
+                usedFallback = false;
+            } else {
+                // Fallback: try increasing radii until we find results
+                for (let i = 0; i < radii.length; i++) {
+                    const r = radii[i];
+                    const response = await apiService.getProperties({
+                        lat: userLocation.lat,
+                        lng: userLocation.lng,
+                        radiusKm: r
+                    });
+                    const content = response.content || [];
+                    if (content.length > 0 || i === radii.length - 1) {
+                        baseContent = content;
+                        chosenRadius = r;
+                        usedFallback = i > 0;
+                        break;
+                    }
+                }
+            }
+        } else {
+            const response = await apiService.getProperties();
+            baseContent = response.content || [];
+        }
+
         // Response is a Page object with content array
-        allProperties = response.content || [];
+        allProperties = baseContent;
+        activeRadiusKm = chosenRadius;
         
-        // Fetch full details for PG and APARTMENT to get names
+        // Fetch full details for PG and APARTMENT to get names and images
         await enrichPropertiesWithNames();
         
         filteredProperties = [...allProperties];
@@ -313,6 +590,7 @@ async function loadProperties() {
         
         displayProperties();
         setupPagination();
+        updateDistanceMessaging(usedFallback);
         
     } catch (error) {
         console.error('Error loading properties:', error);
@@ -355,7 +633,7 @@ async function enrichPropertiesWithNames() {
                 city: details.city || property.city,
                 location: details.location || property.location,
                 landmark: details.landmark || property.landmark,
-                primaryImageUrl: details.primaryImageUrl || property.primaryImageUrl,
+                primaryImageUrl: normalizeImageUrl(details.primaryImageUrl || property.primaryImageUrl),
                 currentFloor: details.currentFloor || details.floorNumber,
                 totalFloor: details.totalFloor || details.totalFloors,
                 furnishing: details.furnishing || details.furnishingStatus,
@@ -381,23 +659,18 @@ async function enrichPropertiesWithNames() {
 
                 normalized.sort((a, b) => (b.primary - a.primary) || (a.position - b.position));
                 
-                // Extract just the URLs for the carousel
-                // Check if URL is already a full URL (http/https) or S3 URL, otherwise add leading slash
-                property.images = normalized.map(img => {
-                    const url = img.url;
-                    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
-                        return url;
-                    }
-                    return `/${url}`;
-                });
+                // Extract and normalize URLs
+                property.images = normalized.map(img => normalizeImageUrl(img.url)).filter(Boolean);
             } else {
                 // Fallback to primary image
-                property.images = property.primaryImageUrl ? [property.primaryImageUrl] : [];
+                const primaryUrl = normalizeImageUrl(property.primaryImageUrl);
+                property.images = primaryUrl ? [primaryUrl] : [];
             }
         } catch (error) {
             // Keep original images if any, or use primary
             if (!property.images && property.primaryImageUrl) {
-                property.images = [property.primaryImageUrl];
+                const primaryUrl = normalizeImageUrl(property.primaryImageUrl);
+                property.images = primaryUrl ? [primaryUrl] : [];
             }
         }
     });
@@ -419,8 +692,9 @@ function applyUrlFilters() {
     // Start with all properties
     filteredProperties = [...allProperties];
     
-    // Apply city filter to properties
-    if (cityParam && filteredProperties.length > 0) {
+    // Apply city filter only when we are not using a geocoded location (lat/lng)
+    const usingGeo = !!(userLocation && userLocation.lat && userLocation.lng);
+    if (!usingGeo && cityParam && filteredProperties.length > 0) {
         filteredProperties = filteredProperties.filter(property => 
             property.city && property.city.toLowerCase() === cityParam.toLowerCase()
         );
@@ -569,6 +843,8 @@ function displayProperties() {
 function createPropertyCard(property) {
     const bhkType = property.bhkType || property.bhk;
     const seater = property.pgSeater || property.seater;
+    const distanceValue = (typeof property.distanceKm === 'number') ? property.distanceKm : (typeof property.distance === 'number' ? property.distance : null);
+    const distanceDisplay = distanceValue !== null ? `${distanceValue.toFixed(1)} km away` : '';
     // Compute title based on type
     let title;
     if ((property.type === 'PG' || property.type === 'APARTMENT') && property.name) {
@@ -616,10 +892,17 @@ function createPropertyCard(property) {
     // Favorite state for initial render
     const favorites = JSON.parse(localStorage.getItem('favoriteProperties') || '[]');
     const isFav = favorites.includes(property.id);
+    
+    // Generate fallback URL for S3 images
+    const fallbackUrl = getLocalFallbackUrl(firstImage);
+    const onerrorAttr = fallbackUrl 
+        ? `onerror="if(this.src!=='${fallbackUrl}' && this.src!=='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'){this.src='${fallbackUrl}'}else{this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'}"`
+        : `onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'"`;
+    
     return `
       <div class="property-card" data-property-id="${property.id}" onclick="window.location.href='property-details.html?id=${property.id}'">
         <div class="property-image" data-property-id="${property.id}" data-image-index="0" data-images="${encodeURIComponent(JSON.stringify(images))}">
-          <img src="${firstImage}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=60'" />
+          <img src="${firstImage}" alt="${title}" ${onerrorAttr} />
           <span class="property-badge">${property.type}</span>
           <span class="rating-badge"><i class="fas fa-star"></i> ${ratingValue}</span>
           <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, ${property.id})" aria-label="Add to wishlist">
@@ -637,6 +920,7 @@ function createPropertyCard(property) {
             <div class="property-rent">₹${formatNumber(property.expectedRent)} <span>/month</span></div>
           </div>
           <div class="property-location"><i class="fas fa-map-marker-alt"></i> ${property.location}, ${property.city}</div>
+          ${distanceDisplay ? `<div class="property-distance"><i class="fas fa-location-arrow"></i> ${distanceDisplay}</div>` : ''}
           <div class="divider"></div>
                     <div class="info-grid">
                         <div class="info-item"><span class="info-label">Type</span><span class="info-value">${typeDisplay}</span></div>

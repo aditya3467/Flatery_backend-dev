@@ -18,6 +18,7 @@ public class PropertySummary {
     private Integer builtUpAreaSqft;
     private Double latitude;
     private Double longitude;
+    private Double distanceKm;
     private Integer expectedRent;
     private Furnishing furnishing;
     private Parking parking;

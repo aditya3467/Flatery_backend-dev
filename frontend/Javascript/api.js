@@ -159,9 +159,17 @@ class ApiService {
     // Tenant API methods
 
     // Property API methods
-    async getProperties() {
+    async getProperties(params = {}) {
         try {
-            return await this.makeRequest('/properties');
+            const searchParams = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    searchParams.append(key, value);
+                }
+            });
+            const qs = searchParams.toString();
+            const url = qs ? `/properties?${qs}` : '/properties';
+            return await this.makeRequest(url, { includeAuth: false });
         } catch (error) {
             throw new Error('Failed to fetch properties: ' + error.message);
         }

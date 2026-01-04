@@ -40,15 +40,97 @@ public class PropertyQueryService {
             Integer minRent,
             Integer maxRent,
             Furnishing furnishing,
+            Double lat,
+            Double lng,
+            Double radiusKm,
             Pageable pageable
     ) {
-        // Simple baseline: fetch all and filter in memory (replace with JPA Specifications later)
-        Page<Property> page = propertyRepository.findAll(pageable);
-        Page<Property> filtered = page.map(p -> p) // no-op to keep Page
-                .map(p -> p); // placeholder
+        List<Property> all = propertyRepository.findAll();
 
-        // Convert to summaries with primary image url
-        return page.map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())));
+        // Basic attribute filters first
+        // Skip city/location filters when doing radius search (lat/lng provided)
+        boolean isRadiusSearch = (lat != null && lng != null);
+        List<Property> filtered = all.stream()
+                .filter(p -> isRadiusSearch || city == null || equalsIgnoreCase(p.getCity(), city))
+                .filter(p -> isRadiusSearch || location == null || containsIgnoreCase(p.getLocation(), location))
+                .filter(p -> type == null || type == p.getType())
+                .filter(p -> bhk == null || bhk == p.getBhkType())
+                .filter(p -> minRent == null || (p.getExpectedRent() != null && p.getExpectedRent() >= minRent))
+                .filter(p -> maxRent == null || (p.getExpectedRent() != null && p.getExpectedRent() <= maxRent))
+                .filter(p -> furnishing == null || furnishing == p.getFurnishing())
+                .toList();
+
+        Double usedRadius = null;
+        if (lat != null && lng != null) {
+            double[] radii = radiusKm != null ? new double[]{radiusKm} : new double[]{2, 5, 10};
+            for (double r : radii) {
+                List<Property> within = filtered.stream()
+                        .filter(p -> hasCoords(p))
+                        .filter(p -> distanceKm(lat, lng, p.getLatitude(), p.getLongitude()) <= r)
+                        .toList();
+                if (!within.isEmpty()) {
+                    filtered = within;
+                    usedRadius = r;
+                    break;
+                }
+            }
+        }
+
+        // Sort: by distance if available, else posted date desc
+        filtered = filtered.stream()
+                .sorted((a, b) -> {
+                    Double da = (lat != null && lng != null && hasCoords(a)) ? distanceKm(lat, lng, a.getLatitude(), a.getLongitude()) : null;
+                    Double db = (lat != null && lng != null && hasCoords(b)) ? distanceKm(lat, lng, b.getLatitude(), b.getLongitude()) : null;
+                    if (da != null && db != null) return da.compareTo(db);
+                    if (da != null) return -1;
+                    if (db != null) return 1;
+                    // fallback: postedOn desc
+                    if (a.getPostedOn() != null && b.getPostedOn() != null) return b.getPostedOn().compareTo(a.getPostedOn());
+                    return 0;
+                })
+                .toList();
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        List<Property> pageContent = start > end ? List.of() : filtered.subList(start, end);
+
+        // Map with distance
+        List<PropertySummary> summaries = pageContent.stream()
+                .map(p -> {
+                    Double d = null;
+                    if (lat != null && lng != null && hasCoords(p)) {
+                        d = distanceKm(lat, lng, p.getLatitude(), p.getLongitude());
+                    }
+                    return mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId()), d);
+                })
+                .toList();
+
+        return new PageImpl<>(summaries, pageable, filtered.size());
+    }
+
+    private boolean hasCoords(Property p) {
+        return p.getLatitude() != null && p.getLongitude() != null;
+    }
+
+    private boolean equalsIgnoreCase(String a, String b) {
+        return a != null && b != null && a.equalsIgnoreCase(b);
+    }
+
+    private boolean containsIgnoreCase(String a, String b) {
+        return a != null && b != null && a.toLowerCase().contains(b.toLowerCase());
+    }
+
+    // Haversine distance in km
+    private double distanceKm(double lat1, double lon1, double lat2, double lon2) {
+        double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 
     @Transactional(readOnly = true)

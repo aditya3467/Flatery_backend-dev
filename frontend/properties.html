@@ -430,6 +430,19 @@
                 </div>
             </div>
 
+            <div class="location-search-bar">
+                <input type="text" id="locationSearchInput" placeholder="Search city/locality/landmark">
+                <button id="detectLocationBtn" class="btn-outline">Detect my location</button>
+                <select id="radiusSelect">
+                    <option value="2">2 km</option>
+                    <option value="5" selected>5 km</option>
+                    <option value="10">10 km</option>
+                </select>
+                <button id="locationSearchBtn" class="btn-primary">Search</button>
+                <span id="locationStatus" class="location-status"></span>
+            </div>
+            <div id="distanceNotice" class="distance-notice"></div>
+
             <!-- Properties List -->
             <div class="properties-list" id="propertiesList">
                 <!-- Loading State -->

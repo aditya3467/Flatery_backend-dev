@@ -40,9 +40,12 @@ public class PublicPropertyController {
             @RequestParam(required = false) Integer minRent,
             @RequestParam(required = false) Integer maxRent,
             @RequestParam(required = false) Furnishing furnishing,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Double radiusKm,
             Pageable pageable
     ) {
-        Page<PropertySummary> page = queryService.search(city, location, type, bhk, minRent, maxRent, furnishing, pageable);
+        Page<PropertySummary> page = queryService.search(city, location, type, bhk, minRent, maxRent, furnishing, lat, lng, radiusKm, pageable);
         return ResponseEntity.ok(page);
     }
 

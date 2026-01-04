@@ -119,6 +119,10 @@ public class PropertyMapper {
     }
 
     public PropertySummary toSummary(Property p, String primaryImageUrl) {
+        return toSummary(p, primaryImageUrl, null);
+    }
+
+    public PropertySummary toSummary(Property p, String primaryImageUrl, Double distanceKm) {
         PropertySummary s = new PropertySummary();
         s.setId(p.getId());
         s.setType(p.getType());
@@ -131,6 +135,7 @@ public class PropertyMapper {
         s.setBuiltUpAreaSqft(p.getBuiltUpAreaSqft());
         s.setLatitude(p.getLatitude());
         s.setLongitude(p.getLongitude());
+        s.setDistanceKm(distanceKm);
         s.setExpectedRent(p.getExpectedRent());
         s.setFurnishing(p.getFurnishing());
         s.setParking(p.getParking());
