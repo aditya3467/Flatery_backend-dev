@@ -53,4 +53,8 @@ public interface PropertyViewRepository extends JpaRepository<PropertyView, Long
     // Get recent views for aggregation
     @Query("SELECT v FROM PropertyView v WHERE v.viewedAt >= :since AND v.ownerView = false")
     List<PropertyView> findRecentViews(@Param("since") LocalDateTime since);
+    
+    // Count views after a certain date (for superadmin dashboard)
+    long countByViewedAtAfter(LocalDateTime date);
 }
+

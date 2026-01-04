@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .test-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .test-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .test-result {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .loading {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0277bd;
+        }
+
+        .info p {
+            color: #01579b;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Backend Connection Test</h1>
+
+        <div class="info">
+            <p><strong>Backend URL:</strong> http://localhost:8081/api</p>
+            <p><strong>Purpose:</strong> Verify real-time database connectivity</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Backend Health Check</h3>
+            <div id="healthResult" class="test-result loading">Waiting to run test...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Subscription Plans Check</h3>
+            <div id="plansResult" class="test-result loading">Waiting to run test...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Dashboard Stats Check</h3>
+            <div id="statsResult" class="test-result loading">Waiting to run test...</div>
+        </div>
+
+        <button onclick="runTests()" id="testButton">Run Connection Tests</button>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8081/api';
+
+        async function runTests() {
+            const button = document.getElementById('testButton');
+            button.disabled = true;
+            button.textContent = 'Running Tests...';
+
+            // Test 1: Health Check (Public endpoint)
+            await testHealthCheck();
+
+            // Test 2: Get Subscription Plans
+            await testSubscriptionPlans();
+
+            // Test 3: Dashboard Stats (requires auth)
+            await testDashboardStats();
+
+            button.disabled = false;
+            button.textContent = 'Run Tests Again';
+        }
+
+        async function testHealthCheck() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.className = 'test-result loading';
+            resultDiv.textContent = '⏳ Testing backend health...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const text = await response.text();
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = `✅ SUCCESS: Backend is running!\nResponse: ${text}`;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `❌ FAILED: Status ${response.status}\n${await response.text()}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ ERROR: Cannot connect to backend\n${error.message}\n\nIs the server running on port 8081?`;
+            }
+        }
+
+        async function testSubscriptionPlans() {
+            const resultDiv = document.getElementById('plansResult');
+            resultDiv.className = 'test-result loading';
+            resultDiv.textContent = '⏳ Fetching subscription plans...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/superadmin/subscriptions/plans`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const plans = await response.json();
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = `✅ SUCCESS: Found ${plans.length} subscription plan(s)\n\n${JSON.stringify(plans, null, 2)}`;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `❌ FAILED: Status ${response.status}\n${await response.text()}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+            }
+        }
+
+        async function testDashboardStats() {
+            const resultDiv = document.getElementById('statsResult');
+            resultDiv.className = 'test-result loading';
+            resultDiv.textContent = '⏳ Fetching dashboard stats...';
+
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = '❌ NO AUTH TOKEN: Please login to SuperAdmin dashboard first';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/superadmin/dashboard/stats`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = `✅ SUCCESS: Dashboard stats loaded\n\n${JSON.stringify(stats, null, 2)}`;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `❌ FAILED: Status ${response.status}\n${await response.text()}\n\nMake sure you're logged in as SUPERADMIN`;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>

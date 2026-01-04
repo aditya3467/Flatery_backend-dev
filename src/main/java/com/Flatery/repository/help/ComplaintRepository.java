@@ -2,6 +2,9 @@ package com.Flatery.repository.help;
 
 import com.Flatery.model.help.Complaint;
 import com.Flatery.model.help.helpstatus;
+import com.Flatery.model.help.Priority;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -86,4 +89,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
             "FROM Complaint c WHERE c.ownerId = :ownerId " +
             "AND c.actualResolutionDate IS NOT NULL")
     Double getAverageResolutionTimeByOwnerId(@Param("ownerId") Long ownerId);
+    
+    // For SuperAdmin - pagination support
+    Page<Complaint> findByStatus(helpstatus status, Pageable pageable);
+    Page<Complaint> findByPriority(Priority priority, Pageable pageable);
 }

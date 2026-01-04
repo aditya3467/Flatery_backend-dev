@@ -41,6 +41,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Allow CORS preflight
                         .requestMatchers("/api/auth/**").permitAll() // Allow all auth endpoints
+                        .requestMatchers("/api/setup/**").permitAll() // Allow setup endpoints (DELETE AFTER FIRST USE!)
+                        .requestMatchers("/api/superadmin/**").permitAll() // SuperAdmin endpoints - auth checked in controller
                         .requestMatchers("/api/properties/**").permitAll() // Allow public property listing
                         .requestMatchers("/api/tenants/check-active-tenancy").permitAll() // Allow active tenancy check for frontend validation
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access

@@ -3,6 +3,8 @@ package com.Flatery.repository;
 import com.Flatery.model.RoleName;
 import com.Flatery.model.User;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,4 +29,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Count users with given role who are not owners (owner IDs stored in properties table)
     @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r = :role AND u.id NOT IN (SELECT DISTINCT p.ownerId FROM com.Flatery.model.property.Property p)")
     long countByRoleExcludingOwners(@Param("role") RoleName role);
+    
+    // SuperAdmin: Find users by role with pagination
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE r = :role")
+    Page<User> findByRole(@Param("role") RoleName role, Pageable pageable);
+    
+    // SuperAdmin: Search users by role with keyword
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE r = :role AND (LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<User> findByRoleAndSearch(@Param("role") RoleName role, @Param("search") String search, Pageable pageable);
 }

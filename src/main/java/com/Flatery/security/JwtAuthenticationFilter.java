@@ -50,22 +50,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         // Debug logging for upload-qr endpoint
         if (request.getRequestURI().contains("upload-qr")) {
+            System.out.println("=== JWT Filter Debug ===");
             System.out.println("JWT token: " + jwt.substring(0, Math.min(30, jwt.length())) + "...");
             System.out.println("JWT periods count: " + jwt.chars().filter(ch -> ch == '.').count());
         }
         
-        username = jwtService.extractUsername(jwt);
+        try {
+            username = jwtService.extractUsername(jwt);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails,
-                                null,
-                                userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails,
+                                    null,
+                                    userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Invalid or malformed JWT - just continue without authentication
+            logger.debug("Invalid JWT token: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

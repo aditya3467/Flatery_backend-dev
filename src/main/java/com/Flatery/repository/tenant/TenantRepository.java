@@ -30,5 +30,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
         // Sum of security deposits for all tenants of an owner
         @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(t.securityDeposit),0) FROM Tenant t WHERE t.ownerId = :ownerId AND t.status = 'ACTIVE'")
         Integer sumActiveSecurityDepositsByOwnerId(@org.springframework.data.repository.query.Param("ownerId") Long ownerId);
+        
+        // Count tenants by owner (for superadmin)
+        long countByOwnerId(Long ownerId);
 }
-
