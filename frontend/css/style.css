@@ -1389,12 +1389,37 @@ img
   border-color: var(--accent-gold);
 }
 
+.property-image {
+  position: relative;
+}
+
 .property-image img {
   width: 100%;
   height: 200px;
   object-fit: cover;
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
+}
+
+.home-view-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+.home-view-badge i {
+  font-size: 0.7rem;
 }
 
 .property-details {

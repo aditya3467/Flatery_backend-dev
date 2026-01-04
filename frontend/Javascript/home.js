@@ -9,7 +9,8 @@ let selectedLocation = null; // { lat, lng, label, radiusKm }
 let suggestionTimeout = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
-    loadRecommendedProperties();
+    // Auto-detect location and load nearby properties
+    await autoDetectAndLoadProperties();
     setupSearchButton();
     initLocationAutocomplete();
 });
@@ -188,6 +189,116 @@ function clearPersistedLocation() {
 /**
  * Load recommended properties from API and display on homepage
  */
+/**
+ * Auto-detect user location and load nearby properties sorted by views
+ */
+async function autoDetectAndLoadProperties() {
+    const container = document.getElementById('recommendedPropertiesGrid');
+    
+    if (!container) return;
+    
+    try {
+        // Show loading state
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; width: 100%;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+                <p style="margin-top: 10px;">Detecting your location...</p>
+            </div>
+        `;
+        
+        // Try to get user's location
+        let userLat = null;
+        let userLng = null;
+        
+        if (navigator.geolocation) {
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        timeout: 5000,
+                        enableHighAccuracy: false
+                    });
+                });
+                
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+                console.log('Location detected:', userLat, userLng);
+            } catch (geoError) {
+                console.log('Geolocation failed, falling back to all properties:', geoError);
+            }
+        }
+        
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; width: 100%;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+                <p style="margin-top: 10px;">Loading nearby properties...</p>
+            </div>
+        `;
+        
+        // Fetch properties (nearby if location available, otherwise all)
+        let properties = [];
+        if (userLat && userLng) {
+            // Fetch nearby properties within 10km
+            const response = await fetch(`${apiService.baseURL}/properties?lat=${userLat}&lng=${userLng}&radiusKm=10`);
+            if (response.ok) {
+                const data = await response.json();
+                properties = data.content || [];
+            }
+        }
+        
+        // Fallback to all properties if no nearby properties or no location
+        if (properties.length === 0) {
+            const response = await fetch(`${apiService.baseURL}/properties`);
+            if (response.ok) {
+                const data = await response.json();
+                properties = data.content || [];
+            }
+        }
+        
+        if (properties.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; width: 100%;">
+                    <i class="fas fa-home" style="font-size: 2rem; color: #ccc;"></i>
+                    <p style="margin-top: 10px;">No properties available yet.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Fetch view counts for all properties
+        const viewCountsPromises = properties.map(property => 
+            fetch(`${apiService.baseURL}/properties/${property.id}/views`)
+                .then(res => res.ok ? res.json() : { totalViews: 0 })
+                .catch(() => ({ totalViews: 0 }))
+        );
+        
+        const viewCounts = await Promise.all(viewCountsPromises);
+        
+        // Add view counts to properties
+        properties.forEach((property, index) => {
+            property.viewCount = viewCounts[index].totalViews || 0;
+        });
+        
+        // Sort by view count (most viewed first)
+        properties.sort((a, b) => b.viewCount - a.viewCount);
+        
+        // Display top 3 properties
+        const topProperties = properties.slice(0, 3);
+        container.innerHTML = topProperties.map(property => createPropertyCard(property)).join('');
+        
+    } catch (error) {
+        console.error('Error loading properties:', error);
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; width: 100%;">
+                <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: #f44336;"></i>
+                <p style="margin-top: 10px;">Failed to load properties. Please try again later.</p>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Load recommended properties (legacy function, replaced by autoDetectAndLoadProperties)
+ */
 async function loadRecommendedProperties() {
     const container = document.getElementById('recommendedPropertiesGrid');
     
@@ -245,9 +356,47 @@ async function loadRecommendedProperties() {
 function createPropertyCard(property) {
     const bhkType = property.bhkType || property.bhk;
     const seater = property.pgSeater || property.seater;
-    const title = property.name || 
-                  `${bhkType ? bhkType + ' BHK' : seater + ' Seater'} ${property.type}`;
+    const location = property.location || '';
+    const city = property.city || '';
+    
+    // Format title like properties.js does
+    let title;
+    if ((property.type === 'PG' || property.type === 'APARTMENT') && property.name) {
+        title = property.name;
+    } else if (property.type === 'FLAT' && bhkType) {
+        const bhkNumber = bhkType.replace('BHK_', '');
+        const locationName = location || city || 'Property';
+        title = `${bhkNumber} BHK in ${locationName}`;
+    } else {
+        title = location || city || 'Property';
+    }
+    
+    // Format location line like "Ansal Api landran, Mohali"
+    const locationLine = [location, city].filter(Boolean).join(', ');
+    
     const imageUrl = property.primaryImageUrl || 'img/properties/default.jpg';
+    
+    // Get property details with proper fallbacks
+    const area = property.builtUpAreaSqft || property.builtUpArea || null;
+    const bathrooms = property.bathrooms || property.bathroom || null;
+    const hasBalcony = property.balcony === true;
+    
+    // Format bedroom/seater info
+    let bedroomInfo = '';
+    if (property.type === 'PG' || seater) {
+        bedroomInfo = seater ? `${seater} Seater` : null;
+    } else {
+        bedroomInfo = bhkType ? bhkType.replace('BHK_', '') + ' BHK' : null;
+    }
+    
+    // Build description parts
+    const descParts = [];
+    if (bedroomInfo) descParts.push(bedroomInfo);
+    if (bathrooms) descParts.push(`${bathrooms} Bath${bathrooms !== 1 ? 's' : ''}`);
+    if (hasBalcony) descParts.push('Balcony');
+    if (area) descParts.push(`${area} sqft`);
+    
+    const description = descParts.length > 0 ? descParts.join(' • ') : 'Details not available';
     
     return `
         <div class="property-card" onclick="viewProperty(${property.id})">
@@ -256,11 +405,8 @@ function createPropertyCard(property) {
             </div>
             <div class="property-details">
                 <h3>${title}</h3>
-                <p>
-                    ${bhkType ? bhkType + ' Beds' : seater + ' Seater'} • 
-                    ${property.bathrooms} Baths • 
-                    ${property.builtUpAreaSqft} sqft
-                </p>
+                ${locationLine ? `<p style="color: #999; font-size: 0.9rem; margin-bottom: 0.5rem;"><i class="fas fa-map-marker-alt"></i> ${locationLine}</p>` : ''}
+                <p>${description}</p>
                 <p>₹${formatPrice(property.expectedRent)}/month</p>
             </div>
         </div>

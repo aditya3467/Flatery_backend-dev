@@ -162,6 +162,14 @@ async function loadPropertyDetails(propertyId) {
         // Hide loading state
         hideLoadingState();
         
+        // Start tracking property view after page loads
+        if (window.propertyViewTracker) {
+            const referrer = propertyViewTracker.getReferrerContext();
+            propertyViewTracker.startTracking(propertyId, referrer);
+        }
+        
+        // Load and display view count
+        loadPropertyViews(propertyId);
         
     } catch (error) {
         console.error('Error loading property details:', error);
@@ -402,10 +410,10 @@ function populatePropertySummary(property) {
                 <i class="fas fa-map-marker-alt"></i>
                 <span>${[property.location, property.city].filter(Boolean).join(', ') || 'Location not specified'}</span>
             </div>
-            <div class="summary-rating">
-                <div class="rating-stars">
-                    ${generateStarRating(property.rating || 4.0)}
-                    <span class="rating-text">${property.rating || 4.0} (${property.reviewCount || 0} reviews)</span>
+            <div class="summary-views" id="summaryViewsSection">
+                <div class="view-count-display">
+                    <i class="fas fa-eye"></i>
+                    <span id="viewCountText">Loading views...</span>
                 </div>
             </div>
             <div class="summary-highlights">
@@ -713,9 +721,9 @@ function populateCTASidebar(property) {
 
             <!-- Key Stats -->
             <div class="key-stats">
-                <div class="stat-item">
-                    <span class="stat-label">⭐ Rating:</span>
-                    <span class="stat-value">${property.rating || 4.0}/5</span>
+                <div class="stat-item" id="ctaViewsSection">
+                    <span class="stat-label">👁️ Views:</span>
+                    <span class="stat-value" id="ctaViewCount">Loading...</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">👥 Recent Bookings:</span>
@@ -952,6 +960,47 @@ function updateWishlistButtons() {
             if (text) text.textContent = 'Add to Wishlist';
         }
     });
+}
+
+/**
+ * Load and display property view statistics
+ */
+async function loadPropertyViews(propertyId) {
+    try {
+        const response = await fetch(`${apiService.baseURL}/properties/${propertyId}/views`);
+        if (!response.ok) {
+            // Show 0 views if API fails
+            displayViewBadge({ totalViews: 0, uniqueViewers: 0 });
+            return;
+        }
+        
+        const data = await response.json();
+        displayViewBadge(data);
+    } catch (error) {
+        console.log('Could not load view stats:', error);
+        // Show 0 views on error
+        displayViewBadge({ totalViews: 0, uniqueViewers: 0 });
+    }
+}
+
+/**
+ * Display view count in UI sections
+ */
+function displayViewBadge(viewData) {
+    const viewsText = `${viewData.totalViews} ${viewData.totalViews === 1 ? 'view' : 'views'}`;
+    const uniqueText = viewData.uniqueViewers ? ` (${viewData.uniqueViewers} unique)` : '';
+    
+    // Update summary section
+    const viewCountText = document.getElementById('viewCountText');
+    if (viewCountText) {
+        viewCountText.textContent = `${viewsText}${uniqueText}`;
+    }
+    
+    // Update CTA sidebar
+    const ctaViewCount = document.getElementById('ctaViewCount');
+    if (ctaViewCount) {
+        ctaViewCount.textContent = viewsText;
+    }
 }
 
 /**

@@ -213,6 +213,28 @@ body {
     gap: 1rem;
 }
 
+/* ===== View Stats Badge ===== */
+.view-stats-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(122, 122, 255, 0.1);
+    border: 1px solid rgba(122, 122, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin-top: 1rem;
+    color: var(--accent-violet-light);
+    font-size: 0.9rem;
+}
+
+.view-stats-badge i {
+    color: var(--accent-violet);
+}
+
+.view-stats-badge span {
+    font-weight: 500;
+}
+
 .summary-header {
     display: flex;
     justify-content: space-between;
@@ -247,26 +269,30 @@ body {
     color: var(--accent-violet);
 }
 
-.summary-rating {
+.summary-views {
     display: flex;
     align-items: center;
     gap: 1rem;
+    margin-top: 0.5rem;
 }
 
-.rating-stars {
+.view-count-display {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 0.5rem;
+    color: white;
 }
 
-.rating-stars i {
-    color: #FFD700;
+.view-count-display i {
     font-size: 1rem;
 }
 
-.rating-text {
-    color: var(--text-secondary);
+.view-count-display span {
     font-size: 0.875rem;
+    font-weight: 500;
 }
 
 .summary-highlights {

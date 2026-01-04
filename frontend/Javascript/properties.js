@@ -6,6 +6,7 @@
 // Sample properties data (replace with API call)
 let allProperties = [];
 let filteredProperties = [];
+let propertyViewCounts = {}; // Store view counts by property ID
 let currentPage = 1;
 const itemsPerPage = 9;
 const LOCATION_STORAGE_KEY = 'flatery:lastSearchLocation';
@@ -583,6 +584,9 @@ async function loadProperties() {
         // Fetch full details for PG and APARTMENT to get names and images
         await enrichPropertiesWithNames();
         
+        // Fetch view counts for all properties
+        await fetchPropertyViewCounts(allProperties);
+        
         filteredProperties = [...allProperties];
         
         // Apply URL filters after loading
@@ -601,6 +605,33 @@ async function loadProperties() {
                 <p>Please try again later.</p>
             </div>
         `;
+    }
+}
+
+/**
+ * Fetch view counts for all loaded properties
+ */
+async function fetchPropertyViewCounts(properties) {
+    if (!properties || properties.length === 0) return;
+    
+    try {
+        // Fetch view counts for all properties in parallel
+        const viewPromises = properties.map(property => 
+            fetch(`${apiService.baseURL}/properties/${property.id}/views`)
+                .then(res => res.ok ? res.json() : null)
+                .catch(() => null)
+        );
+        
+        const viewResults = await Promise.all(viewPromises);
+        
+        // Store view counts by property ID
+        properties.forEach((property, index) => {
+            if (viewResults[index] && viewResults[index].totalViews) {
+                propertyViewCounts[property.id] = viewResults[index].totalViews;
+            }
+        });
+    } catch (error) {
+        console.log('Could not fetch view counts:', error);
     }
 }
 
@@ -887,11 +918,14 @@ function createPropertyCard(property) {
     const amenityArray = Array.isArray(property.amenities) ? property.amenities : [];
     const topAmenities = amenityArray.slice(0, 4);
     const moreAmenityCount = amenityArray.length > 4 ? amenityArray.length - 4 : 0;
-    // Static rating placeholder (could be computed later)
-    const ratingValue = (property.rating || 4.6).toFixed(1);
+    
     // Favorite state for initial render
     const favorites = JSON.parse(localStorage.getItem('favoriteProperties') || '[]');
     const isFav = favorites.includes(property.id);
+    
+    // Get view count for this property
+    const viewCount = propertyViewCounts[property.id] || 0;
+    const viewsBadge = viewCount >= 10 ? `<span class="views-badge"><i class="fas fa-eye"></i> ${viewCount} views</span>` : '';
     
     // Generate fallback URL for S3 images
     const fallbackUrl = getLocalFallbackUrl(firstImage);
@@ -904,7 +938,7 @@ function createPropertyCard(property) {
         <div class="property-image" data-property-id="${property.id}" data-image-index="0" data-images="${encodeURIComponent(JSON.stringify(images))}">
           <img src="${firstImage}" alt="${title}" ${onerrorAttr} />
           <span class="property-badge">${property.type}</span>
-          <span class="rating-badge"><i class="fas fa-star"></i> ${ratingValue}</span>
+          ${viewsBadge}
           <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, ${property.id})" aria-label="Add to wishlist">
             <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
           </button>

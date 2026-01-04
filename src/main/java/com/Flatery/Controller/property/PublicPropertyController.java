@@ -2,18 +2,25 @@ package com.Flatery.Controller.property;
 
 import com.Flatery.dto.property.PropertyResponse;
 import com.Flatery.dto.property.PropertySummary;
+import com.Flatery.dto.property.PropertyViewRequest;
 import com.Flatery.model.property.PropertyImage;
 import com.Flatery.model.property.enums.BhkType;
 import com.Flatery.model.property.enums.Furnishing;
 import com.Flatery.model.property.enums.PropertyType;
+import com.Flatery.model.User;
 import com.Flatery.repository.property.PropertyImageRepository;
 import com.Flatery.service.property.PropertyQueryService;
+import com.Flatery.service.property.PropertyViewService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.List;
 
 @RestController
@@ -23,6 +30,7 @@ public class PublicPropertyController {
 
     private final PropertyQueryService queryService;
     private final PropertyImageRepository propertyImageRepository;
+    private final PropertyViewService viewService;
 
     // Public detail
     @GetMapping("/{id}")
@@ -61,5 +69,61 @@ public class PublicPropertyController {
     public ResponseEntity<List<PropertySummary>> getRecommendedProperties() {
         List<PropertySummary> properties = queryService.getRecommendedProperties();
         return ResponseEntity.ok(properties);
+    }
+
+    // Record property view
+    @PostMapping("/{id}/view")
+    public ResponseEntity<?> recordPropertyView(
+            @PathVariable Long id,
+            @RequestBody PropertyViewRequest request,
+            @AuthenticationPrincipal User user,
+            HttpServletRequest httpRequest
+    ) {
+        String ipHash = hashIP(httpRequest.getRemoteAddr());
+        
+        boolean recorded = viewService.recordView(
+                id,
+                user,
+                request.getSessionId(),
+                ipHash,
+                request.getReferrer(),
+                request.getViewDurationSeconds()
+        );
+
+        return ResponseEntity.ok(new ViewRecordResponse(recorded));
+    }
+
+    // Get view count for a property
+    @GetMapping("/{id}/views")
+    public ResponseEntity<PropertyViewsResponse> getPropertyViews(@PathVariable Long id) {
+        long totalViews = viewService.getPropertyViewCount(id);
+        long uniqueViewers = viewService.getUniqueViewerCount(id);
+        
+        PropertyViewsResponse response = new PropertyViewsResponse();
+        response.setPropertyId(id);
+        response.setTotalViews(totalViews);
+        response.setUniqueViewers(uniqueViewers);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    private String hashIP(String ip) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(ip.getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // Response DTOs
+    record ViewRecordResponse(boolean recorded) {}
+    
+    @lombok.Data
+    static class PropertyViewsResponse {
+        private Long propertyId;
+        private long totalViews;
+        private long uniqueViewers;
     }
 }

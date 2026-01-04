@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -140,5 +142,29 @@ public class PropertyQueryService {
         return properties.stream()
                 .map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())))
                 .toList();
+    }
+
+    /**
+     * Get properties by IDs (for popular/trending)
+     */
+    @Transactional(readOnly = true)
+    public List<PropertySummary> getPropertiesByIds(List<Long> propertyIds) {
+        if (propertyIds == null || propertyIds.isEmpty()) {
+            return List.of();
+        }
+        
+        List<Property> properties = propertyRepository.findAllById(propertyIds);
+        
+        // Maintain order from input list
+        Map<Long, Property> propertyMap = properties.stream()
+                .collect(Collectors.toMap(Property::getId, p -> p));
+        
+        return propertyIds.stream()
+                .filter(propertyMap::containsKey)
+                .map(id -> {
+                    Property p = propertyMap.get(id);
+                    return mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId()));
+                })
+                .collect(Collectors.toList());
     }
 }
