@@ -218,9 +218,21 @@
                             <option value="Mohali">Mohali</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label for="filterLocality">Locality</label>
-                        <input type="text" id="filterLocality" placeholder="e.g., Banjara Hills">
+                    <div class="location-search-bar">
+                        <div style="position: relative; width: 100%;">
+                            <input type="text" id="locationSearchInput" placeholder="Search city/locality/landmark">
+                            <div id="propertyLocationSuggestions" class="location-suggestions" role="listbox" aria-label="Location suggestions"></div>
+                        </div>
+                        <button id="detectLocationBtn" class="btn-outline">Detect my location</button>
+                        <div class="inline-row">
+                            <select id="radiusSelect">
+                                <option value="10" selected>10 km</option>
+                                <option value="20">20 km</option>
+                                <option value="50">50 km</option>
+                            </select>
+                            <button id="locationSearchBtn" class="btn-primary">Search</button>
+                        </div>
+                        <span id="locationStatus" class="location-status"></span>
                     </div>
                 </div>
 
@@ -429,17 +441,6 @@
                 </div>
             </div>
 
-            <div class="location-search-bar">
-                <input type="text" id="locationSearchInput" placeholder="Search city/locality/landmark">
-                <button id="detectLocationBtn" class="btn-outline">Detect my location</button>
-                <select id="radiusSelect">
-                    <option value="2">2 km</option>
-                    <option value="5" selected>5 km</option>
-                    <option value="10">10 km</option>
-                </select>
-                <button id="locationSearchBtn" class="btn-primary">Search</button>
-                <span id="locationStatus" class="location-status"></span>
-            </div>
             <div id="distanceNotice" class="distance-notice"></div>
 
             <!-- Properties List -->

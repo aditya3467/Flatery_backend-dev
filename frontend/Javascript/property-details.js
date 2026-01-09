@@ -458,6 +458,16 @@ function populateOverviewSection(property) {
                     <span class="overview-label">Type</span>
                     <span class="overview-value">${property.propertyType || 'N/A'}</span>
                 </div>
+                ${property.bhkType || property.bhk ? `
+                <div class="overview-item">
+                    <span class="overview-label">BHK</span>
+                    <span class="overview-value">${(property.bhkType || property.bhk || '').replace('BHK_', '')}</span>
+                </div>` : ''}
+                ${property.pgSeater || property.seater ? `
+                <div class="overview-item">
+                    <span class="overview-label">Seater</span>
+                    <span class="overview-value">${property.pgSeater || property.seater || 'N/A'}</span>
+                </div>` : ''}
                 <div class="overview-item">
                     <span class="overview-label">Built-up Area</span>
                     <span class="overview-value">${property.builtUpAreaSqft || 'N/A'} sqft</span>

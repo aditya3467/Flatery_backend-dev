@@ -12,6 +12,7 @@ const itemsPerPage = 9;
 const LOCATION_STORAGE_KEY = 'flatery:lastSearchLocation';
 let userLocation = null; // { lat, lng, label, radiusKm }
 let activeRadiusKm = null;
+let locationCityMismatch = false; // flag when user location is outside selected city's 50km radius
 
 /**
  * Convert relative or partial image URLs to full URLs
@@ -52,6 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setFilterValuesFromUrl();
     // Initialize location controls and restore last search
     initLocationControls();
+    // Initialize location autocomplete for property page
+    initPropertyLocationAutocomplete();
     // Then load properties
     loadProperties();
     // Initialize mobile filter bar
@@ -169,16 +172,30 @@ function initializeMobileFilterBar() {
     }
 }
 
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
 function buildRadiiList() {
-    const base = userLocation?.radiusKm ? [userLocation.radiusKm, 2, 5, 10] : [2, 5, 10];
+    const base = userLocation?.radiusKm ? [userLocation.radiusKm, 10, 20, 50] : [10, 20, 50];
     // Ensure uniqueness and sorted ascending
     const unique = Array.from(new Set(base)).sort((a, b) => a - b);
-    return unique.length ? unique : [5];
+    return unique.length ? unique : [10];
 }
 
 function updateDistanceMessaging(usedFallback) {
     if (!userLocation) {
-        setDistanceNotice('');
+        setDistanceNotice('Search or detect your location to find nearby properties');
         return;
     }
 
@@ -306,9 +323,81 @@ function resetMobileFilters() {
     }
 }
 
-/**
- * Location controls: init, storage, and handlers
- */
+let propertyLocationSuggestionTimeout = null;
+
+function initPropertyLocationAutocomplete() {
+    const locationInput = document.getElementById('locationSearchInput');
+    const suggestionBox = document.getElementById('propertyLocationSuggestions');
+    if (!locationInput || !suggestionBox) {
+        return;
+    }
+
+    locationInput.addEventListener('input', () => {
+        const value = locationInput.value.trim();
+        clearPropertyLocationSuggestions();
+        if (value.length < 3) {
+            return;
+        }
+        if (propertyLocationSuggestionTimeout) {
+            clearTimeout(propertyLocationSuggestionTimeout);
+        }
+        propertyLocationSuggestionTimeout = setTimeout(() => fetchPropertyLocationSuggestions(value), 250);
+    });
+
+    locationInput.addEventListener('focus', () => {
+        if (suggestionBox.childElementCount > 0) {
+            suggestionBox.style.display = 'block';
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!suggestionBox.contains(e.target) && e.target !== locationInput) {
+            suggestionBox.style.display = 'none';
+        }
+    });
+
+    suggestionBox.addEventListener('click', (e) => {
+        const item = e.target.closest('.suggestion-item');
+        if (!item) return;
+        const lat = parseFloat(item.dataset.lat);
+        const lng = parseFloat(item.dataset.lng);
+        const label = item.dataset.label || locationInput.value.trim();
+        locationInput.value = label;
+        clearPropertyLocationSuggestions();
+    });
+}
+
+function clearPropertyLocationSuggestions() {
+    const suggestionBox = document.getElementById('propertyLocationSuggestions');
+    if (suggestionBox) {
+        suggestionBox.innerHTML = '';
+        suggestionBox.style.display = 'none';
+    }
+}
+
+async function fetchPropertyLocationSuggestions(query) {
+    const suggestionBox = document.getElementById('propertyLocationSuggestions');
+    if (!suggestionBox) return;
+    try {
+        suggestionBox.innerHTML = '<div class="suggestion-item">Searching...</div>';
+        suggestionBox.style.display = 'block';
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=in`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error('Geocode failed');
+        const results = await res.json();
+        if (!Array.isArray(results) || results.length === 0) {
+            suggestionBox.innerHTML = '<div class="suggestion-item">No matches found</div>';
+            return;
+        }
+        suggestionBox.innerHTML = results.map((item, idx) => {
+            const label = item.display_name || item.name || query;
+            return `<div class="suggestion-item" data-lat="${item.lat}" data-lng="${item.lon}" data-label="${label}" role="option" tabindex="${idx}">${label}</div>`;
+        }).join('');
+        suggestionBox.style.display = 'block';
+    } catch (e) {
+        suggestionBox.innerHTML = '<div class="suggestion-item">Failed to load suggestions</div>';
+    }
+}
 function initLocationControls() {
     restoreLocationFromStorage();
 
@@ -325,15 +414,18 @@ function initLocationControls() {
         searchInput.value = userLocation.label;
     }
 
-    if (searchBtn && searchInput) {
+    if (searchBtn) {
         searchBtn.addEventListener('click', async () => {
-            const query = searchInput.value.trim();
-            if (!query) {
-                updateLocationStatus('Enter a city/locality to search.', 'warn');
-                return;
+            const query = searchInput?.value?.trim() || '';
+            
+            // If location search has a value, geocode and update location first
+            if (query) {
+                const radius = getSelectedRadius();
+                await handleManualLocationSearch(query, radius);
+            } else {
+                // No location search query, just apply filters with current city
+                await applyFilters();
             }
-            const radius = getSelectedRadius();
-            await handleManualLocationSearch(query, radius);
         });
     }
 
@@ -358,8 +450,8 @@ function initLocationControls() {
 
 function getSelectedRadius() {
     const radiusSelect = document.getElementById('radiusSelect');
-    const val = radiusSelect ? parseFloat(radiusSelect.value) : 5;
-    return isNaN(val) ? 5 : val;
+    const val = radiusSelect ? parseFloat(radiusSelect.value) : 10;
+    return isNaN(val) ? 10 : val;
 }
 
 function persistLocation() {
@@ -396,8 +488,35 @@ async function handleManualLocationSearch(query, radiusKm) {
             lat: parseFloat(best.lat),
             lng: parseFloat(best.lon),
             label: best.display_name || query,
-            radiusKm: radiusKm || 5
+            radiusKm: radiusKm || 10
         };
+        
+        // Extract city from geocoded address and sync with city filter
+        let detectedCity = '';
+        if (best.address) {
+            detectedCity = best.address.city || best.address.town || best.address.village || best.address.state || '';
+        }
+        
+        // Update city filter dropdown and URL if we found a city
+        if (detectedCity) {
+            const citySelect = document.getElementById('filterCity');
+            if (citySelect) {
+                // Try to match detected city with dropdown options (case-insensitive)
+                const options = Array.from(citySelect.options);
+                const matchingOption = options.find(opt => 
+                    opt.value.toLowerCase() === detectedCity.toLowerCase()
+                );
+                if (matchingOption) {
+                    citySelect.value = matchingOption.value;
+                    detectedCity = matchingOption.value; // Use the exact option value
+                }
+            }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('city', detectedCity);
+            history.replaceState(null, '', `${window.location.pathname}?${urlParams.toString()}`);
+        }
+        
         persistLocation();
         updateLocationStatus(`Searching near ${userLocation.label}`, 'info');
         await loadProperties();
@@ -416,12 +535,54 @@ async function handleDetectLocation(radiusKm) {
     return new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition(async (pos) => {
             const { latitude, longitude } = pos.coords;
+            
+            // Reverse geocode to get location name
+            let locationName = 'Your location';
+            try {
+                const reverseUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
+                const res = await fetch(reverseUrl, { headers: { 'Accept': 'application/json' } });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Extract locality/city from address (avoid showing only state)
+                    const addr = data.address || {};
+                    const parts = [];
+                    
+                    // Prioritize more specific locations
+                    if (addr.neighbourhood) parts.push(addr.neighbourhood);
+                    else if (addr.suburb) parts.push(addr.suburb);
+                    else if (addr.road) parts.push(addr.road);
+                    
+                    // Add city/town if available
+                    if (addr.city || addr.town || addr.village) {
+                        parts.push(addr.city || addr.town || addr.village);
+                    }
+                    
+                    // Only use if we have at least neighbourhood/suburb/road + city
+                    // Don't show if only state is available
+                    if (parts.length >= 2 || (parts.length === 1 && !addr.state)) {
+                        locationName = parts.join(', ');
+                    } else {
+                        // Fallback: show "Your location" if only state is available
+                        locationName = 'Your location';
+                    }
+                }
+            } catch (e) {
+                console.log('Reverse geocode failed, using default label', e);
+            }
+            
             userLocation = {
                 lat: latitude,
                 lng: longitude,
-                label: 'Your location',
-                radiusKm: radiusKm || 5
+                label: locationName,
+                radiusKm: radiusKm || 10
             };
+            
+            // Fill the search input with the location name
+            const searchInput = document.getElementById('locationSearchInput');
+            if (searchInput) {
+                searchInput.value = locationName;
+            }
+            
             persistLocation();
             updateLocationStatus('Location detected. Fetching nearby properties...', 'info');
             await loadProperties();
@@ -513,27 +674,70 @@ function setFilterValuesFromUrl() {
  */
 async function loadProperties() {
     const propertiesGrid = document.getElementById('propertiesGrid');
+    locationCityMismatch = false;
+    let cityAnchor = null;
     
     try {
         // If navigated with a city/locality query but no lat/lng yet, geocode once to anchor search
         const urlParams = new URLSearchParams(window.location.search);
         const cityParam = urlParams.get('city');
-        if (!userLocation && cityParam) {
+        if (cityParam) {
             try {
                 const results = await geocodeLocation(cityParam);
                 if (results && results.length > 0) {
                     const best = results[0];
-                    userLocation = {
+                    cityAnchor = {
                         lat: parseFloat(best.lat),
                         lng: parseFloat(best.lon),
-                        label: best.display_name || cityParam,
-                        radiusKm: getSelectedRadius()
+                        label: best.display_name || cityParam
                     };
-                    persistLocation();
-                    updateLocationStatus(`Searching near ${userLocation.label}`, 'info');
+                    // If no userLocation yet, anchor search to the city center
+                    if (!userLocation) {
+                        userLocation = {
+                            lat: cityAnchor.lat,
+                            lng: cityAnchor.lng,
+                            label: cityAnchor.label,
+                            radiusKm: getSelectedRadius()
+                        };
+                        persistLocation();
+                        updateLocationStatus(`Searching near ${userLocation.label}`, 'info');
+                    }
+                } else {
+                    updateLocationStatus(`No location found for "${cityParam}"`, 'warn');
+                    allProperties = [];
+                    filteredProperties = [];
+                    displayProperties();
+                    setupPagination();
+                    return;
                 }
             } catch (e) {
-                // fall through to normal search
+                console.error('Geocoding failed:', e);
+                updateLocationStatus(`Could not find location "${cityParam}"`, 'error');
+                allProperties = [];
+                filteredProperties = [];
+                displayProperties();
+                setupPagination();
+                return;
+            }
+        }
+
+        // If both userLocation and a selected city anchor exist, enforce 50 km cap
+        if (userLocation && userLocation.lat && userLocation.lng && cityAnchor) {
+            const distanceToCity = calculateDistance(
+                userLocation.lat,
+                userLocation.lng,
+                cityAnchor.lat,
+                cityAnchor.lng
+            );
+
+            if (distanceToCity > 50) {
+                locationCityMismatch = true;
+                allProperties = [];
+                filteredProperties = [];
+                displayProperties();
+                setupPagination();
+                setDistanceNotice(`Please select a location within the selected city (within 50 km of ${cityAnchor.label}).`);
+                return;
             }
         }
 
@@ -573,12 +777,44 @@ async function loadProperties() {
                 }
             }
         } else {
-            const response = await apiService.getProperties();
-            baseContent = response.content || [];
+            // No location set - don't load all properties
+            // Show empty state prompting user to search
+            baseContent = [];
         }
 
         // Response is a Page object with content array
-        allProperties = baseContent;
+        // Filter out INACTIVE properties from public listing
+        allProperties = baseContent.filter(property => {
+            const status = (property.status || 'ACTIVE').toUpperCase();
+            return status === 'ACTIVE';
+        });
+        
+        // Client-side distance filter: Only include properties within the chosen radius
+        if (userLocation && userLocation.lat && userLocation.lng && chosenRadius) {
+            allProperties = allProperties.filter(property => {
+                let distance = null;
+
+                // Prefer backend-provided distance if present
+                if (typeof property.distanceKm === 'number') {
+                    distance = property.distanceKm;
+                } else if (property.latitude && property.longitude) {
+                    distance = calculateDistance(
+                        userLocation.lat, userLocation.lng,
+                        property.latitude, property.longitude
+                    );
+                }
+
+                // If we still cannot derive distance, drop the property to avoid misleading results
+                if (distance === null) return false;
+
+                // Store calculated distance for display
+                property.calculatedDistance = distance;
+
+                // Only include if within radius
+                return distance <= chosenRadius;
+            });
+        }
+        
         activeRadiusKm = chosenRadius;
         
         // Fetch full details for PG and APARTMENT to get names and images
@@ -725,21 +961,25 @@ function applyUrlFilters() {
     
     // Apply city filter only when we are not using a geocoded location (lat/lng)
     const usingGeo = !!(userLocation && userLocation.lat && userLocation.lng);
-    if (!usingGeo && cityParam && filteredProperties.length > 0) {
-        filteredProperties = filteredProperties.filter(property => 
+    if (!usingGeo && cityParam) {
+        const cityFiltered = filteredProperties.filter(property => 
             property.city && property.city.toLowerCase() === cityParam.toLowerCase()
         );
+        // If no properties match the city, show empty result (don't fall back to showing all)
+        filteredProperties = cityFiltered;
     }
     
     // Apply keyword filter if provided
-    if (keywordParam && filteredProperties.length > 0) {
+    if (keywordParam) {
         const keyword = keywordParam.toLowerCase();
-        filteredProperties = filteredProperties.filter(property => 
+        const keywordFiltered = filteredProperties.filter(property => 
             (property.city && property.city.toLowerCase().includes(keyword)) ||
             (property.location && property.location.toLowerCase().includes(keyword)) ||
             (property.type && property.type.toLowerCase().includes(keyword)) ||
             (property.name && property.name.toLowerCase().includes(keyword))
         );
+        // If no properties match the keyword, show empty result
+        filteredProperties = keywordFiltered;
     }
     
     // Apply property type filter
@@ -837,11 +1077,14 @@ function displayProperties() {
     }
     
     if (currentProperties.length === 0) {
+        const emptyMessage = locationCityMismatch
+            ? `<p>Please select a location within the selected city (within 50 km).</p>`
+            : `<p>Try adjusting your filters or search criteria.</p>`;
         propertiesList.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-search"></i>
                 <h3>No Properties Found</h3>
-                <p>Try adjusting your filters or search criteria.</p>
+                ${emptyMessage}
             </div>
         `;
         if (paginationContainer) {
@@ -874,7 +1117,17 @@ function displayProperties() {
 function createPropertyCard(property) {
     const bhkType = property.bhkType || property.bhk;
     const seater = property.pgSeater || property.seater;
-    const distanceValue = (typeof property.distanceKm === 'number') ? property.distanceKm : (typeof property.distance === 'number' ? property.distance : null);
+    
+    // Use pre-calculated distance first, then try API distance, then calculate if needed
+    let distanceValue = property.calculatedDistance || 
+                       (typeof property.distanceKm === 'number' ? property.distanceKm : null) ||
+                       (typeof property.distance === 'number' ? property.distance : null);
+    
+    // If still no distance but we have user location and property coordinates, calculate it
+    if (distanceValue === null && userLocation && userLocation.lat && userLocation.lng && property.latitude && property.longitude) {
+        distanceValue = calculateDistance(userLocation.lat, userLocation.lng, property.latitude, property.longitude);
+    }
+    
     const distanceDisplay = distanceValue !== null ? `${distanceValue.toFixed(1)} km away` : '';
     // Compute title based on type
     let title;
@@ -935,17 +1188,49 @@ function createPropertyCard(property) {
     
     return `
       <div class="property-card" data-property-id="${property.id}" onclick="window.location.href='property-details.html?id=${property.id}'">
-        <div class="property-image" data-property-id="${property.id}" data-image-index="0" data-images="${encodeURIComponent(JSON.stringify(images))}">
-          <img src="${firstImage}" alt="${title}" ${onerrorAttr} />
-          <span class="property-badge">${property.type}</span>
-          ${viewsBadge}
-          <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, ${property.id})" aria-label="Add to wishlist">
-            <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
-          </button>
-          <button class="carousel-btn prev" aria-label="Previous image">‹</button>
-          <button class="carousel-btn next" aria-label="Next image">›</button>
-          <div class="carousel-controls">
-            ${images.map((_, idx) => `<span class="carousel-dot ${idx===0?'active':''}" data-index="${idx}"></span>`).join('')}
+        <div class="property-media-container">
+          <div class="property-image" data-property-id="${property.id}" data-image-index="0" data-images="${encodeURIComponent(JSON.stringify(images))}">
+            <img src="${firstImage}" alt="${title}" ${onerrorAttr} />
+            <span class="property-badge">${property.type}</span>
+            ${viewsBadge}
+            <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, ${property.id})" aria-label="Add to wishlist">
+              <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
+            </button>
+            <button class="carousel-btn prev" aria-label="Previous image">‹</button>
+            <button class="carousel-btn next" aria-label="Next image">›</button>
+            <div class="carousel-controls">
+              ${images.map((_, idx) => `<span class="carousel-dot ${idx===0?'active':''}" data-index="${idx}"></span>`).join('')}
+            </div>
+          </div>
+          <div class="property-quick-info">
+            <div class="quick-info-item">
+              <div class="quick-info-icon"><i class="fas fa-tag"></i></div>
+              <div class="quick-info-content">
+                <span class="quick-info-label">Type</span>
+                <span class="quick-info-value">${typeDisplay}</span>
+              </div>
+            </div>
+            <div class="quick-info-item">
+              <div class="quick-info-icon"><i class="fas fa-coins"></i></div>
+              <div class="quick-info-content">
+                <span class="quick-info-label">Deposit</span>
+                <span class="quick-info-value">${deposit}</span>
+              </div>
+            </div>
+            <div class="quick-info-item">
+              <div class="quick-info-icon"><i class="fas fa-ruler-combined"></i></div>
+              <div class="quick-info-content">
+                <span class="quick-info-label">Built Area</span>
+                <span class="quick-info-value">${areaDisplay}</span>
+              </div>
+            </div>
+            <div class="quick-info-item">
+              <div class="quick-info-icon"><i class="fas fa-tools"></i></div>
+              <div class="quick-info-content">
+                <span class="quick-info-label">Maintenance</span>
+                <span class="quick-info-value">${maintenance}</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="property-info">
@@ -956,27 +1241,42 @@ function createPropertyCard(property) {
           <div class="property-location"><i class="fas fa-map-marker-alt"></i> ${property.location}, ${property.city}</div>
           ${distanceDisplay ? `<div class="property-distance"><i class="fas fa-location-arrow"></i> ${distanceDisplay}</div>` : ''}
           <div class="divider"></div>
-                    <div class="info-grid">
-                        <div class="info-item"><span class="info-label">Type</span><span class="info-value">${typeDisplay}</span></div>
-                        <div class="info-item"><span class="info-label">${property.type === 'PG' ? 'Seater' : 'BHK'}</span><span class="info-value">${ocupDisplay}</span></div>
-                        <div class="info-item"><span class="info-label">Area</span><span class="info-value">${areaDisplay}</span></div>
-                        <div class="info-item"><span class="info-label">Bath</span><span class="info-value">${bathDisplay}</span></div>
-                        <div class="info-item"><span class="info-label">Furnishing</span><span class="info-value">${furnishingDisplay}</span></div>
-                        <div class="info-item"><span class="info-label">Floor</span><span class="info-value">${floorDisplay}</span></div>
-                        <div class="info-item"><span class="info-label">Parking</span><span class="info-value">${parkingDisplay}</span></div>
-                        <div class="info-item"><span class="info-label">Deposit</span><span class="info-value">${deposit}</span></div>
-                        <div class="info-item"><span class="info-label">Maintenance</span><span class="info-value">${maintenance}</span></div>
-                        <div class="info-item"><span class="info-label">Available</span><span class="info-value">${availabilityText}</span></div>
-                        <div class="info-item"><span class="info-label">Tenants</span><span class="info-value">${preferredTenants}</span></div>
-                    </div>
-                    ${description ? `<p class="description clamp-2">${description}</p>` : ''}
-                    <div class="amenities">
-                        ${topAmenities.map(a => `<div class="amenity"><i class=\"fas fa-check\"></i>${a}</div>`).join('')}
-                        ${moreAmenityCount ? `<div class="amenity">+${moreAmenityCount} more</div>` : ''}
-                    </div>
-          <div class="property-actions">
-            <button class="btn btn-outline" onclick="event.stopPropagation(); window.location.href='property-details.html?id=${property.id}'">Details</button>
-            <button class="btn btn-primary" onclick="event.stopPropagation(); alert('Booking feature coming soon!')">Book Visit</button>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-icon"><i class="fas fa-couch"></i></span>
+              <div class="info-content">
+                <span class="info-label">${furnishingDisplay}</span>
+                <span class="info-sublabel">Furnishing</span>
+              </div>
+              <button class="info-badge">Furnish</button>
+            </div>
+            <div class="info-item">
+              <span class="info-icon"><i class="fas fa-building"></i></span>
+              <div class="info-content">
+                <span class="info-label">${ocupDisplay}</span>
+                <span class="info-sublabel">Apartment Type</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <span class="info-icon"><i class="fas fa-users"></i></span>
+              <div class="info-content">
+                <span class="info-label">${preferredTenants}</span>
+                <span class="info-sublabel">Preferred Tenants</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <span class="info-icon"><i class="fas fa-key"></i></span>
+              <div class="info-content">
+                <span class="info-label">${availableDate}</span>
+                <span class="info-sublabel">Available From</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-owner-details" onclick="event.stopPropagation(); alert('Get Owner Details feature coming soon!')">Get Owner Details</button>
+          <div class="owner-status">
+            <span class="status-indicator online"></span>
+            <span class="status-text">Owner is available to chat now</span>
+            <button class="btn btn-outline btn-chat" onclick="event.stopPropagation(); alert('Chat feature coming soon!')">Start Chat <i class="fas fa-comment-dots"></i></button>
           </div>
         </div>
       </div>
@@ -1003,11 +1303,12 @@ function toggleBhkSeaterFilter() {
 /**
  * Apply filters
  */
-function applyFilters() {
+async function applyFilters() {
     
     // Get filter values from actual HTML structure
     const propertyType = document.getElementById('filterPropertyType')?.value || '';
-    const city = document.getElementById('filterCity')?.value?.toLowerCase() || '';
+    const cityRaw = document.getElementById('filterCity')?.value?.trim() || '';
+    const city = cityRaw.toLowerCase();
     const maxRent = parseInt(document.getElementById('filterMaxRent')?.value) || Infinity;
     const furnishing = document.getElementById('filterFurnishing')?.value || '';
     
@@ -1019,6 +1320,42 @@ function applyFilters() {
     const selectedPreferredTenants = Array.from(document.querySelectorAll('input[data-filter="preferredTenants"]:checked')).map(cb => cb.value);
     
     const today = new Date();
+
+    // If city changed via filters, geocode the new city and reload properties
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentCityParam = urlParams.get('city') || '';
+    const cityChanged = cityRaw && cityRaw.toLowerCase() !== currentCityParam.toLowerCase();
+
+    if (cityChanged) {
+        urlParams.set('city', cityRaw);
+        history.replaceState(null, '', `${window.location.pathname}?${urlParams.toString()}`);
+        locationCityMismatch = false;
+        
+        // Geocode the new city to update userLocation properly
+        try {
+            const results = await geocodeLocation(cityRaw);
+            if (results && results.length > 0) {
+                const best = results[0];
+                userLocation = {
+                    lat: parseFloat(best.lat),
+                    lng: parseFloat(best.lon),
+                    label: best.display_name || cityRaw,
+                    radiusKm: getSelectedRadius()
+                };
+                persistLocation();
+                
+                // Update location search input to reflect the city
+                const searchInput = document.getElementById('locationSearchInput');
+                if (searchInput) {
+                    searchInput.value = cityRaw;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to geocode city:', e);
+        }
+        
+        await loadProperties();
+    }
     
     filteredProperties = allProperties.filter(property => {
         // Property Type filter

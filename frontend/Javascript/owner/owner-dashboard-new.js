@@ -96,6 +96,7 @@ class OwnerDashboard {
 
             // Update UI
             this.updateMetrics();
+            this.renderActiveListings();
             this.renderPropertyGalaxy();
             this.updateControlDeck();
             this.renderInsights();
@@ -227,6 +228,140 @@ class OwnerDashboard {
         document.getElementById('occupancyRateMetric').textContent = `${occupancyRate}%`;
     }
 
+    renderActiveListings() {
+        const container = document.getElementById('activeListingsContainer');
+        if (!container) return;
+
+        // Filter only active and approved properties
+        const activeListings = this.propertiesData.filter(p => {
+            const status = (p.status || 'ACTIVE').toUpperCase();
+            const isApproved = p.isApproved !== false && p.approval !== 'REJECTED';
+            return status === 'ACTIVE' && isApproved;
+        });
+
+        if (activeListings.length === 0) {
+            container.innerHTML = `
+                <div class="no-active-listings">
+                    <i class="fas fa-shop"></i>
+                    <p>No active listings yet</p>
+                    <p style="font-size: 0.9rem; color: #9CA3AF; margin-bottom: var(--spacing-md);">
+                        Create and activate properties to make them visible to tenants in the marketplace
+                    </p>
+                    <a href="add-property.html">
+                        <i class="fas fa-plus"></i> Add First Property
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        // Get 7-day views data (simplified - using a mock count for now)
+        container.innerHTML = activeListings.map(property => {
+            // Handle image URLs
+            let imageUrl = property.primaryImageUrl || property.imageUrl;
+            if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+                imageUrl = `../${imageUrl}`;
+            }
+            if (!imageUrl) {
+                imageUrl = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500';
+            }
+
+            // Build property title
+            const isPG = property.type === 'PG' || property.type === 'Hostel' || property.propertyType === 'PG' || property.propertyType === 'Hostel';
+            const bhkType = property.bhkType || property.bhk;
+            
+            let title = '';
+            if (isPG) {
+                const pgName = property.name && property.name.trim() ? property.name.trim() : null;
+                title = pgName || property.propertyName || `PG Property ${property.id}`;
+            } else if (property.type === 'FLAT') {
+                const flatNum = property.flatNumber || property.id;
+                const bhkPart = bhkType ? `${bhkType} BHK` : 'Flat';
+                const locationPart = property.location ? `, ${property.location}` : '';
+                
+                if (property.flatNumber) {
+                    title = `Flat ${property.flatNumber} - ${bhkPart}${locationPart}`;
+                } else {
+                    title = bhkType ? `${bhkPart}${locationPart}` : `Flat ${property.id}`;
+                }
+            } else {
+                title = property.name || property.propertyName || `Property ${property.id}`;
+            }
+
+            const monthlyRent = property.expectedRent || property.rent || property.monthlyRent || 0;
+            const propertyType = property.type || (bhkType ? 'Flat' : 'Property');
+            const locality = property.location || property.locality || 'Location not specified';
+            
+            // Mock view count (in real implementation, this would come from API)
+            const viewsCount = Math.floor(Math.random() * 100) + 5;
+            
+            // Status: check approval status
+            const isUnderReview = property.isApproved === false || property.approval === 'PENDING';
+            const statusBadge = isUnderReview ? 'under-review' : 'live';
+            const statusText = isUnderReview ? 'Under Review' : 'Live';
+
+            return `
+                <div class="active-listing-card">
+                    <div class="listing-image-wrapper">
+                        <img src="${imageUrl}" alt="${this.escapeHtml(title)}"
+                             onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500'">
+                        <div class="listing-status-badge ${statusBadge}">
+                            <i class="fas ${statusBadge === 'live' ? 'fa-circle' : 'fa-spinner'}"></i>
+                            ${statusText}
+                        </div>
+                    </div>
+                    <div class="listing-content">
+                        <h3 class="listing-title">${this.escapeHtml(title)}</h3>
+                        
+                        <div class="listing-details">
+                            <div class="listing-detail-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${this.escapeHtml(locality)}</span>
+                            </div>
+                            <div class="listing-detail-item">
+                                <i class="fas fa-home"></i>
+                                <span>${propertyType}</span>
+                            </div>
+                        </div>
+
+                        <div class="listing-rent">₹${this.formatNumber(monthlyRent)}/month</div>
+
+                        <div class="listing-stats">
+                            <div class="listing-stat">
+                                <div class="listing-stat-value">${viewsCount}</div>
+                                <div class="listing-stat-label">7-day Views</div>
+                            </div>
+                            <div class="listing-stat">
+                                <div class="listing-stat-value">4.5/5</div>
+                                <div class="listing-stat-label">Rating</div>
+                            </div>
+                        </div>
+
+                        <div class="listing-actions">
+                            <button class="listing-action-btn primary" 
+                                    onclick="window.location.href='../property-details.html?id=${property.id}'"
+                                    title="Preview how tenants see your listing">
+                                <i class="fas fa-eye"></i>
+                                <span>Preview</span>
+                            </button>
+                            <button class="listing-action-btn secondary"
+                                    onclick="window.location.href='edit-property.html?id=${property.id}'"
+                                    title="Edit listing details">
+                                <i class="fas fa-edit"></i>
+                                <span>Edit</span>
+                            </button>
+                            <button class="listing-action-btn danger"
+                                    onclick="if(window.ownerDashboard) { window.ownerDashboard.toggleListingVisibility(${property.id}); }"
+                                    title="Pause this listing">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
     renderPropertyGalaxy() {
         const container = document.getElementById('propertyGalaxy');
         
@@ -338,13 +473,6 @@ class OwnerDashboard {
                                     title="Edit property details">
                                 <i class="fas fa-edit"></i>
                                 Edit
-                            </button>
-                            <button class="toggle-status-btn ${isActive ? 'deactivate' : 'activate'}" 
-                                    onclick="event.stopPropagation(); if(window.ownerDashboard) { window.ownerDashboard.togglePropertyStatus(${property.id}, '${propertyStatus}'); } else { alert('Dashboard not ready'); }"
-                                    title="${isActive ? 'Deactivate this listing' : 'Activate this listing'}"
-                                    style="position: relative; z-index: 20; pointer-events: auto !important; opacity: 1 !important; filter: none !important;">
-                                <i class="fas ${isActive ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
-                                ${isActive ? 'Deactivate' : 'Activate'}
                             </button>
                         </div>
                     </div>
@@ -735,6 +863,34 @@ class OwnerDashboard {
             
             // Re-render to restore button state
             this.renderPropertyGalaxy();
+        }
+    }
+
+    async toggleListingVisibility(propertyId) {
+        try {
+            // Show loading feedback on the button
+            const btn = event?.target?.closest('.listing-action-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+
+            // Call API to deactivate property (pause listing)
+            const response = await apiService.put(`/admin/properties/${propertyId}/status`, {});
+            
+            this.showSuccess('Listing paused successfully! Tenants will no longer see it.');
+            
+            // Reload and re-render to reflect the change
+            await this.loadProperties();
+            this.renderActiveListings();
+            this.updateMetrics();
+            
+        } catch (error) {
+            console.error('[OwnerDashboard] Error pausing listing:', error);
+            this.showError(`Failed to pause listing: ${error.message || 'Please try again.'}`);
+            
+            // Re-render to restore button state
+            this.renderActiveListings();
         }
     }
 

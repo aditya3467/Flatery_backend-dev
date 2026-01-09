@@ -22,31 +22,49 @@ function setupSearchButton() {
     const searchButton = document.getElementById('searchButton');
     const detectButton = document.getElementById('detectLocationBtn');
     const propertyTypeSelect = document.getElementById('propertyTypeSelect');
-    const locationInput = document.getElementById('locationInput');
+        const citySelect = document.getElementById('citySelect');
+        const locationInput = document.getElementById('locationInput');
 
     const goToProperties = () => {
         const propertyType = propertyTypeSelect ? propertyTypeSelect.value : '';
-        const cityText = locationInput ? locationInput.value.trim() : '';
+            const selectedCity = citySelect ? citySelect.value : '';
+            const localityText = locationInput ? locationInput.value.trim() : '';
+
+            // Validate that city is selected
+            if (!selectedCity) {
+                alert('Please select a city before searching.');
+                citySelect?.focus();
+                return;
+            }
 
         const params = new URLSearchParams();
+        
+            // Always add selected city
+            params.append('city', selectedCity);
+        
         if (propertyType) {
             params.append('propertyType', propertyType);
         }
 
-        if (selectedLocation && selectedLocation.lat && selectedLocation.lng) {
-            persistLocation(selectedLocation);
-            if (selectedLocation.label) {
-                params.append('city', selectedLocation.label);
-            }
-        } else if (cityText) {
+            // If user has selected a specific location with coordinates, use it
+            if (selectedLocation && selectedLocation.lat && selectedLocation.lng) {
+                persistLocation({
+                    ...selectedLocation,
+                    city: selectedCity // Ensure city is part of stored location
+                });
+                if (localityText) {
+                    params.append('locality', localityText);
+                }
+            } else if (localityText) {
+                // User entered locality text without selecting from suggestions
             clearPersistedLocation();
-            params.append('city', cityText);
+                params.append('locality', localityText);
         } else {
             clearPersistedLocation();
         }
 
         const queryString = params.toString();
-        window.location.href = queryString ? `properties.html?${queryString}` : 'properties.html';
+            window.location.href = `properties.html?${queryString}`;
     };
 
     if (searchButton) {
@@ -55,7 +73,17 @@ function setupSearchButton() {
 
     if (detectButton) {
         detectButton.addEventListener('click', async () => {
-            await detectLocationFromBrowser(locationInput);
+                const detectedCity = await detectLocationFromBrowser(locationInput);
+                if (detectedCity && citySelect) {
+                    // Try to set the city select to the detected city
+                    const cityOptions = Array.from(citySelect.options);
+                    const matchingOption = cityOptions.find(opt => 
+                        opt.value.toLowerCase() === detectedCity.toLowerCase()
+                    );
+                    if (matchingOption) {
+                        citySelect.value = matchingOption.value;
+                    }
+                }
             goToProperties();
         });
     }

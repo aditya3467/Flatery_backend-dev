@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listing Manager - Flatery</title>
+    <!--===== Font Awesome =====-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!--===== Main CSS =====-->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/owner/owner-dashboard-new.css">
+    <style>
+        .listing-manager-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: var(--spacing-md);
+            padding-top: calc(80px + var(--spacing-md));
+        }
+
+        .manager-header {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .manager-header h1 {
+            font-size: 2rem;
+            color: var(--dark-navy);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .manager-header p {
+            color: #6B7280;
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            overflow-x: auto;
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6B7280;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+            font-size: 1rem;
+        }
+
+        .tab-button.active {
+            color: var(--electric-blue);
+            border-bottom-color: var(--electric-blue);
+        }
+
+        .tab-button:hover:not(.active) {
+            color: var(--dark-navy);
+        }
+
+        .tab-badge {
+            display: inline-block;
+            margin-left: 0.5rem;
+            background: #E5E7EB;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .tab-badge.active {
+            background: var(--electric-blue);
+            color: var(--white);
+        }
+
+        .listings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            padding: 0.75rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            background: var(--white);
+            cursor: pointer;
+        }
+
+        .manager-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--electric-blue);
+        }
+
+        .stat-label {
+            color: #6B7280;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xl);
+            background: linear-gradient(135deg, #F0F9FF 0%, #F0F4FF 100%);
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--electric-blue);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--electric-blue);
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            color: #6B7280;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .empty-state a {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: var(--electric-blue);
+            color: var(--white);
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all var(--transition-fast);
+        }
+
+        .empty-state a:hover {
+            background: var(--deep-blue);
+            transform: translateY(-2px);
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .bulk-actions button {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid #E5E7EB;
+            background: var(--white);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bulk-actions button:hover {
+            border-color: var(--electric-blue);
+            color: var(--electric-blue);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: var(--spacing-lg);
+            color: var(--electric-blue);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all var(--transition-fast);
+        }
+
+        .back-button:hover {
+            gap: 1rem;
+            color: var(--deep-blue);
+        }
+    </style>
+    <!--===== Scripts =====-->
+    <script src="../Javascript/api.js"></script>
+    <script src="../Javascript/component-loader.js" defer></script>
+    <script src="../Javascript/notifications.js" defer></script>
+    <script src="../Javascript/main.js" defer></script>
+</head>
+
+<body>
+    <!--===== Navbar Component =====-->
+    <div id="navbar-container" data-component="../components/navbar.html"></div>
+
+    <div class="listing-manager-container">
+        
+        <a href="owner-dashboard.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Back to Dashboard
+        </a>
+
+        <div class="manager-header">
+            <h1>
+                <i class="fas fa-store"></i>
+                Listing Manager
+            </h1>
+            <p>Manage your property listings and monitor their performance in the marketplace</p>
+        </div>
+
+        <!-- Manager Stats -->
+        <div class="manager-stats" id="managerStats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalListingsCount">0</div>
+                <div class="stat-label">Total Listings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeListingsCount">0</div>
+                <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="inactiveListingsCount">0</div>
+                <div class="stat-label">Inactive</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="underReviewCount">0</div>
+                <div class="stat-label">Under Review</div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <input type="text" class="filter-input" id="searchInput" placeholder="Search by property name, location...">
+            <select class="filter-select" id="propertyTypeFilter">
+                <option value="">All Property Types</option>
+                <option value="FLAT">Flat</option>
+                <option value="PG">PG</option>
+                <option value="APARTMENT">Apartment</option>
+            </select>
+            <select class="filter-select" id="sortByFilter">
+                <option value="recent">Recently Updated</option>
+                <option value="rent-low">Rent: Low to High</option>
+                <option value="rent-high">Rent: High to Low</option>
+                <option value="views">Most Viewed</option>
+            </select>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <button class="tab-button active" data-tab="all">
+                All
+                <span class="tab-badge" id="allBadge">0</span>
+            </button>
+            <button class="tab-button" data-tab="active">
+                Active
+                <span class="tab-badge" id="activeBadge">0</span>
+            </button>
+            <button class="tab-button" data-tab="inactive">
+                Inactive
+                <span class="tab-badge" id="inactiveBadge">0</span>
+            </button>
+            <button class="tab-button" data-tab="draft">
+                Draft
+                <span class="tab-badge" id="draftBadge">0</span>
+            </button>
+            <button class="tab-button" data-tab="under-review">
+                Under Review
+                <span class="tab-badge" id="reviewBadge">0</span>
+            </button>
+            <button class="tab-button" data-tab="blocked">
+                Blocked
+                <span class="tab-badge" id="blockedBadge">0</span>
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div id="allTab" class="tab-content active">
+            <div class="listings-grid" id="allListingsGrid">
+                <div style="grid-column: 1/-1; text-align: center; padding: var(--spacing-lg);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--electric-blue);"></i>
+                    <p>Loading listings...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="activeTab" class="tab-content">
+            <div class="listings-grid" id="activeListingsGrid">
+                <div style="grid-column: 1/-1; text-align: center; padding: var(--spacing-lg);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--electric-blue);"></i>
+                    <p>Loading listings...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="inactiveTab" class="tab-content">
+            <div class="listings-grid" id="inactiveListingsGrid">
+                <div style="grid-column: 1/-1; text-align: center; padding: var(--spacing-lg);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--electric-blue);"></i>
+                    <p>Loading listings...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="draftTab" class="tab-content">
+            <div class="listings-grid" id="draftListingsGrid">
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <i class="fas fa-file-alt"></i>
+                    <p>No draft listings yet</p>
+                    <a href="add-property.html">Create New Listing</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="underReviewTab" class="tab-content">
+            <div class="listings-grid" id="underReviewListingsGrid">
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <i class="fas fa-hourglass-half"></i>
+                    <p>No listings under review</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="blockedTab" class="tab-content">
+            <div class="listings-grid" id="blockedListingsGrid">
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <i class="fas fa-ban"></i>
+                    <p>No blocked listings</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script defer>
+        class ListingManager {
+            constructor() {
+                this.properties = [];
+                this.allProperties = [];
+                this.init();
+            }
+
+            async init() {
+                // Check authentication
+                const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+                if (!apiService.isAuthenticated() || !roles.includes('ADMIN')) {
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 1500);
+                    return;
+                }
+
+                // Load properties
+                await this.loadProperties();
+                
+                // Setup event listeners
+                this.setupEventListeners();
+            }
+
+            async loadProperties() {
+                try {
+                    const response = await apiService.getMyProperties(true, 0, 1000);
+                    
+                    if (Array.isArray(response)) {
+                        this.allProperties = response;
+                    } else if (response && response.content && Array.isArray(response.content)) {
+                        this.allProperties = response.content;
+                    } else if (response && response.properties && Array.isArray(response.properties)) {
+                        this.allProperties = response.properties;
+                    } else {
+                        this.allProperties = [];
+                    }
+
+                    this.properties = [...this.allProperties];
+                    this.updateStats();
+                    this.renderAllListings();
+                } catch (error) {
+                    console.error('Error loading properties:', error);
+                }
+            }
+
+            setupEventListeners() {
+                // Tab buttons
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const tab = btn.dataset.tab;
+                        this.switchTab(tab);
+                    });
+                });
+
+                // Filters
+                document.getElementById('searchInput')?.addEventListener('input', () => this.applyFilters());
+                document.getElementById('propertyTypeFilter')?.addEventListener('change', () => this.applyFilters());
+                document.getElementById('sortByFilter')?.addEventListener('change', () => this.applyFilters());
+            }
+
+            updateStats() {
+                const all = this.allProperties.length;
+                const active = this.allProperties.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
+                const inactive = this.allProperties.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'INACTIVE').length;
+                const underReview = this.allProperties.filter(p => p.isApproved === false || p.approval === 'PENDING').length;
+
+                document.getElementById('totalListingsCount').textContent = all;
+                document.getElementById('activeListingsCount').textContent = active;
+                document.getElementById('inactiveListingsCount').textContent = inactive;
+                document.getElementById('underReviewCount').textContent = underReview;
+
+                document.getElementById('allBadge').textContent = all;
+                document.getElementById('activeBadge').textContent = active;
+                document.getElementById('inactiveBadge').textContent = inactive;
+                document.getElementById('reviewBadge').textContent = underReview;
+                document.getElementById('draftBadge').textContent = '0';
+                document.getElementById('blockedBadge').textContent = '0';
+            }
+
+            renderAllListings() {
+                this.renderListingsByStatus('all');
+                this.renderListingsByStatus('active');
+                this.renderListingsByStatus('inactive');
+            }
+
+            renderListingsByStatus(status) {
+                let listings = [...this.allProperties];
+                let gridId = '';
+
+                if (status === 'all') {
+                    gridId = 'allListingsGrid';
+                } else if (status === 'active') {
+                    listings = listings.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
+                    gridId = 'activeListingsGrid';
+                } else if (status === 'inactive') {
+                    listings = listings.filter(p => (p.status || 'ACTIVE').toUpperCase() === 'INACTIVE');
+                    gridId = 'inactiveListingsGrid';
+                }
+
+                const grid = document.getElementById(gridId);
+                if (!grid) return;
+
+                if (listings.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <i class="fas fa-inbox"></i>
+                            <p>No listings in this category</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = listings.map(property => this.createListingCard(property)).join('');
+            }
+
+            createListingCard(property) {
+                const isPG = property.type === 'PG' || property.propertyType === 'PG';
+                const title = property.name || property.propertyName || `Property ${property.id}`;
+                const rent = property.expectedRent || property.rent || 0;
+                const status = (property.status || 'ACTIVE').toUpperCase();
+                const statusColor = status === 'ACTIVE' ? '#10B981' : '#6B7280';
+                const locality = property.location || property.locality || 'Location not specified';
+
+                return `
+                    <div class="active-listing-card">
+                        <div class="listing-image-wrapper">
+                            <img src="${property.primaryImageUrl || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500'}" 
+                                 alt="${title}" 
+                                 onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500'">
+                            <div class="listing-status-badge ${status === 'ACTIVE' ? 'live' : 'under-review'}">
+                                <i class="fas fa-circle" style="font-size: 0.6rem;"></i>
+                                ${status}
+                            </div>
+                        </div>
+                        <div class="listing-content">
+                            <h3 class="listing-title">${title}</h3>
+                            <div class="listing-details">
+                                <div class="listing-detail-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>${locality}</span>
+                                </div>
+                            </div>
+                            <div class="listing-rent">₹${this.formatNumber(rent)}/month</div>
+                            <div class="listing-actions">
+                                <button class="listing-action-btn primary" onclick="window.location.href='edit-property.html?id=${property.id}'">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                ${status === 'ACTIVE' ? `
+                                    <button class="listing-action-btn danger" onclick="window.listingManager.toggleStatus(${property.id}, '${status}')" title="Pause this listing">
+                                        <i class="fas fa-pause"></i> Pause
+                                    </button>
+                                ` : `
+                                    <button class="listing-action-btn" style="background: #10B981; color: white;" onclick="window.listingManager.toggleStatus(${property.id}, '${status}')" title="Activate this listing">
+                                        <i class="fas fa-play"></i> Activate
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            switchTab(tab) {
+                // Update active tab button
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.closest('.tab-button').classList.add('active');
+
+                // Update active tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tab + 'Tab').classList.add('active');
+            }
+
+            applyFilters() {
+                // Implement filter logic as needed
+            }
+
+            async toggleStatus(propertyId, currentStatus) {
+                try {
+                    // Show loading feedback
+                    const btn = event?.target;
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    }
+
+                    // Call API to toggle property status
+                    const response = await apiService.put(`/admin/properties/${propertyId}/status`, {});
+                    
+                    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+                    const message = newStatus === 'ACTIVE' 
+                        ? 'Listing activated successfully! It is now visible to tenants.' 
+                        : 'Listing paused successfully! Tenants will no longer see it.';
+                    
+                    alert(message);
+                    
+                    // Reload and re-render
+                    await this.loadProperties();
+                    this.updateStats();
+                    this.renderAllListings();
+                    
+                } catch (error) {
+                    console.error('Error toggling status:', error);
+                    alert(`Failed to update listing: ${error.message || 'Please try again.'}`);
+                    
+                    // Re-render to restore button state
+                    this.renderAllListings();
+                }
+            }
+
+            formatNumber(num) {
+                if (!num) return '0';
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const initManager = () => {
+                if (typeof apiService !== 'undefined') {
+                    window.listingManager = new ListingManager();
+                } else {
+                    setTimeout(initManager, 100);
+                }
+            };
+            initManager();
+        });
+    </script>
+
+</body>
+
+</html>
