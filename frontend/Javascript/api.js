@@ -686,3 +686,34 @@ const apiService = new ApiService();
 
 // Export for use in other files
 window.apiService = apiService;
+
+// ============================
+// SUPERADMIN EMAIL API METHODS
+// ============================
+ApiService.prototype.getEmailConfig = function() {
+    return this.get('/superadmin/email/config');
+};
+
+ApiService.prototype.upsertEmailConfig = function(payload) {
+    return this.post('/superadmin/email/config', payload);
+};
+
+ApiService.prototype.sendTestEmail = function(to) {
+    return this.post('/superadmin/email/config/test', { to });
+};
+
+ApiService.prototype.listEmailTemplates = function() {
+    return this.get('/superadmin/email/templates');
+};
+
+ApiService.prototype.upsertEmailTemplate = function(payload) {
+    return this.post('/superadmin/email/templates', payload);
+};
+
+ApiService.prototype.manualEmailDispatch = function(payload) {
+    return this.post('/superadmin/email/dispatch', payload);
+};
+
+ApiService.prototype.getRecentEmailLogs = function() {
+    return this.get('/superadmin/email/logs/recent');
+};

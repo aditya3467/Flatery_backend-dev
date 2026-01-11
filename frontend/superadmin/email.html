@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Superadmin • Email</title>
+  <link rel="stylesheet" href="css/email.css" />
+</head>
+<body>
+  <header>
+    <h1>Email Settings & Templates</h1>
+    <p>Manage SMTP settings, templates, and view email logs.</p>
+  </header>
+
+  <main class="container">
+    <section class="card" id="smtp-section">
+      <div class="card-header">
+        <h2>SMTP Configuration</h2>
+        <div class="actions">
+          <button id="btn-load-config" class="btn">Reload</button>
+          <button id="btn-save-config" class="btn primary">Save</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <label>Provider
+            <input type="text" id="cfg-provider" placeholder="SMTP" value="SMTP" />
+          </label>
+          <label>Host
+            <input type="text" id="cfg-host" placeholder="smtp.gmail.com" />
+          </label>
+          <label>Port
+            <input type="number" id="cfg-port" placeholder="587" />
+          </label>
+          <label>Encryption
+            <select id="cfg-encryption">
+              <option value="TLS">TLS</option>
+              <option value="SSL">SSL</option>
+            </select>
+          </label>
+          <label>Username
+            <input type="text" id="cfg-username" placeholder="your@gmail.com" />
+          </label>
+          <label>Password (App Password / SMTP)
+            <input type="password" id="cfg-password" placeholder="Leave blank to keep existing" />
+          </label>
+          <label>From Name
+            <input type="text" id="cfg-fromName" placeholder="Flatery" />
+          </label>
+          <label>From Email
+            <input type="email" id="cfg-fromEmail" placeholder="your@gmail.com" />
+          </label>
+          <label>Reply-To
+            <input type="email" id="cfg-replyTo" placeholder="support@yourdomain.com" />
+          </label>
+          <label class="switch">Enabled
+            <input type="checkbox" id="cfg-enabled" checked />
+          </label>
+          <label class="switch">Paused
+            <input type="checkbox" id="cfg-paused" />
+          </label>
+        </div>
+        <div class="inline">
+          <input type="email" id="test-email" placeholder="test recipient" />
+          <button id="btn-send-test" class="btn">Send Test</button>
+        </div>
+        <div id="config-status" class="status"></div>
+      </div>
+    </section>
+
+    <section class="card" id="templates-section">
+      <div class="card-header">
+        <h2>Templates</h2>
+        <div class="actions">
+          <button id="btn-refresh-templates" class="btn">Refresh</button>
+          <button id="btn-new-template" class="btn">New / Update</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="table" id="templates-table">
+          <thead>
+            <tr><th>Type</th><th>Subject</th><th>Active</th><th>Updated</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="logs-section">
+      <div class="card-header">
+        <h2>Email Logs (Recent)</h2>
+        <div class="actions">
+          <button id="btn-refresh-logs" class="btn">Refresh</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="table" id="logs-table">
+          <thead>
+            <tr><th>Time</th><th>Type</th><th>Recipient</th><th>Status</th><th>Error</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="template-dialog">
+    <form method="dialog" id="template-form">
+      <h3>Template Editor</h3>
+      <label>Template Key
+        <select id="tpl-key">
+          <option value="PASSWORD_RESET">PASSWORD_RESET</option>
+          <option value="TENANT_ONBOARDING">TENANT_ONBOARDING</option>
+          <option value="TENANT_WELCOME">TENANT_WELCOME</option>
+          <option value="RENT_DUE_REMINDER">RENT_DUE_REMINDER</option>
+          <option value="RENT_OVERDUE">RENT_OVERDUE</option>
+          <option value="PAYMENT_CONFIRMATION">PAYMENT_CONFIRMATION</option>
+          <option value="LISTING_APPROVED">LISTING_APPROVED</option>
+          <option value="LISTING_BLOCKED">LISTING_BLOCKED</option>
+        </select>
+      </label>
+      <label>Subject
+        <input type="text" id="tpl-subject" />
+      </label>
+      <label>HTML Body
+        <textarea id="tpl-html" rows="8" placeholder="Supports {{placeholders}}"></textarea>
+      </label>
+      <label>Text Body
+        <textarea id="tpl-text" rows="4" placeholder="Text fallback"></textarea>
+      </label>
+      <label>Placeholders (comma-separated)
+        <input type="text" id="tpl-placeholders" placeholder="tenant_name, rent_amount, due_date" />
+      </label>
+      <label class="switch">Active
+        <input type="checkbox" id="tpl-active" checked />
+      </label>
+      <menu>
+        <button id="tpl-cancel" value="cancel">Cancel</button>
+        <button id="tpl-save" value="default" class="primary">Save</button>
+      </menu>
+      <div id="tpl-status" class="status"></div>
+    </form>
+  </dialog>
+
+  <script src="../Javascript/api.js"></script>
+  <script src="js/email.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #f7f7fb; color: #222; }
+header { padding: 16px 24px; background: #fff; border-bottom: 1px solid #eaeaea; }
+h1 { margin: 0 0 4px; font-size: 20px; }
+.container { padding: 16px; max-width: 1100px; margin: 0 auto; }
+.card { background: #fff; border: 1px solid #eaeaea; border-radius: 8px; margin-bottom: 16px; }
+.card-header { padding: 12px 16px; border-bottom: 1px solid #eaeaea; display:flex; align-items:center; justify-content:space-between; }
+.card-body { padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #555; }
+input[type="text"], input[type="email"], input[type="number"], input[type="password"], select, textarea { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.inline { display: flex; gap: 10px; margin-top: 8px; }
+.btn { background: #f0f0f4; border: 1px solid #dedee5; color: #222; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+.btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.btn:hover { filter: brightness(0.98); }
+.status { margin-top: 10px; font-size: 12px; color: #2563eb; }
+.status.error { color: #c62828; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+.table tr:hover { background: #fafafa; }
+.switch { display: flex; align-items: center; gap: 8px; }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+dialog { border: none; border-radius: 8px; width: min(760px, 96%); }
+dialog form { padding: 16px; }
+dialog h3 { margin: 0 0 12px; }
+dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; margin-top: 10px; }
