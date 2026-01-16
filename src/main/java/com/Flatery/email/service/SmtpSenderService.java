@@ -17,7 +17,7 @@ public class SmtpSenderService {
         EmailConfig cfg = emailConfigService.getActiveConfigOrThrow();
         JavaMailSender sender = emailConfigService.buildSender(cfg);
         MimeMessage msg = sender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(msg, "UTF-8");
+        MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
         helper.setFrom(cfg.getFromEmail(), cfg.getFromName());
         if (cfg.getReplyTo() != null && !cfg.getReplyTo().isBlank()) {
             helper.setReplyTo(cfg.getReplyTo());

@@ -5,11 +5,13 @@ import com.Flatery.model.property.Property;
 import com.Flatery.repository.property.FloorRepository;
 import com.Flatery.repository.property.PropertyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FloorService {
@@ -44,15 +46,25 @@ public class FloorService {
 
     @Transactional(readOnly = true)
     public List<Floor> getFloorsForProperty(Long propertyId, Long actorUserId) {
+        log.info("[GetFloors] Loading floors for propertyId={}, actorUserId={}", propertyId, actorUserId);
+        
         // Verify property ownership
         Property property = propertyRepository.findById(propertyId)
-                .orElseThrow(() -> new IllegalArgumentException("Property not found"));
+                .orElseThrow(() -> {
+                    log.error("[GetFloors] Property not found: {}", propertyId);
+                    return new IllegalArgumentException("Property not found");
+                });
+        
+        log.info("[GetFloors] Property found. OwnerId={}, ActorUserId={}", property.getOwnerId(), actorUserId);
         
         if (!property.getOwnerId().equals(actorUserId)) {
+            log.error("[GetFloors] Authorization failed. Property owner {} != actor {}", property.getOwnerId(), actorUserId);
             throw new SecurityException("Not authorized to view this property");
         }
 
-        return floorRepository.findByPropertyIdOrderByNumberAsc(propertyId);
+        List<Floor> floors = floorRepository.findByPropertyIdOrderByNumberAsc(propertyId);
+        log.info("[GetFloors] Found {} floors for property {}", floors.size(), propertyId);
+        return floors;
     }
 
     @Transactional

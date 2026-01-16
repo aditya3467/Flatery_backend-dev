@@ -1,53 +1,45 @@
 package com.Flatery.service.tenant;
 
 import com.Flatery.dto.tenant.AddTenantRequest;
+import com.Flatery.dto.tenant.TenantPropertyDetails;
 import com.Flatery.dto.tenant.TenantResponse;
 import com.Flatery.dto.tenant.TenantSummary;
-import com.Flatery.dto.tenant.TenantPropertyDetails;
+import com.Flatery.email.EmailType;
+import com.Flatery.email.service.EmailDispatcher;
 import com.Flatery.model.RoleName;
 import com.Flatery.model.User;
-import com.Flatery.model.property.Property;
+import com.Flatery.model.payment.PaymentMode;
+import com.Flatery.model.payment.PaymentStatus;
+import com.Flatery.model.payment.Transaction;
 import com.Flatery.model.property.Floor;
+import com.Flatery.model.property.Property;
+import com.Flatery.model.property.Unit;
 import com.Flatery.model.tenant.Tenant;
 import com.Flatery.model.tenant.TenancyHistory;
 import com.Flatery.repository.UserRepository;
-import com.Flatery.model.property.Unit;
-import com.Flatery.repository.property.UnitRepository;
-import com.Flatery.repository.property.FloorRepository;
-import com.Flatery.service.property.UnitService;
-import com.Flatery.service.payment.PaymentStatusService;
-import com.Flatery.model.payment.Transaction;
-import com.Flatery.model.payment.PaymentStatus;
-import com.Flatery.model.payment.PaymentMode;
 import com.Flatery.repository.payment.TransactionRepository;
+import com.Flatery.repository.property.FloorRepository;
 import com.Flatery.repository.property.PropertyRepository;
+import com.Flatery.repository.property.UnitRepository;
 import com.Flatery.repository.tenant.TenantRepository;
+import com.Flatery.service.payment.PaymentStatusService;
+import com.Flatery.service.property.UnitService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.security.SecureRandom;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TenantService {
 
     private final TenantRepository tenantRepository;
@@ -60,12 +52,21 @@ public class TenantService {
     private final TenancyHistoryService tenancyHistoryService;
     private final PaymentStatusService paymentStatusService;
     private final TransactionRepository transactionRepository;
+    private final EmailDispatcher emailDispatcher;
 
     private static final String TENANT_PREFIX = "TEN";
     private final Random random = new SecureRandom();
 
-    @Transactional
+    @Value("${app.tenant.portal.url:https://flatery.com/tenant}")
+    private String tenantPortalUrl;
+
+    @Transactional(rollbackFor = Exception.class)
     public TenantResponse addTenant(Long ownerId, AddTenantRequest req) {
+        try {
+            log.info("[AddTenant] === STARTING TENANT CREATION ===");
+            log.info("[AddTenant] Input - Name: {}, Phone: {}, Property: {}", 
+                     req.getTenantName(), req.getPhoneNumber(), req.getPropertyId());
+            
         // Validate property belongs to owner
         Property property = propertyRepository.findById(req.getPropertyId())
                 .orElseThrow(() -> new IllegalArgumentException("Property not found"));
@@ -77,9 +78,15 @@ public class TenantService {
     User existing = null;
     if (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank()) {
         existing = userRepository.findByPhoneNumber(req.getPhoneNumber().trim()).orElse(null);
+        if (existing != null) {
+            log.info("[AddTenant] Found existing user by phone: {} (username: {})", req.getPhoneNumber(), existing.getUsername());
+        }
     }
     if (existing == null && req.getEmailAddress() != null && !req.getEmailAddress().isBlank()) {
         existing = userRepository.findByEmail(req.getEmailAddress().trim()).orElse(null);
+        if (existing != null) {
+            log.info("[AddTenant] Found existing user by email: {} (username: {})", req.getEmailAddress(), existing.getUsername());
+        }
     }
 
     // ENFORCE SINGLE ACTIVE TENANCY RULE: Check for existing active tenancy
@@ -292,6 +299,7 @@ public class TenantService {
     String rawPassword = null;
     if (existing != null) {
         // Link to existing user account: do not create temp password or change password
+        log.info("[AddTenant] Linking to existing user account: {}", existing.getUsername());
         tenant.setTemporaryPassword(null);
         tenant.setPasswordChanged(true);
         username = existing.getUsername();
@@ -300,18 +308,27 @@ public class TenantService {
         rawPassword = (req.getTemporaryPassword() != null && !req.getTemporaryPassword().isBlank())
                 ? req.getTemporaryPassword()
                 : generateTemporaryPassword();
+        log.info("[AddTenant] Creating new user with temp password (length: {})", rawPassword.length());
         tenant.setTemporaryPassword(rawPassword);
         tenant.setPasswordChanged(false);
+        log.info("[AddTenant] Set temporaryPassword on tenant entity: {}", rawPassword != null ? "YES (length=" + rawPassword.length() + ")" : "NULL");
         username = (req.getPhoneNumber() != null && !req.getPhoneNumber().isBlank())
                 ? req.getPhoneNumber()
                 : tenant.getTenantId().toLowerCase(Locale.ROOT);
     }
 
     tenant = tenantRepository.save(tenant);
+    log.info("[AddTenant] Saved tenant ID={}, temporaryPassword in DB should be: {}", 
+             tenant.getId(), tenant.getTemporaryPassword() != null ? "SET (length=" + tenant.getTemporaryPassword().length() + ")" : "NULL");
 
     // If assigned to a unit, recompute its occupancy status
     if (tenant.getUnitId() != null) {
-        unitService.recomputeUnitStatus(tenant.getUnitId());
+        try {
+            unitService.recomputeUnitStatus(tenant.getUnitId());
+        } catch (Exception ex) {
+            log.warn("[AddTenant] Failed to recompute unit status for unitId={}: {}", tenant.getUnitId(), ex.getMessage());
+            // Don't fail the tenant creation if unit status update fails
+        }
     }
 
     if (existing == null) {
@@ -358,11 +375,82 @@ public class TenantService {
         }
     }
 
+    sendTenantCredentialsIfNeeded(tenant, property, username, rawPassword);
+
+    // Force flush to surface any DB constraint/rollback issues immediately
+    try {
+        tenantRepository.flush();
+    } catch (Exception flushEx) {
+        log.error("[AddTenant] Flush failed (DB constraint likely). Root cause: {}", flushEx.getMessage(), flushEx);
+        throw flushEx; // surface real cause instead of silent rollback
+    }
+
     // Build response
     TenantResponse response = TenantResponse.of(tenant);
     response.setUsername(username);
     response.setTemporaryPassword(rawPassword); // null when existing user
+    
+    log.info("[AddTenant] === TENANT CREATION SUCCESS ===");
     return response;
+        } catch (Exception e) {
+            log.error("[AddTenant] === TENANT CREATION FAILED ===", e);
+            log.error("[AddTenant] Error Type: {}", e.getClass().getName());
+            log.error("[AddTenant] Error Message: {}", e.getMessage());
+            if (e.getCause() != null) {
+                log.error("[AddTenant] Root Cause: {} - {}", e.getCause().getClass().getName(), e.getCause().getMessage());
+            }
+            throw e; // Re-throw to trigger rollback
+        }
+    }
+
+    private void sendTenantCredentialsIfNeeded(Tenant tenant, Property property, String username, String rawPassword) {
+        if (rawPassword == null) {
+            log.info("[AddTenant] Skipping credential email - existing user path (no new password generated)");
+            return; // existing user path
+        }
+
+        String email = tenant.getEmailAddress();
+        if (email == null || email.isBlank()) {
+            log.warn("[AddTenant] Skipping credential email - no email address provided for tenant {}", tenant.getTenantId());
+            return; // nothing to send
+        }
+
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("tenant_name", tenant.getTenantName());
+            data.put("username", username);
+            data.put("temporary_password", rawPassword);
+            data.put("portal_url", tenantPortalUrl);
+            data.put("property_name", resolvePropertyName(property));
+
+            emailDispatcher.dispatch(EmailType.TENANT_CREDS, email, data, Instant.now());
+            log.info("[AddTenant] Queued credential email to: {} for tenant: {}", email, tenant.getTenantId());
+
+            // Also send welcome email using superadmin template
+            Map<String, Object> welcomeData = new HashMap<>();
+            welcomeData.put("tenant_name", tenant.getTenantName());
+            welcomeData.put("portal_url", tenantPortalUrl);
+            emailDispatcher.dispatch(EmailType.TENANT_WELCOME, email, welcomeData, Instant.now());
+            log.info("[AddTenant] Queued welcome email to: {} for tenant: {}", email, tenant.getTenantId());
+        } catch (Exception e) {
+            log.error("[AddTenant] Failed to queue tenant emails (creds/welcome) for tenantId={} email={} error={}",
+                    tenant.getId(), email, e.getMessage(), e);
+        }
+    }
+
+    private String resolvePropertyName(Property property) {
+        if (property == null) return "Property";
+        if (property.getName() != null && !property.getName().isBlank()) {
+            return property.getName();
+        }
+        String label = property.getType() != null ? property.getType().toString() : "Property";
+        if (property.getLocation() != null && !property.getLocation().isBlank()) {
+            label += " at " + property.getLocation();
+        }
+        if (property.getCity() != null && !property.getCity().isBlank()) {
+            label += ", " + property.getCity();
+        }
+        return label;
     }
 
     @Transactional

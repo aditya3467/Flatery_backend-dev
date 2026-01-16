@@ -188,7 +188,7 @@ class ApiService {
 
     async getMyProperties(all = false, page = 0, size = 10) {
         try {
-            const params = new URLSearchParams({ all: all.toString(), page: page.toString(), size: page.toString() });
+            const params = new URLSearchParams({ all: all.toString(), page: page.toString(), size: size.toString() });
             return await this.makeRequest(`/admin/properties?${params}`);
         } catch (error) {
             throw new Error('Failed to fetch my properties: ' + error.message);
@@ -541,6 +541,20 @@ class ApiService {
         });
     }
 
+    // Get tenant past stays/tenancy history
+    async getTenantPastStays() {
+        return this.makeRequest('/tenants/me/past-stays', {
+            method: 'GET'
+        });
+    }
+
+    // Get tenant's payment transactions
+    async getTenantPayments() {
+        return this.makeRequest('/tenant/my-payments', {
+            method: 'GET'
+        });
+    }
+
     // Submit new complaint
     async submitComplaint(complaintData) {
         return this.makeRequest('/tenants/me/complaints', {
@@ -700,6 +714,10 @@ ApiService.prototype.upsertEmailConfig = function(payload) {
 
 ApiService.prototype.sendTestEmail = function(to) {
     return this.post('/superadmin/email/config/test', { to });
+};
+
+ApiService.prototype.verifyEmailConfig = function() {
+    return this.post('/superadmin/email/config/verify', {});
 };
 
 ApiService.prototype.listEmailTemplates = function() {

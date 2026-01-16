@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Initial Payment</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { color: #333; margin-bottom: 10px; }
+    .subtitle { color: #666; margin-bottom: 30px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .btn { background: #2563eb; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
+    .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+    .result { margin-top: 20px; padding: 15px; border-radius: 6px; display: none; }
+    .result.success { background: #dcfce7; border: 1px solid #86efac; color: #166534; }
+    .result.error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+    .result pre { margin-top: 10px; background: rgba(0,0,0,0.05); padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+    .info { background: #dbeafe; border: 1px solid #93c5fd; padding: 15px; border-radius: 6px; margin-bottom: 20px; color: #1e40af; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test Initial Payment Creation</h1>
+    <p class="subtitle">Test creating an owner-approved initial payment</p>
+    
+    <div class="info">
+      <strong>📋 Instructions:</strong><br>
+      1. Make sure you're logged in as an owner<br>
+      2. Enter a valid tenant ID that belongs to you<br>
+      3. Fill in payment details<br>
+      4. Click "Create Payment" to test
+    </div>
+    
+    <form id="testForm">
+      <div class="grid">
+        <div class="form-group">
+          <label>Tenant ID *</label>
+          <input type="number" id="tenantId" required placeholder="e.g., 1">
+        </div>
+        
+        <div class="form-group">
+          <label>Amount (₹) *</label>
+          <input type="number" id="amount" required placeholder="e.g., 12000" step="0.01">
+        </div>
+      </div>
+      
+      <div class="grid">
+        <div class="form-group">
+          <label>Payment Month (YYYY-MM) *</label>
+          <input type="text" id="paymentMonth" required placeholder="2026-01" pattern="\d{4}-\d{2}">
+        </div>
+        
+        <div class="form-group">
+          <label>Payment Mode *</label>
+          <select id="paymentMode" required>
+            <option value="CASH">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="BANK_TRANSFER">Bank Transfer</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Reference/Note</label>
+        <input type="text" id="upiRef" placeholder="Initial rent payment - added by owner">
+      </div>
+      
+      <button type="submit" class="btn" id="submitBtn">Create Payment</button>
+    </form>
+    
+    <div id="result" class="result">
+      <h3 id="resultTitle"></h3>
+      <div id="resultMessage"></div>
+      <pre id="resultData"></pre>
+    </div>
+  </div>
+  
+  <script>
+    const API_BASE = 'http://localhost:8081/api';
+    
+    // Set default payment month to current month
+    const now = new Date();
+    document.getElementById('paymentMonth').value = 
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    document.getElementById('testForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const resultDiv = document.getElementById('result');
+      const resultTitle = document.getElementById('resultTitle');
+      const resultMessage = document.getElementById('resultMessage');
+      const resultData = document.getElementById('resultData');
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating Payment...';
+      resultDiv.style.display = 'none';
+      
+      const payload = {
+        tenantId: parseInt(document.getElementById('tenantId').value),
+        amount: parseFloat(document.getElementById('amount').value),
+        paymentMonth: document.getElementById('paymentMonth').value,
+        paymentMode: document.getElementById('paymentMode').value,
+        upiRef: document.getElementById('upiRef').value || 'Initial rent payment - added by owner'
+      };
+      
+      console.log('Sending request:', payload);
+      
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          throw new Error('No auth token found. Please login first.');
+        }
+        
+        const response = await fetch(`${API_BASE}/transactions/owner/create-approved`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        console.log('Response:', data);
+        
+        resultDiv.style.display = 'block';
+        
+        if (response.ok) {
+          resultDiv.className = 'result success';
+          resultTitle.textContent = '✅ Payment Created Successfully!';
+          resultMessage.innerHTML = `
+            <strong>Payment ID:</strong> ${data.id}<br>
+            <strong>Tenant ID:</strong> ${data.tenantId}<br>
+            <strong>Amount:</strong> ₹${data.amount}<br>
+            <strong>Status:</strong> ${data.status}<br>
+            <strong>Payment Month:</strong> ${data.paymentMonth}<br>
+            <strong>Payment Mode:</strong> ${data.paymentMode}
+          `;
+          resultData.textContent = JSON.stringify(data, null, 2);
+        } else {
+          resultDiv.className = 'result error';
+          resultTitle.textContent = '❌ Payment Creation Failed';
+          resultMessage.innerHTML = `
+            <strong>Error:</strong> ${data.message || 'Unknown error'}<br>
+            <strong>Status Code:</strong> ${response.status}
+          `;
+          resultData.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (error) {
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'result error';
+        resultTitle.textContent = '❌ Request Failed';
+        resultMessage.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        resultData.textContent = error.stack || error.toString();
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Payment';
+      }
+    });
+  </script>
+</body>
+</html>

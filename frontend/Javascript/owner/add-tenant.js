@@ -9,8 +9,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     return;
   }
   await loadOwnerProperties();
-  // Hide both main sections until a property is chosen
-  toggleSections(null);
+  // Don't hide sections here - let loadOwnerProperties and onPropertyChanged handle it
 });
 
 function onTenantCountChange(count) {
@@ -236,9 +235,18 @@ async function onPropertyChanged(propertyId) {
   if (!propertyId) { toggleSections(null); return; }
   const prop = propertiesCache.find(p => String(p.id) === String(propertyId));
   currentPropertyType = (prop?.type || '').toString().toUpperCase();
+  
+  console.log('Property changed:', propertyId, 'Type:', currentPropertyType);
+  
+  // First toggle sections to show the appropriate layout
+  toggleSections(currentPropertyType);
+  
   // For PG, load units UI; otherwise hide PG UI
   await loadPropertyUnits(propertyId);
+  
+  // Ensure sections are still visible after loading units
   toggleSections(currentPropertyType);
+  
   if (currentPropertyType === 'FLAT') {
     // Ensure at least one tenant form exists for FLAT mode
     const countEl = document.getElementById('tenantCount');
@@ -269,7 +277,7 @@ function toggleSections(type) {
     if (single) single.style.display = 'block';
     if (multi) multi.style.display = 'none';
     if (pgUnit) pgUnit.style.display = 'block';
-    if (flatRoomGroup) flatRoomGroup.style.display = 'block';
+    if (flatRoomGroup) flatRoomGroup.style.display = 'none';
     if (flatBtn) flatBtn.style.display = 'none';
     if (pgBtn) pgBtn.style.display = 'block';
     if (defaultBtn) defaultBtn.style.display = 'none';
@@ -306,6 +314,9 @@ async function handleSubmit(e) {
     showAlert('error','Please select a property first.'); 
     return; 
   }
+
+  // Clear any prior credential panel before new submission
+  renderCredentialPanel([]);
   
   
   const form = document.getElementById('addTenantForm');
@@ -327,13 +338,11 @@ async function handleSingleTenantSubmit(fd) {
   // For FLAT properties, use shared fields; for PG properties, use individual fields
   const isFlat = currentPropertyType === 'FLAT';
   
-  for (let [key, value] of fd.entries()) {
-  }
-  
   // Clean phone number: remove country code and non-digits
   const rawPhoneNumber = (fd.get('phoneNumber_0') || '').trim();
   const cleanPhoneNumber = rawPhoneNumber.replace(/^\+91/, '').replace(/\D/g, '');
   
+  console.log('Phone number processing:', {
     raw: rawPhoneNumber,
     cleaned: cleanPhoneNumber,
     length: cleanPhoneNumber.length
@@ -382,6 +391,7 @@ async function handleSingleTenantSubmit(fd) {
 
   try {
     showAlert('info', 'Adding tenant...');
+    console.log('[Single Tenant] Sending data:', JSON.stringify(data, null, 2));
     const response = await apiService.post('/tenants', data);
     
     // Check if initial rent was received and create payment
@@ -392,14 +402,29 @@ async function handleSingleTenantSubmit(fd) {
     if (receivedRent && initialRentAmount && response.id) {
       try {
         const paymentResult = await createInitialRentPayment(response.id, parseInt(initialRentAmount), data.leaseStartDate);
-        showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+        showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. ${response.temporaryPassword ? '📋 See credentials below to share with tenant.' : ''}`);
       } catch (paymentError) {
         console.error('[Add Tenant] PAYMENT CREATION FAILED:', paymentError);
         console.error('[Add Tenant] Error details:', JSON.stringify(paymentError, null, 2));
-        showAlert('warning', `Tenant added successfully but FAILED to record initial payment: ${paymentError.message || 'Unknown error'}. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+        showAlert('warning', `Tenant added successfully but FAILED to record initial payment: ${paymentError.message || 'Unknown error'}. ${response.temporaryPassword ? '📋 See credentials below.' : ''}`);
       }
     } else {
-      showAlert('success', `Tenant added successfully! Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+      showAlert('success', `Tenant added successfully! ${response.temporaryPassword ? '📋 Check credentials panel below to share with tenant.' : ''}`);
+    }
+
+    renderCredentialPanel([
+      {
+        tenantName: data.tenantName,
+        username: response.username,
+        temporaryPassword: response.temporaryPassword
+      }
+    ]);
+
+    // Show warning if no password (existing user)
+    if (!response.temporaryPassword) {
+      setTimeout(() => {
+        showAlert('warning', `⚠️ This phone/email already has an account (username: ${response.username}). No new password was generated. The tenant can use their existing credentials to login.`);
+      }, 2000);
     }
     
     // Reset form
@@ -509,13 +534,16 @@ async function handleMultipleTenantSubmit(fd) {
       }
     }
     
-    let successMessage = `${tenants.length} tenants added successfully!${receivedRent && initialRentAmount ? ` Initial rent payment of ₹${initialRentAmount} recorded.` : ''}\n\n`;
-    response.forEach((tenant, index) => {
-      const phone = tenants[index]?.phoneNumber || '';
-      successMessage += `${tenant.tenantName} (${phone}): ${tenant.username}${tenant.temporaryPassword ? ' (Password: ' + tenant.temporaryPassword + ')' : ''}\n`;
-    });
+    const hasPasswords = response.some(t => t.temporaryPassword);
+    const successMessage = `${tenants.length} tenants added successfully!${receivedRent && initialRentAmount ? ` Initial rent payment of ₹${initialRentAmount} recorded.` : ''} ${hasPasswords ? '📋 See all credentials below.' : ''}`;
     
     showAlert('success', successMessage);
+
+    renderCredentialPanel(response.map((tenant, index) => ({
+      tenantName: tenant.tenantName || tenants[index]?.tenantName,
+      username: tenant.username,
+      temporaryPassword: tenant.temporaryPassword
+    })));
     
     // Reset form
     document.getElementById('addTenantForm').reset();
@@ -614,14 +642,29 @@ async function lookupExistingUserForIndex(index) {
 
 // Handle PG single-tenant submission using original single-tenant fields
 async function handlePGSubmit(fd) {
+  // Parse rent due date properly
+  let rentDueDate = null;
   const rentDueDateDate = fd.get('rentDueDateDate');
-  const rentDueDate = rentDueDateDate ? (new Date(rentDueDateDate)).getUTCDate() : null;
+  
+  if (rentDueDateDate) {
+    try {
+      // Convert "YYYY-MM-DD" to day of month (1-31)
+      const date = new Date(rentDueDateDate + 'T00:00:00Z');
+      rentDueDate = date.getUTCDate();
+      console.log('[PG Submit] Rent due date:', rentDueDateDate, '-> day:', rentDueDate);
+    } catch (e) {
+      console.error('[PG Submit] Error parsing rent due date:', e);
+      showAlert('error', 'Invalid rent due date format');
+      return;
+    }
+  }
+  
   const data = {
     tenantName: (fd.get('tenantName') || '').trim(),
-    phoneNumber: (fd.get('phoneNumber') || '').trim(),
+    phoneNumber: (fd.get('phoneNumber') || '').trim().replace(/^\+91/, '').replace(/\D/g, ''),
     emailAddress: (fd.get('emailAddress') || '').trim() || null,
     propertyId: parseInt(document.getElementById('propertyId').value),
-    flatRoomNumber: (fd.get('flatRoomNumber') || '').trim(),
+    flatRoomNumber: (fd.get('flatRoomNumber') || '').trim() || null,
     unitId: fd.get('unitId') ? parseInt(fd.get('unitId')) : null,
     bedIndex: fd.get('bedIndex') ? parseInt(fd.get('bedIndex')) : null,
     rentAmount: parseInt(fd.get('rentAmount')),
@@ -630,10 +673,13 @@ async function handlePGSubmit(fd) {
     leaseStartDate: fd.get('leaseStartDate'),
     leaseEndDate: fd.get('leaseEndDate') || null,
     temporaryPassword: (fd.get('temporaryPassword') || '').trim() || null,
-    status: fd.get('status') || 'ACTIVE'
+    status: fd.get('status') || 'ACTIVE',
+    primary: true
   };
 
-  if (!validateTenantData({ ...data, rentDueDate: data.rentDueDate, leaseStartDate: data.leaseStartDate }, 0)) return;
+  console.log('[PG Submit] Sending data:', JSON.stringify(data, null, 2));
+  
+  if (!validateTenantData(data, 0)) return;
 
   try {
     showAlert('info', 'Adding tenant...');
@@ -646,14 +692,22 @@ async function handlePGSubmit(fd) {
     if (receivedRent && initialRentAmount && response.id) {
       try {
         await createInitialRentPayment(response.id, parseInt(initialRentAmount), data.leaseStartDate);
-        showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+        showAlert('success', `Tenant added successfully! Initial rent payment of ₹${initialRentAmount} recorded. ${response.temporaryPassword ? '📋 See credentials below.' : ''}`);
       } catch (paymentError) {
         console.error('[Add Tenant PG] Failed to create initial payment:', paymentError);
-        showAlert('warning', `Tenant added successfully but failed to record initial payment. Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+        showAlert('warning', `Tenant added successfully but failed to record initial payment. ${response.temporaryPassword ? '📋 See credentials below.' : ''}`);
       }
     } else {
-      showAlert('success', `Tenant added successfully! Username: ${response.username}${response.temporaryPassword ? ', Password: ' + response.temporaryPassword : ''}`);
+      showAlert('success', `Tenant added successfully! ${response.temporaryPassword ? '📋 Check credentials below to share with tenant.' : ''}`);
     }
+    
+    renderCredentialPanel([
+      {
+        tenantName: data.tenantName,
+        username: response.username,
+        temporaryPassword: response.temporaryPassword
+      }
+    ]);
     
     document.getElementById('addTenantForm').reset();
     toggleSections(currentPropertyType);
@@ -673,6 +727,48 @@ function showAlert(type, message) {
 function hideAlert() {
   const alert = document.getElementById('alertMessage');
   if (alert) alert.style.display = 'none';
+}
+
+function renderCredentialPanel(entries) {
+  const panel = document.getElementById('credentialPanel');
+  const list = document.getElementById('credentialList');
+  if (!panel || !list) return;
+
+  const rows = (entries || []).filter(e => e && e.temporaryPassword);
+  list.innerHTML = '';
+
+  if (!rows.length) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  rows.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'credential-row';
+
+    const left = document.createElement('div');
+    const nameEl = document.createElement('div');
+    nameEl.className = 'credential-primary';
+    nameEl.textContent = item.tenantName || 'Tenant';
+    const metaEl = document.createElement('div');
+    metaEl.className = 'credential-meta';
+    metaEl.textContent = `Username: ${item.username || ''}`;
+    left.appendChild(nameEl);
+    left.appendChild(metaEl);
+
+    const passEl = document.createElement('div');
+    passEl.className = 'credential-pass';
+    passEl.textContent = `Password: ${item.temporaryPassword}`;
+
+    row.appendChild(left);
+    row.appendChild(passEl);
+    list.appendChild(row);
+  });
+
+  panel.style.display = 'block';
+  setTimeout(() => {
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
 }
 
 // Expose submit handler
@@ -851,12 +947,8 @@ async function checkDuplicateTenancy(user) {
 // Load floors and units for PG properties
 async function loadPropertyUnits(propertyId) {
   try {
-    // If no property selected, hide PG section and reset dependent fields
+    // If no property selected, reset dependent fields
     if (!propertyId) {
-      const pgSection = document.getElementById('pgUnitSection');
-      if (pgSection) pgSection.style.display = 'none';
-      const flatRoomGroup = document.getElementById('flatRoomGroup');
-      if (flatRoomGroup) flatRoomGroup.style.display = '';
       const floorSelect = document.getElementById('floorSelect');
       const unitSelect = document.getElementById('unitSelect');
       const unitInfo = document.getElementById('unitStatusInfo');
@@ -869,13 +961,8 @@ async function loadPropertyUnits(propertyId) {
     const property = await apiService.getMyProperty(propertyId);
     const isPG = (property?.type || '').toString().toUpperCase() === 'PG';
     
-    const pgSection = document.getElementById('pgUnitSection');
+    // Reset PG selectors if not a PG property
     if (!isPG) {
-      pgSection.style.display = 'none';
-      // Show Flat/Room for non-PG
-      const flatRoomGroup = document.getElementById('flatRoomGroup');
-      if (flatRoomGroup) flatRoomGroup.style.display = '';
-      // Reset PG selectors if previously set
       const floorSelect = document.getElementById('floorSelect');
       const unitSelect = document.getElementById('unitSelect');
       const unitInfo = document.getElementById('unitStatusInfo');
@@ -885,19 +972,10 @@ async function loadPropertyUnits(propertyId) {
       return;
     }
     
-    pgSection.style.display = 'block';
-    // Hide Flat/Room for PG and clear any previous value
-    const flatRoomGroup = document.getElementById('flatRoomGroup');
-    if (flatRoomGroup) {
-      flatRoomGroup.style.display = 'none';
-      const frInput = flatRoomGroup.querySelector('input[name="flatRoomNumber"]');
-      if (frInput) frInput.value = '';
-    }
-    
-    // Load floors
+    // Load floors for PG properties
     const floors = await apiService.getFloors(propertyId);
     const floorSelect = document.getElementById('floorSelect');
-  floorSelect.innerHTML = "<option value=\"\">Select Floor</option>";
+    floorSelect.innerHTML = "<option value=\"\">Select Floor</option>";
     floors.forEach(floor => {
       const opt = document.createElement('option');
       opt.value = floor.id;
@@ -923,8 +1001,14 @@ async function loadPropertyUnits(propertyId) {
     });
     
   } catch (err) {
-    console.error('Failed to load property units', err);
-    showAlert('error', 'Failed to load floors/units: ' + (err.message || 'Unknown error'));
+    console.error('Failed to load property units:', err);
+    const errorMsg = err.message || err.toString() || 'Unknown error';
+    // Don't show alert for non-PG properties - just log it
+    const property = propertiesCache.find(p => String(p.id) === String(propertyId));
+    const isPG = property && (property.type || '').toString().toUpperCase() === 'PG';
+    if (isPG) {
+      showAlert('warning', `Could not load PG units/floors: ${errorMsg}. You can still add tenants using room numbers.`);
+    }
   }
 }
 
@@ -985,15 +1069,32 @@ function showUnitInfo(unitId) {
 // Create initial rent payment when tenant is added
 async function createInitialRentPayment(tenantId, amount, paymentDate) {
   try {
+    // Ensure payment month is in YYYY-MM format
+    let paymentMonth;
+    if (paymentDate) {
+      // If it's a full date (YYYY-MM-DD), extract just YYYY-MM
+      if (paymentDate.length >= 7) {
+        paymentMonth = paymentDate.substring(0, 7);
+      } else {
+        paymentMonth = paymentDate;
+      }
+    } else {
+      // Default to current month
+      paymentMonth = new Date().toISOString().split('T')[0].substring(0, 7);
+    }
+    
+    console.log('[Initial Payment] Creating payment - tenantId:', tenantId, 'amount:', amount, 'month:', paymentMonth);
+    
     const paymentData = {
       tenantId: tenantId,
       amount: amount,
-      paymentMonth: paymentDate || new Date().toISOString().split('T')[0].substring(0, 7), // YYYY-MM format
-      paymentMode: 'CASH', // Default to CASH
+      paymentMonth: paymentMonth,
+      paymentMode: 'CASH',
       upiRef: 'Initial rent payment - added by owner'
     };
     
     const response = await apiService.post('/transactions/owner/create-approved', paymentData);
+    console.log('[Initial Payment] Payment created successfully:', response);
     return response;
   } catch (error) {
     console.error('[Initial Payment] Error creating payment:', error);

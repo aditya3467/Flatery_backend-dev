@@ -8,7 +8,7 @@
     username: $('#cfg-username'), password: $('#cfg-password'), fromName: $('#cfg-fromName'), fromEmail: $('#cfg-fromEmail'),
     replyTo: $('#cfg-replyTo'), enabled: $('#cfg-enabled'), paused: $('#cfg-paused'), status: $('#config-status'),
     testEmail: $('#test-email'),
-    btnLoad: $('#btn-load-config'), btnSave: $('#btn-save-config'), btnTest: $('#btn-send-test')
+    btnLoad: $('#btn-load-config'), btnSave: $('#btn-save-config'), btnVerify: $('#btn-verify-config'), btnTest: $('#btn-send-test')
   };
 
   const tplEls = {
@@ -77,15 +77,43 @@
     }
   }
 
+  async function verifyConfig() {
+    setStatus(configEls.status, 'Verifying credentials...');
+    try {
+      const result = await apiService.verifyEmailConfig();
+      if (result.status === 'success') {
+        setStatus(configEls.status, '✓ ' + result.message);
+      } else {
+        setStatus(configEls.status, '✗ ' + result.message, true);
+      }
+    } catch (e) {
+      setStatus(configEls.status, 'Verification error: ' + (e.message || 'Failed'), true);
+    }
+  }
+
   async function sendTest() {
     const to = configEls.testEmail.value.trim();
     if (!to) return setStatus(configEls.status, 'Enter test recipient email', true);
-    setStatus(configEls.status, 'Sending test...');
+    
+    setStatus(configEls.status, 'Verifying credentials before sending...');
     try {
-      await apiService.sendTestEmail(to);
-      setStatus(configEls.status, 'Test email sent.');
+      // First verify credentials
+      const verifyResult = await apiService.verifyEmailConfig();
+      if (verifyResult.status !== 'success') {
+        setStatus(configEls.status, 'Cannot send test - ' + verifyResult.message, true);
+        return;
+      }
+      
+      setStatus(configEls.status, 'Sending test email...');
+      const testResult = await apiService.sendTestEmail(to);
+      
+      if (testResult.status === 'success') {
+        setStatus(configEls.status, '✓ ' + testResult.message + ' to ' + to);
+      } else {
+        setStatus(configEls.status, '✗ ' + testResult.message, true);
+      }
     } catch (e) {
-      setStatus(configEls.status, e.message || 'Test send failed', true);
+      setStatus(configEls.status, 'Error: ' + (e.message || 'Test send failed'), true);
     }
   }
 
@@ -197,6 +225,7 @@
   // Wire events
   if (configEls.btnLoad) configEls.btnLoad.addEventListener('click', loadConfig);
   if (configEls.btnSave) configEls.btnSave.addEventListener('click', saveConfig);
+  if (configEls.btnVerify) configEls.btnVerify.addEventListener('click', verifyConfig);
   if (configEls.btnTest) configEls.btnTest.addEventListener('click', sendTest);
 
   if (tplEls.btnRefresh) tplEls.btnRefresh.addEventListener('click', loadTemplates);

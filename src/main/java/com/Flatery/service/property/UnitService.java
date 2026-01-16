@@ -115,10 +115,18 @@ public class UnitService {
         return unitRepository.save(unit);
     }
 
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void recomputeUnitStatus(Long unitId) {
-        Unit unit = unitRepository.findById(unitId)
-                .orElseThrow(() -> new IllegalArgumentException("Unit not found"));
+        if (unitId == null) {
+            return; // No unit assigned, nothing to recompute
+        }
+        
+        Unit unit = unitRepository.findById(unitId).orElse(null);
+        if (unit == null) {
+            // Unit doesn't exist, log warning but don't fail the parent transaction
+            System.err.println("Warning: Cannot recompute status for non-existent unit ID: " + unitId);
+            return;
+        }
 
         // Count active tenancies: status ACTIVE AND (lease end date null or strictly after today)
         java.time.LocalDate today = java.time.LocalDate.now();

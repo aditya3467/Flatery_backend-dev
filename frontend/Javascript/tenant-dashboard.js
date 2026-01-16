@@ -182,8 +182,8 @@ async function loadDashboardData() {
         document.getElementById('dueDate').textContent = `${dueDay}${suffix}`;
         document.getElementById('dueDateMonth').textContent = 'Every Month';
         
-        // Update rent status badge
-        const rentStatus = calculateRentStatus(tenantData);
+        // Update rent status badge using real payment data
+        const rentStatus = await calculateRentStatusFromPayments(tenantData.rentDueDate);
         const statusBadge = document.getElementById('rentStatus');
         statusBadge.textContent = rentStatus === 'Paid' ? '✅ ' + rentStatus : 
                                   rentStatus === 'Pending' ? '🟡 ' + rentStatus : 
@@ -196,15 +196,31 @@ async function loadDashboardData() {
         const progressPercent = totalMonths > 0 ? Math.round((monthsStayed / totalMonths) * 100) : 0;
         document.getElementById('stayProgress').textContent = `${progressPercent}%`;
         
-        // Generate timeline segments
-        generateTimeline(startDate, endDate, monthsStayed);
+        // Fetch payments and generate timeline with real data
+        let paidMonthsCount = 0;
+        try {
+            const allPayments = await apiService.getTenantPayments();
+            // Filter out security deposits
+            const payments = allPayments.filter(p => 
+                !p.upiRef || !p.upiRef.includes('Security Deposit')
+            );
+            paidMonthsCount = payments.filter(p => 
+                (p.status || '').toLowerCase() === 'verified' || 
+                (p.status || '').toLowerCase() === 'completed'
+            ).length;
+            await generateTimelineWithPayments(startDate, endDate, payments);
+        } catch (error) {
+            console.error('Error loading payments for timeline:', error);
+            // Fallback to date-based timeline
+            generateTimeline(startDate, endDate, monthsStayed);
+        }
         
         // Calculate next due date for timeline
         const nextDueDate = calculateNextRentDue(tenantData.rentDueDate);
         
-        // Update timeline label
+        // Update timeline label with actual paid months
         document.getElementById('timelineLabel').textContent = 
-            `${monthsStayed} / ${totalMonths} months rent paid • Next due: ${nextDueDate}`;
+            `${paidMonthsCount} / ${totalMonths} months rent paid • Next due: ${nextDueDate}`;
         
         // Update countdown
         const daysUntil = calculateDaysUntilDue(tenantData.rentDueDate);
@@ -256,6 +272,73 @@ function generateTimeline(startDate, endDate, monthsPaid) {
         
         segments.push(`
             <div class="timeline-segment ${status}" title="${monthName} - ${status}">
+                <div class="month-label">${monthName}</div>
+                <div class="status-icon">${icon}</div>
+            </div>
+        `);
+    }
+    
+    container.innerHTML = segments.join('');
+}
+
+// Generate timeline with real payment data
+async function generateTimelineWithPayments(startDate, endDate, payments) {
+    const container = document.getElementById('timelineSegments');
+    if (!container) return;
+    
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const start = new Date(startDate);
+    const totalMonths = calculateTotalMonths(startDate, endDate);
+    const segments = [];
+    
+    const startMonth = new Date(startDate).getMonth();
+    const startYear = new Date(startDate).getFullYear();
+    const now = new Date();
+    const currentMonthStr = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    
+    for (let i = 0; i < totalMonths; i++) {
+        const monthIndex = (startMonth + i) % 12;
+        const year = startYear + Math.floor((startMonth + i) / 12);
+        const monthName = months[monthIndex];
+        const monthYearStr = `${monthName} ${year}`;
+        const monthYearISO = `${year}-${String(monthIndex + 1).padStart(2, '0')}`; // "2026-01"
+        
+        // Find payment for this month (check both formats)
+        const payment = payments.find(p => 
+            p.paymentMonth === monthYearStr || p.paymentMonth === monthYearISO
+        );
+        
+        let status = 'upcoming';
+        let icon = '🔲';
+        let title = `${monthName} - Upcoming`;
+        
+        if (payment) {
+            const paymentStatus = (payment.status || '').toLowerCase();
+            if (paymentStatus === 'verified' || paymentStatus === 'completed') {
+                status = 'paid';
+                icon = '✅';
+                title = `${monthName} - Paid`;
+            } else if (paymentStatus === 'pending') {
+                status = 'pending';
+                icon = '🟡';
+                title = `${monthName} - Pending Verification`;
+            } else if (paymentStatus === 'rejected') {
+                status = 'overdue';
+                icon = '🔴';
+                title = `${monthName} - Payment Rejected`;
+            } else if (paymentStatus === 'canceled') {
+                status = 'upcoming';
+                icon = '🔲';
+                title = `${monthName} - Payment Canceled`;
+            }
+        } else if (monthYearStr === currentMonthStr) {
+            status = 'pending';
+            icon = '🟡';
+            title = `${monthName} - Current Month`;
+        }
+        
+        segments.push(`
+            <div class="timeline-segment ${status}" title="${title}">
                 <div class="month-label">${monthName}</div>
                 <div class="status-icon">${icon}</div>
             </div>
@@ -461,42 +544,113 @@ async function loadStayInfoData() {
 async function loadPastStaysData() {
     const grid = document.getElementById('pastStaysGrid');
     
-    // Mock past stays
-    const mockStays = [
-        { property: 'Urban Nest PG', period: 'Jan – Mar 2025', status: 'completed' },
-        { property: 'Classic Stay PG', period: 'Jul – Sep 2024', status: 'completed' }
-    ];
-    
-    grid.innerHTML = mockStays.map(stay => `
-        <div class="past-stay-card">
-            <div class="stay-image">
-                <i class="fas fa-building"></i>
+    try {
+        // Fetch real past stays from backend
+        const pastStays = await apiService.getTenantPastStays();
+        
+        if (!pastStays || pastStays.length === 0) {
+            // No past stays - show friendly message
+            grid.innerHTML = `
+                <div class="no-data-message" style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                    <i class="fas fa-history fa-3x" style="color: #ccc; margin-bottom: 1rem;"></i>
+                    <h3 style="margin-bottom: 0.5rem; font-weight: 600;">No Past Stays</h3>
+                    <p>You don't have any previous tenancy history.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Render past stays from real data
+        grid.innerHTML = pastStays.map(stay => {
+            const startDate = stay.startDate ? formatDateShort(stay.startDate) : 'N/A';
+            const endDate = stay.endDate ? formatDateShort(stay.endDate) : 'Ongoing';
+            const period = `${startDate} – ${endDate}`;
+            const propertyName = stay.propertyName || 'Unknown Property';
+            const city = stay.city || '';
+            
+            return `
+                <div class="past-stay-card">
+                    <div class="stay-image">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="stay-content">
+                        <h3>${propertyName}</h3>
+                        <p class="stay-location" style="color: #888; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-map-marker-alt"></i> ${city}
+                        </p>
+                        <p>Stay Period: ${period}</p>
+                        <span class="status-badge completed">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        console.log('[TenantDashboard] Loaded', pastStays.length, 'past stays');
+        
+    } catch (error) {
+        console.error('Error loading past stays:', error);
+        grid.innerHTML = `
+            <div class="error-message" style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #ef5350;">
+                <i class="fas fa-exclamation-triangle fa-2x" style="margin-bottom: 1rem;"></i>
+                <p>Failed to load past stays. Please try again later.</p>
             </div>
-            <div class="stay-content">
-                <h3>${stay.property}</h3>
-                <p>Stay Period: ${stay.period}</p>
-                <span class="status-badge ${stay.status}">${capitalizeFirst(stay.status)}</span>
-            </div>
-            <button class="btn-view-details" onclick="handleViewPastStay('${stay.property}')">
-                View Details
-            </button>
-        </div>
-    `).join('');
+        `;
+    }
 }
 
 // Helper functions
-function calculateRentStatus(tenantData) {
-    // Simple logic - needs backend support for actual status
-    const today = new Date();
-    const dueDay = tenantData.rentDueDate || 1;
-    const dueDate = new Date(today.getFullYear(), today.getMonth(), dueDay);
-    
-    if (today > dueDate) {
-        return 'Overdue';
-    } else if (today.getDate() >= dueDay - 3) {
+async function calculateRentStatusFromPayments(rentDueDate) {
+    try {
+        // Fetch real payment transactions
+        const allTransactions = await apiService.getTenantPayments();
+        
+        // Filter out security deposits (identified by upiRef)
+        const transactions = allTransactions.filter(t => 
+            !t.upiRef || !t.upiRef.includes('Security Deposit')
+        );
+        
+        // Get current month in both formats
+        const now = new Date();
+        const currentMonthStr = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); // "Jan 2026"
+        const currentMonthISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // "2026-01"
+        
+        // Find payment for current month (check both formats)
+        const currentMonthPayment = transactions.find(t => 
+            t.paymentMonth === currentMonthStr || t.paymentMonth === currentMonthISO
+        );
+        
+        if (currentMonthPayment) {
+            const status = (currentMonthPayment.status || '').toLowerCase();
+            // Backend returns: VERIFIED, PENDING, REJECTED, CANCELED
+            if (status === 'verified' || status === 'completed') {
+                return 'Paid';
+            } else if (status === 'pending') {
+                return 'Pending';
+            }
+        }
+        
+        // No payment found - check if overdue
+        const today = new Date();
+        const dueDay = rentDueDate || 1;
+        const dueDate = new Date(today.getFullYear(), today.getMonth(), dueDay);
+        
+        if (today > dueDate) {
+            return 'Overdue';
+        } else if (today.getDate() >= dueDay - 3) {
+            return 'Pending';
+        }
+        
         return 'Pending';
+    } catch (error) {
+        console.error('Error calculating rent status:', error);
+        // Fallback to date-based logic
+        const today = new Date();
+        const dueDay = rentDueDate || 1;
+        const dueDate = new Date(today.getFullYear(), today.getMonth(), dueDay);
+        return today > dueDate ? 'Overdue' : 'Pending';
     }
-    return 'Paid';
 }
 
 function calculateNextRentDue(rentDueDate) {
@@ -650,7 +804,8 @@ async function loadPropertyInformation(propertyDetails) {
         document.getElementById('propertyAddress').textContent = `${propertyDetails.address || ''} ${propertyDetails.city || ''}`.trim() || 'N/A';
         document.getElementById('propertyType').textContent = propertyDetails.propertyType || 'PG';
         document.getElementById('totalFloors').textContent = propertyDetails.totalFloors || 'N/A';
-        
+
+        console.log('[TenantDashboard] Property details loaded:', {
             name: propertyDetails.propertyName,
             address: propertyDetails.address,
             city: propertyDetails.city,
@@ -687,7 +842,8 @@ async function loadRoomDetails(tenantData, propertyDetails) {
             document.getElementById('rentDueDate').textContent = '1st of every month'; // Default
             document.getElementById('paymentCycle').textContent = 'Monthly (1st)';
         }
-        
+
+        console.log('[TenantDashboard] Room details loaded:', {
             unitCode: propertyDetails.unitCode,
             bedIndex: tenantData.bedIndex,
             floorName: propertyDetails.floorName,
@@ -711,7 +867,8 @@ async function loadOwnerInformation(propertyDetails) {
         if (propertyDetails.ownerName) {
             ownerAvatar.innerHTML = propertyDetails.ownerName.charAt(0).toUpperCase();
         }
-        
+
+        console.log('[TenantDashboard] Owner info loaded:', {
             name: propertyDetails.ownerName,
             phone: propertyDetails.ownerPhone,
             email: propertyDetails.ownerEmail
@@ -950,7 +1107,7 @@ async function loadRentPayments() {
             currentMonthDetails.upiRef = currentMonthTransaction.upiRef;
             currentMonthDetails.paymentDate = currentMonthTransaction.paymentDate;
             rentData.currentStatus = currentMonthDetails.status;
-            
+            console.log('[TenantDashboard] Current month transaction:', {
                 month: currentMonthTransaction.paymentMonth,
                 status: currentMonthDetails.status,
                 amount: currentMonthDetails.amount,
@@ -997,6 +1154,7 @@ async function loadRentPayments() {
         // Load analytics with real transactions
         await loadRentAnalytics(rentData.monthlyRent, transactions);
 
+        console.log('[TenantDashboard] Rent summary:', {
             rentAmount: rentData.monthlyRent,
             dueDate: rentData.rentDueDate,
             securityDeposit: rentData.securityDeposit,
@@ -1336,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const paidAmountInput = form.querySelector('#paidAmount');
                 const amount = paidAmountInput ? (parseFloat(paidAmountInput.value) || 0) : 0;
 
+                console.log('[TenantDashboard] Uploading proof file:', {
                     fileName: file.name,
                     fileSize: file.size,
                     fileType: file.type
@@ -1360,6 +1519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     screenshotUrl: fileUrl
                 };
 
+                console.log('[TenantDashboard] Payment payload:', {
                     amount: paymentPayload.amount,
                     paymentMonth: paymentPayload.paymentMonth,
                     paymentMode: paymentPayload.paymentMode,

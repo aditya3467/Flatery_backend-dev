@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Add Tenant API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid #666;
+            padding-left: 12px;
+        }
+        .log-info {
+            border-left-color: #4fc3f7;
+        }
+        .log-success {
+            border-left-color: #66bb6a;
+            background: rgba(102, 187, 106, 0.1);
+        }
+        .log-error {
+            border-left-color: #ef5350;
+            background: rgba(239, 83, 80, 0.1);
+        }
+        .log-request {
+            border-left-color: #ffa726;
+        }
+        .timestamp {
+            color: #888;
+            font-size: 11px;
+        }
+        .result-box {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .result-box.success {
+            background: #e8f5e9;
+            border-color: #66bb6a;
+        }
+        .result-box.error {
+            background: #ffebee;
+            border-color: #ef5350;
+        }
+        .credential-display {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .credential-item {
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        .credential-label {
+            opacity: 0.9;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔧 Test Add Tenant API</h1>
+            <p class="subtitle">Debug tenant creation with detailed logging</p>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label for="tenantName">Tenant Name *</label>
+                    <input type="text" id="tenantName" value="Test Tenant" required>
+                </div>
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number (10 digits) *</label>
+                    <input type="text" id="phoneNumber" value="9999999999" pattern="[0-9]{10}" required>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label for="emailAddress">Email Address</label>
+                    <input type="email" id="emailAddress" value="test@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="propertyId">Property ID *</label>
+                    <input type="number" id="propertyId" value="1" required>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label for="flatRoomNumber">Flat/Room Number</label>
+                    <input type="text" id="flatRoomNumber" value="101">
+                </div>
+                <div class="form-group">
+                    <label for="rentAmount">Rent Amount *</label>
+                    <input type="number" id="rentAmount" value="10000" required>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label for="securityDeposit">Security Deposit *</label>
+                    <input type="number" id="securityDeposit" value="20000" required>
+                </div>
+                <div class="form-group">
+                    <label for="rentDueDate">Rent Due Date (1-31) *</label>
+                    <input type="number" id="rentDueDate" value="5" min="1" max="31" required>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="form-group">
+                    <label for="leaseStartDate">Lease Start Date *</label>
+                    <input type="date" id="leaseStartDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="leaseEndDate">Lease End Date (Optional)</label>
+                    <input type="date" id="leaseEndDate">
+                </div>
+            </div>
+
+            <button class="btn" onclick="testAddTenant()">🚀 Test Add Tenant</button>
+
+            <div id="resultContainer"></div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Logs</h2>
+            <button class="btn" onclick="clearLogs()" style="background: #ef5350; margin-bottom: 15px;">Clear Logs</button>
+            <div id="logContainer" class="log-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Set default lease start date to today
+        document.getElementById('leaseStartDate').valueAsDate = new Date();
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Also log to console
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('resultContainer').innerHTML = '';
+        }
+
+        async function testAddTenant() {
+            log('=== Starting Tenant Creation Test ===', 'info');
+            
+            // Get form values
+            const data = {
+                tenantName: document.getElementById('tenantName').value.trim(),
+                phoneNumber: document.getElementById('phoneNumber').value.trim(),
+                emailAddress: document.getElementById('emailAddress').value.trim() || null,
+                propertyId: parseInt(document.getElementById('propertyId').value),
+                flatRoomNumber: document.getElementById('flatRoomNumber').value.trim() || null,
+                rentAmount: parseInt(document.getElementById('rentAmount').value),
+                securityDeposit: parseInt(document.getElementById('securityDeposit').value),
+                rentDueDate: parseInt(document.getElementById('rentDueDate').value),
+                leaseStartDate: document.getElementById('leaseStartDate').value,
+                leaseEndDate: document.getElementById('leaseEndDate').value || null,
+                unitId: null,
+                bedIndex: null,
+                status: 'ACTIVE',
+                primary: true
+            };
+
+            log('Request Data:\n' + JSON.stringify(data, null, 2), 'request');
+
+            try {
+                const token = localStorage.getItem('token');
+                log('Using JWT Token: ' + (token ? token.substring(0, 20) + '...' : 'NOT FOUND'), 'info');
+
+                const url = 'http://localhost:8081/api/tenants';
+                log('POST ' + url, 'info');
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                log('Response Status: ' + response.status + ' ' + response.statusText, 
+                    response.ok ? 'success' : 'error');
+
+                const responseText = await response.text();
+                log('Response Body (raw):\n' + responseText, response.ok ? 'success' : 'error');
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    result = responseText;
+                }
+
+                if (response.ok) {
+                    log('✅ SUCCESS! Tenant created successfully', 'success');
+                    displaySuccess(result);
+                } else {
+                    log('❌ FAILED! See error details below', 'error');
+                    displayError(result, response.status);
+                }
+
+            } catch (error) {
+                log('❌ NETWORK ERROR: ' + error.message, 'error');
+                displayError({ error: error.message, stack: error.stack }, 0);
+            }
+        }
+
+        function displaySuccess(result) {
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = `
+                <div class="result-box success">
+                    <h3>✅ Tenant Created Successfully!</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+
+            if (result.temporaryPassword) {
+                container.innerHTML += `
+                    <div class="credential-display">
+                        <h3>🔐 Tenant Credentials</h3>
+                        <div class="credential-item">
+                            <div class="credential-label">Tenant Name</div>
+                            <strong>${result.tenantName || 'N/A'}</strong>
+                        </div>
+                        <div class="credential-item">
+                            <div class="credential-label">Username</div>
+                            <strong>${result.username}</strong>
+                        </div>
+                        <div class="credential-item">
+                            <div class="credential-label">Temporary Password</div>
+                            <strong style="font-size: 20px; letter-spacing: 2px;">${result.temporaryPassword}</strong>
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML += `
+                    <div class="result-box" style="background: #fff3e0; border-color: #ff9800;">
+                        <h4>⚠️ No Password Generated</h4>
+                        <p>This phone number/email already has an account. Username: <strong>${result.username}</strong></p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayError(error, status) {
+            const container = document.getElementById('resultContainer');
+            
+            let errorMessage = '';
+            if (typeof error === 'object') {
+                if (error.error) {
+                    errorMessage = error.error;
+                } else {
+                    errorMessage = JSON.stringify(error, null, 2);
+                }
+            } else {
+                errorMessage = error;
+            }
+
+            container.innerHTML = `
+                <div class="result-box error">
+                    <h3>❌ Error ${status}</h3>
+                    <pre>${errorMessage}</pre>
+                </div>
+            `;
+        }
+
+        // Log initial page load
+        log('Test page loaded. Ready to test tenant creation.', 'success');
+        log('Make sure your backend is running on http://localhost:8081', 'info');
+    </script>
+</body>
+</html>

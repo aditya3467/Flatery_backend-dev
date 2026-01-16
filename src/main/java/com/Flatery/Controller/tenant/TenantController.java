@@ -20,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,18 +42,44 @@ public class TenantController {
     public ResponseEntity<?> addTenant(@Valid @RequestBody AddTenantRequest request,
                                        Authentication authentication) {
         try {
+            System.out.println("=== ADD TENANT REQUEST RECEIVED ===");
+            System.out.println("Tenant Name: " + request.getTenantName());
+            System.out.println("Phone Number: " + request.getPhoneNumber());
+            System.out.println("Email: " + request.getEmailAddress());
+            System.out.println("Property ID: " + request.getPropertyId());
+            System.out.println("Room Number: " + request.getFlatRoomNumber());
+            System.out.println("Rent Amount: " + request.getRentAmount());
+            System.out.println("Security Deposit: " + request.getSecurityDeposit());
+            System.out.println("Rent Due Date: " + request.getRentDueDate());
+            System.out.println("Lease Start: " + request.getLeaseStartDate());
+            System.out.println("Lease End: " + request.getLeaseEndDate());
+            System.out.println("Unit ID: " + request.getUnitId());
+            System.out.println("Bed Index: " + request.getBedIndex());
+            System.out.println("Primary: " + request.getPrimary());
+            System.out.println("====================================");
+            
             Long ownerId = getAuthenticatedUserId(authentication);
+            System.out.println("Owner ID from auth: " + ownerId);
+            
             TenantResponse response = tenantService.addTenant(ownerId, request);
+            
+            System.out.println("=== TENANT CREATED SUCCESSFULLY ===");
+            System.out.println("Response: " + response);
+            System.out.println("====================================");
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException ex) {
-            // Log the error for debugging
-            System.err.println("Add Tenant Validation Error: " + ex.getMessage());
+            System.err.println("=== VALIDATION ERROR ===");
+            System.err.println("Message: " + ex.getMessage());
             ex.printStackTrace();
+            System.err.println("========================");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
         } catch (Exception ex) {
-            // Log unexpected errors
-            System.err.println("Add Tenant Unexpected Error: " + ex.getMessage());
+            System.err.println("=== UNEXPECTED ERROR ===");
+            System.err.println("Type: " + ex.getClass().getName());
+            System.err.println("Message: " + ex.getMessage());
             ex.printStackTrace();
+            System.err.println("========================");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to add tenant: " + ex.getMessage()));
         }
     }
@@ -126,7 +154,20 @@ public class TenantController {
     public ResponseEntity<TenantPropertyDetails> getCurrentTenantProperty(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String username = userDetails.getUsername();
-        return ResponseEntity.ok(tenantService.getTenantPropertyDetails(username));
+        try {
+            return ResponseEntity.ok(tenantService.getTenantPropertyDetails(username));
+        } catch (IllegalStateException ex) {
+            // No active tenancy for this user
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);
+        } catch (IllegalArgumentException ex) {
+            // Tenant not found / property not found
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(null);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
     }
 
     @GetMapping("/check-active-tenancy")
@@ -341,6 +382,18 @@ public class TenantController {
                         .body(new ErrorResponse("Failed to get past stays: " + ex.getMessage()));
             }
         }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+            System.err.println("Validation Error - Field: " + fieldName + ", Message: " + errorMessage);
+        });
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
 
     public record ErrorResponse(String error) {}
     

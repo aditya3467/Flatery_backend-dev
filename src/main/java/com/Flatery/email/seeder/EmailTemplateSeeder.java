@@ -23,16 +23,9 @@ public class EmailTemplateSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("Checking email templates...");
-        
-        long count = templateRepository.count();
-        if (count > 0) {
-            log.info("Templates already exist ({} found), skipping seeder.", count);
-            return;
-        }
 
-        log.info("Creating default email templates...");
-        
-        templateRepository.saveAll(Arrays.asList(
+        try {
+            List<EmailTemplate> templates = Arrays.asList(
             createTemplate(EmailType.PASSWORD_RESET,
                 "Reset your password",
                 "<h2>Hello {{user_name}},</h2><p>Click the button below to reset your password for Flatery.</p><a href=\"{{reset_link}}\" style=\"background:#007AFF;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Reset Password</a><p>If you didn't request this, you can ignore this email.</p><p>This link expires in 24 hours.</p>",
@@ -50,6 +43,12 @@ public class EmailTemplateSeeder implements CommandLineRunner {
                 "<h2>Hello {{tenant_name}},</h2><p>Welcome to Flatery! Here's what you can do:</p><ul><li>View your property and unit details</li><li>Submit rent payments</li><li>Track payment history</li><li>Raise and track complaints</li></ul><p><a href=\"{{portal_url}}\">Start exploring</a></p>",
                 "Welcome to Flatery {{tenant_name}}!\n\nExplore your portal: {{portal_url}}",
                 Arrays.asList("tenant_name", "portal_url")
+            ),
+            createTemplate(EmailType.TENANT_CREDS,
+                "Your Flatery login details",
+                "<h2>Hello {{tenant_name}},</h2><p>Your Flatery tenant account has been created.</p><p><strong>Username:</strong> {{username}}<br><strong>Temporary password:</strong> {{temporary_password}}</p><p>Please log in and change your password immediately.</p><p><a href=\"{{portal_url}}\" style=\"background:#007AFF;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Open Tenant Portal</a></p><p><strong>Property:</strong> {{property_name}}</p>",
+                "Your Flatery account is ready.\nUsername: {{username}}\nTemporary password: {{temporary_password}}\nLogin: {{portal_url}}\nProperty: {{property_name}}\n\nPlease change your password after first login.",
+                Arrays.asList("tenant_name", "username", "temporary_password", "portal_url", "property_name")
             ),
             createTemplate(EmailType.RENT_DUE_REMINDER,
                 "Rent due on {{due_date}}",
@@ -81,9 +80,25 @@ public class EmailTemplateSeeder implements CommandLineRunner {
                 "Your property {{property_name}} requires review.\n\nReason: {{block_reason}}\n\nSupport: {{support_url}}",
                 Arrays.asList("owner_name", "property_name", "block_reason", "support_url")
             )
-        ));
+        );
 
-        log.info("Email templates seeded successfully!");
+        int created = 0;
+        for (EmailTemplate template : templates) {
+            boolean exists = templateRepository.findFirstByTemplateKeyAndActiveTrue(template.getTemplateKey()).isPresent();
+            if (exists) {
+                log.debug("Template {} already present, skipping", template.getTemplateKey());
+                continue;
+            }
+            templateRepository.save(template);
+            created++;
+            log.info("Created email template {}", template.getTemplateKey());
+        }
+
+        log.info("Email template seeding complete. New templates added: {}", created);
+        } catch (Exception e) {
+            log.error("Email template seeding failed: {}. Emails will not be sent until templates are created.", e.getMessage());
+            // Don't fail app startup if email templates can't be created
+        }
     }
 
     private EmailTemplate createTemplate(EmailType type, String subject, String htmlBody, String textBody, List<String> placeholders) throws Exception {

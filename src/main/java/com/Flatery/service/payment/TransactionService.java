@@ -170,39 +170,70 @@ public class TransactionService {
      */
     @Transactional
     public TransactionResponseDto createOwnerApprovedPayment(PaymentRequestDto dto, Long ownerId) {
-        // Validate tenant exists and belongs to this owner
-        Tenant tenant = tenantRepository.findById(dto.getTenantId())
-                .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
-        
-        if (!tenant.getOwnerId().equals(ownerId)) {
-            throw new SecurityException("You don't have permission to create payments for this tenant");
+        try {
+            // Validate tenant exists and belongs to this owner
+            Tenant tenant = tenantRepository.findById(dto.getTenantId())
+                    .orElseThrow(() -> new IllegalArgumentException("Tenant not found with ID: " + dto.getTenantId()));
+            
+            if (!tenant.getOwnerId().equals(ownerId)) {
+                throw new SecurityException("You don't have permission to create payments for this tenant");
+            }
+            
+            String modeStr = dto.getPaymentMode() != null ? dto.getPaymentMode().toUpperCase() : "CASH";
+            PaymentMode paymentMode;
+            try {
+                paymentMode = PaymentMode.valueOf(modeStr);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid payment mode: " + dto.getPaymentMode());
+            }
+            
+            // Validate amount
+            if (dto.getAmount() == null || dto.getAmount() <= 0) {
+                throw new IllegalArgumentException("Amount must be greater than 0");
+            }
+            
+            // Validate payment month format
+            if (dto.getPaymentMonth() == null || !dto.getPaymentMonth().matches("\\d{4}-\\d{2}")) {
+                throw new IllegalArgumentException("Payment month must be in YYYY-MM format");
+            }
+            
+            System.out.println("Creating owner-approved payment: tenantId=" + dto.getTenantId() + 
+                             ", amount=" + dto.getAmount() + ", mode=" + paymentMode);
+            
+            // Create transaction with VERIFIED status (pre-approved by owner)
+            Transaction transaction = Transaction.builder()
+                    .tenantId(tenant.getId())
+                    .ownerId(ownerId)
+                    .propertyId(tenant.getPropertyId())
+                    .amount(dto.getAmount())
+                    .paymentMonth(dto.getPaymentMonth())
+                    .paymentMode(paymentMode)
+                    .upiRef(dto.getUpiRef() != null ? dto.getUpiRef() : "Initial rent payment - added by owner")
+                    .status(PaymentStatus.VERIFIED)
+                    .paymentDate(java.time.LocalDateTime.now())
+                    .createdBy("owner-" + ownerId)
+                    .updatedBy("owner-" + ownerId)
+                    .build();
+            
+            Transaction saved = repository.save(transaction);
+            System.out.println("Owner-approved payment created: id=" + saved.getId());
+            
+            // Async call to mark month as paid - don't wait or fail if it errors
+            new Thread(() -> {
+                try {
+                    markMonthAsPaid(tenant.getId(), tenant.getPropertyId(), dto.getPaymentMonth(), "owner-" + ownerId);
+                } catch (Exception e) {
+                    System.err.println("Background: Failed to update monthly status: " + e.getMessage());
+                }
+            }).start();
+            
+            return mapToDto(saved);
+            
+        } catch (Exception e) {
+            System.err.println("Error in createOwnerApprovedPayment: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        
-        String modeStr = dto.getPaymentMode() != null ? dto.getPaymentMode().toUpperCase() : "CASH";
-        PaymentMode paymentMode = PaymentMode.valueOf(modeStr);
-        
-        // Create transaction with VERIFIED status (pre-approved by owner)
-        Transaction transaction = Transaction.builder()
-                .tenantId(tenant.getId())
-                .ownerId(ownerId)
-                .propertyId(tenant.getPropertyId())
-                .amount(dto.getAmount())
-                .paymentMonth(dto.getPaymentMonth())
-                .paymentMode(paymentMode)
-                .upiRef(dto.getUpiRef())
-                .status(PaymentStatus.VERIFIED)
-                .paymentDate(java.time.LocalDateTime.now())
-                .createdBy("owner-" + ownerId)
-                .updatedBy("owner-" + ownerId)
-                .build();
-        
-        Transaction saved = repository.save(transaction);
-        
-        // Mark month as paid in monthly payment status
-        markMonthAsPaid(tenant.getId(), tenant.getPropertyId(), dto.getPaymentMonth(), "owner-" + ownerId);
-        
-        System.out.println("Owner-approved payment created: id=" + saved.getId());
-        return mapToDto(saved);
     }
 
     public List<TransactionResponseDto> getTransactionsByOwnerAndStatus(Long ownerId, PaymentStatus status) {
@@ -698,7 +729,12 @@ public class TransactionService {
     /**
      * Helper method to mark a month as paid for a tenant
      */
-    private void markMonthAsPaid(Long tenantId, Long propertyId, String paymentMonth, String markedBy) {
+    /**
+     * Mark a month as paid in the TenantMonthlyPaymentStatus table.
+     * Runs in a new transaction to avoid rollback issues.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markMonthAsPaid(Long tenantId, Long propertyId, String paymentMonth, String markedBy) {
         try {
             Optional<TenantMonthlyPaymentStatus> existing = monthlyPaymentStatusRepository
                     .findByTenantIdAndPaymentMonth(tenantId, paymentMonth);
@@ -726,6 +762,8 @@ public class TransactionService {
             }
         } catch (Exception e) {
             System.err.println("Error marking month as paid: " + e.getMessage());
+            e.printStackTrace();
+            // Don't rethrow - let it fail silently
         }
     }
 }

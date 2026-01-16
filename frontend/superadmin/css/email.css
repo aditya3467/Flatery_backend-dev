@@ -11,6 +11,7 @@ input[type="text"], input[type="email"], input[type="number"], input[type="passw
 .inline { display: flex; gap: 10px; margin-top: 8px; }
 .btn { background: #f0f0f4; border: 1px solid #dedee5; color: #222; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
 .btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.btn.secondary { background: #6366f1; color: #fff; border-color: #6366f1; }
 .btn:hover { filter: brightness(0.98); }
 .status { margin-top: 10px; font-size: 12px; color: #2563eb; }
 .status.error { color: #c62828; }

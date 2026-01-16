@@ -7,6 +7,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css" />
   <link rel="stylesheet" href="../css/owner/add-tenant.css" />
+  <style>
+    .credential-panel { margin-top: 24px; border: 2px solid #10b981; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1); }
+    .credential-panel h3 { color: #065f46; margin: 0 0 8px 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+    .credential-panel h3::before { content: '🔐'; font-size: 20px; }
+    .credential-list { display: flex; flex-direction: column; gap: 12px; }
+    .credential-row { display: flex; justify-content: space-between; gap: 16px; padding: 16px; border: 2px solid #10b981; border-radius: 10px; background: #fff; flex-wrap: wrap; align-items: center; }
+    .credential-primary { font-weight: 700; color: #111827; font-size: 16px; }
+    .credential-meta { color: #4b5563; font-size: 14px; margin-top: 4px; }
+    .credential-pass { font-weight: 700; color: #065f46; font-size: 18px; font-family: 'Courier New', monospace; background: #d1fae5; padding: 8px 16px; border-radius: 6px; }
+    .credential-hint { margin: 4px 0 16px 0; color: #047857; font-size: 14px; font-weight: 500; }
+  </style>
   <script src="../Javascript/api.js"></script>
   <script src="../Javascript/component-loader.js" defer></script>
   <script src="../Javascript/notifications.js" defer></script>
@@ -354,6 +365,12 @@
       <p><strong>Username:</strong> <span id="displayUsername"></span></p>
       <p id="passwordRow"><strong>Temporary Password:</strong> <span id="displayPassword"></span></p>
       <p style="color:#666; font-size: 14px;">Share these credentials with the tenant. The password will only be shown once.</p>
+    </div>
+
+    <div id="credentialPanel" class="success-card credential-panel" style="display:none;">
+      <h3>Tenant Login Credentials</h3>
+      <p class="credential-hint">⚠️ Copy these now and share with your tenant. Passwords are only shown once and cannot be retrieved later.</p>
+      <div id="credentialList" class="credential-list"></div>
     </div>
       </div>
     </div>

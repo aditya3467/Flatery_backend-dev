@@ -7,6 +7,7 @@ public enum EmailType {
     // Tenant Lifecycle
     TENANT_ONBOARDING,
     TENANT_WELCOME,
+    TENANT_CREDS,
 
     // Rent & Payment
     RENT_DUE_REMINDER,
