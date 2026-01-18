@@ -1,0 +1,113 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------< com.example.flatery.backenddd:flatery.backenddd >-----------
+[INFO] Building flatery.backenddd 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.1.5:run (default-cli) > test-compile @ flatery.backenddd >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ flatery.backenddd ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 9 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ flatery.backenddd ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 233 source files with javac [debug release 17] to target/classes
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/Tenant/model/TenantProfile.java:[90,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/email/entity/EmailTemplate.java:[45,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/tenant/Tenant.java:[95,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/payment/TenantMonthlyPaymentStatus.java:[30,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/payment/TenantMonthlyPaymentStatus.java:[39,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/payment/TenantMonthlyPaymentStatus.java:[42,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/help/Complaint.java:[80,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/help/Complaint.java:[86,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/email/entity/EmailQueue.java:[48,20] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/email/entity/EmailQueue.java:[51,17] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/email/entity/EmailQueue.java:[54,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/email/entity/EmailConfig.java:[51,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/email/entity/EmailConfig.java:[54,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/payment/OwnerPaymentInfo.java:[46,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/payment/OwnerPaymentInfo.java:[57,20] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /Users/mac/Documents/GitHub/Flatery_backend-dev/src/main/java/com/Flatery/model/property/PropertyView.java:[46,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ flatery.backenddd ---
+[INFO] Copying 0 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ flatery.backenddd ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 1 source file with javac [debug release 17] to target/test-classes
+[INFO] 
+[INFO] <<< spring-boot:3.1.5:run (default-cli) < test-compile @ flatery.backenddd <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.1.5:run (default-cli) @ flatery.backenddd ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.1.5)
+
+2026-01-18T05:09:20.309+05:30  INFO 93645 --- [           main] com.Flatery.Application                  : Starting Application using Java 17.0.12 with PID 93645 (/Users/mac/Documents/GitHub/Flatery_backend-dev/target/classes started by mac in /Users/mac/Documents/GitHub/Flatery_backend-dev)
+2026-01-18T05:09:20.312+05:30  INFO 93645 --- [           main] com.Flatery.Application                  : No active profile set, falling back to 1 default profile: "default"
+2026-01-18T05:09:21.013+05:30  INFO 93645 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-01-18T05:09:21.109+05:30  INFO 93645 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 91 ms. Found 27 JPA repository interfaces.
+2026-01-18T05:09:21.587+05:30  INFO 93645 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8081 (http)
+2026-01-18T05:09:21.595+05:30  INFO 93645 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-01-18T05:09:21.595+05:30  INFO 93645 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.15]
+2026-01-18T05:09:21.671+05:30  INFO 93645 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-01-18T05:09:21.672+05:30  INFO 93645 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1323 ms
+2026-01-18T05:09:21.804+05:30  INFO 93645 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-01-18T05:09:21.838+05:30  INFO 93645 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.2.13.Final
+2026-01-18T05:09:21.840+05:30  INFO 93645 --- [           main] org.hibernate.cfg.Environment            : HHH000406: Using bytecode reflection optimizer
+2026-01-18T05:09:22.001+05:30  INFO 93645 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-01-18T05:09:22.017+05:30  INFO 93645 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-01-18T05:09:22.126+05:30  INFO 93645 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@61e14b53
+2026-01-18T05:09:22.127+05:30  INFO 93645 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-01-18T05:09:22.160+05:30  WARN 93645 --- [           main] org.hibernate.dialect.Dialect            : HHH000511: The 5.5.0 version for [org.hibernate.dialect.MySQLDialect] is no longer supported, hence certain features may not work properly. The minimum supported version is 5.7.0. Check the community dialects project for available legacy versions.
+2026-01-18T05:09:23.239+05:30  INFO 93645 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-01-18T05:09:23.368+05:30  INFO 93645 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-01-18T05:09:23.622+05:30  INFO 93645 --- [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-01-18T05:09:25.249+05:30  INFO 93645 --- [           main] c.F.service.storage.S3StorageService     : S3StorageService initialized with bucket: flatery-assets
+2026-01-18T05:09:25.447+05:30  INFO 93645 --- [           main] c.F.service.property.FileStorageService  : File storage location initialized: /Users/mac/Documents/GitHub/Flatery_backend-dev/uploads/properties
+2026-01-18T05:09:26.037+05:30  WARN 93645 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-01-18T05:09:26.531+05:30  INFO 93645 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@7744f9fa, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@41ca7df9, org.springframework.security.web.context.SecurityContextHolderFilter@91b587b, org.springframework.security.web.header.HeaderWriterFilter@4259ccab, org.springframework.web.filter.CorsFilter@4f0908de, org.springframework.security.web.authentication.logout.LogoutFilter@4dae3857, com.Flatery.security.JwtAuthenticationFilter@2a4f8009, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7d63b66b, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6f088169, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@19469022, org.springframework.security.web.session.SessionManagementFilter@24910a3e, org.springframework.security.web.access.ExceptionTranslationFilter@64c555f7, org.springframework.security.web.access.intercept.AuthorizationFilter@45ee6ac9]
+2026-01-18T05:09:26.872+05:30  WARN 93645 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-01-18T05:09:26.886+05:30  INFO 93645 --- [           main] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-18T05:09:26.888+05:30  INFO 93645 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-01-18T05:09:26.894+05:30  INFO 93645 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-01-18T05:09:26.895+05:30  INFO 93645 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2026-01-18T05:09:26.911+05:30  INFO 93645 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-01-18T05:09:26.924+05:30 ERROR 93645 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8081 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8081 or configure this application to listen on another port.
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  15.486 s
+[INFO] Finished at: 2026-01-18T05:09:26+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.1.5:run (default-cli) on project flatery.backenddd: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

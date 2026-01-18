@@ -291,6 +291,307 @@ function closeChangePasswordModal() {
 window.openChangePasswordModal = openChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
 
+// 🔸 FORGOT PASSWORD HANDLERS
+// ========================================================
+
+function openForgotPasswordModal() {
+    document.getElementById('forgotPasswordModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    resetForgotPasswordModal();
+}
+
+function closeForgotPasswordModal() {
+    document.getElementById('forgotPasswordModal').classList.remove('active');
+    document.body.style.overflow = '';
+    resetForgotPasswordModal();
+}
+
+function resetForgotPasswordModal() {
+    // Reset to step 1
+    document.getElementById('fpStep1').style.display = 'block';
+    document.getElementById('fpStep2').style.display = 'none';
+    document.getElementById('fpStep3').style.display = 'none';
+    
+    // Clear forms
+    document.getElementById('fpEmailForm').reset();
+    document.getElementById('fpOtpForm').reset();
+    
+    // Clear errors
+    document.getElementById('fpEmailError').style.display = 'none';
+    document.getElementById('fpVerifyError').style.display = 'none';
+    
+    // Store email for next step
+    window.fpEmail = null;
+}
+
+async function handleForgotPasswordEmail(e) {
+    e.preventDefault();
+    console.log('handleForgotPasswordEmail called');
+    
+    const email = document.getElementById('fp-email').value.trim();
+    const errorDiv = document.getElementById('fpEmailError');
+    const btn = document.getElementById('fpSendOtpBtn');
+    
+    // Clear previous errors
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+    
+    if (!email) {
+        errorDiv.textContent = '❌ Please enter your email address';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = 'Sending OTP...';
+        console.log('Sending OTP request for email:', email);
+        
+        const response = await fetch('/api/auth/password-reset/forgot-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (response.ok && data.success) {
+            console.log('OTP sent successfully');
+            // Store email for next step
+            window.fpEmail = email;
+            window.fpOtpValidity = data.otpValiditySeconds || 600;
+            
+            // Clear the email input field
+            document.getElementById('fp-email').value = '';
+            
+            // Move to step 2 - OTP verification
+            setTimeout(() => {
+                document.getElementById('fpStep1').style.display = 'none';
+                document.getElementById('fpStep2').style.display = 'block';
+                document.getElementById('fp-otp').focus();
+                updateFpOtpValidity();
+            }, 300);
+            
+        } else {
+            // Show error message from backend
+            const errorMsg = data.message || 'Failed to send OTP. Please try again.';
+            console.log('Error from backend:', errorMsg);
+            errorDiv.textContent = '❌ ' + errorMsg;
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error sending OTP:', error);
+        errorDiv.textContent = '❌ Error: ' + (error.message || 'Network error. Please check your connection.');
+        errorDiv.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send OTP';
+    }
+}
+
+function updateFpOtpValidity() {
+    if (!window.fpOtpValidity) return;
+    
+    let remaining = window.fpOtpValidity;
+    const validityEl = document.getElementById('fpOtpValidity');
+    
+    const interval = setInterval(() => {
+        remaining--;
+        
+        if (remaining <= 0) {
+            clearInterval(interval);
+            validityEl.textContent = 'OTP expired. Please request a new one.';
+            validityEl.style.color = '#f44336';
+            document.getElementById('fpOtpForm').style.opacity = '0.5';
+            document.getElementById('fpOtpForm').style.pointerEvents = 'none';
+        } else {
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            validityEl.textContent = `OTP valid for ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            validityEl.style.color = remaining < 60 ? '#ff9800' : '#666';
+        }
+    }, 1000);
+    
+    // Store interval ID to clear on reset
+    window.fpValidityInterval = interval;
+}
+
+async function handleForgotPasswordOtp(e) {
+    e.preventDefault();
+    console.log('handleForgotPasswordOtp called');
+    
+    const otp = document.getElementById('fp-otp').value.trim();
+    const newPassword = document.getElementById('fp-new-password').value;
+    const confirmPassword = document.getElementById('fp-confirm-password').value;
+    const errorDiv = document.getElementById('fpVerifyError');
+    const btn = document.getElementById('fpResetBtn');
+    
+    // Clear previous errors
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+    
+    // Validation
+    if (!otp || !newPassword || !confirmPassword) {
+        errorDiv.textContent = '❌ Please fill in all fields';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    if (otp.length !== 6) {
+        errorDiv.textContent = '❌ OTP must be exactly 6 digits';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        errorDiv.textContent = '❌ Password must be at least 8 characters';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        errorDiv.textContent = '❌ Passwords do not match';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = 'Resetting Password...';
+        console.log('Sending password reset request');
+        
+        const response = await fetch('/api/auth/password-reset/reset-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: window.fpEmail,
+                otp,
+                newPassword,
+                confirmPassword
+            })
+        });
+        
+        console.log('Reset response status:', response.status);
+        const data = await response.json();
+        console.log('Reset response data:', data);
+        
+        if (response.ok && data.success) {
+            console.log('Password reset successful');
+            // Clear interval
+            if (window.fpValidityInterval) {
+                clearInterval(window.fpValidityInterval);
+            }
+            
+            // Move to step 3 (success)
+            document.getElementById('fpStep2').style.display = 'none';
+            document.getElementById('fpStep3').style.display = 'block';
+            
+            // Auto-close after 3 seconds and show login
+            setTimeout(() => {
+                closeForgotPasswordModal();
+                openLoginModal({ preventDefault: () => {} });
+            }, 3000);
+        } else {
+            // Show error message from backend
+            const errorMsg = data.message || 'Failed to reset password. Please try again.';
+            console.log('Error from reset:', errorMsg);
+            errorDiv.textContent = '❌ ' + errorMsg;
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        errorDiv.textContent = '❌ Error: ' + (error.message || 'Network error. Please check your connection.');
+        errorDiv.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Reset Password';
+    }
+}
+
+async function resendOtp() {
+    console.log('resendOtp called');
+    
+    const email = window.fpEmail;
+    const errorDiv = document.getElementById('fpVerifyError');
+    
+    if (!email) {
+        console.error('No email stored for resend');
+        errorDiv.textContent = '❌ Error: Email not found. Please start over.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+        
+        console.log('Sending resend OTP request for email:', email);
+        
+        const response = await fetch('/api/auth/password-reset/resend-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        console.log('Resend OTP response status:', response.status);
+        const data = await response.json();
+        console.log('Resend OTP response data:', data);
+        
+        if (response.ok && data.success) {
+            console.log('OTP resent successfully');
+            
+            // Update OTP validity
+            window.fpOtpValidity = data.otpValiditySeconds || 600;
+            
+            // Clear any previous OTP input
+            document.getElementById('fp-otp').value = '';
+            document.getElementById('fp-otp').focus();
+            
+            // Restart timer
+            if (window.fpValidityInterval) {
+                clearInterval(window.fpValidityInterval);
+            }
+            updateFpOtpValidity();
+            
+            // Show success message
+            errorDiv.textContent = '✅ ' + (data.message || 'New OTP sent to your email');
+            errorDiv.style.color = '#4caf50';
+            errorDiv.style.display = 'block';
+            
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        } else {
+            const errorMsg = data.message || 'Failed to resend OTP. Please try again.';
+            console.log('Error from resend OTP:', errorMsg);
+            errorDiv.textContent = '❌ ' + errorMsg;
+            errorDiv.style.color = '#f44336';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error resending OTP:', error);
+        errorDiv.textContent = '❌ Error: ' + (error.message || 'Network error. Please check your connection.');
+        errorDiv.style.color = '#f44336';
+        errorDiv.style.display = 'block';
+    }
+}
+
+window.openForgotPasswordModal = openForgotPasswordModal;
+window.closeForgotPasswordModal = closeForgotPasswordModal;
+window.resetForgotPasswordModal = resetForgotPasswordModal;
+window.handleForgotPasswordEmail = handleForgotPasswordEmail;
+window.handleForgotPasswordOtp = handleForgotPasswordOtp;
+window.resendOtp = resendOtp;
+
 // 🔸 AUTH HANDLERS
 // ========================================================
 

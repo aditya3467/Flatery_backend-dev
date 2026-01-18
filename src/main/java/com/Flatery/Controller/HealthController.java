@@ -1,4 +1,4 @@
-package com.Flatery.controller;
+package com.Flatery.Controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

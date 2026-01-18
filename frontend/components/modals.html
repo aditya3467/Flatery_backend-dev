@@ -24,7 +24,7 @@
             <div class="form-group">
                 <div class="label-row">
                     <label for="login-password">Password</label>
-                    <a href="#" class="forgot-link">Forgot password?</a>
+                    <a href="#" class="forgot-link" onclick="closeLoginModal(); openForgotPasswordModal(); return false;">Forgot password?</a>
                 </div>
                 <input type="password" id="login-password" name="password" placeholder="Password" required minlength="6" maxlength="100" autocomplete="current-password">
             </div>
@@ -213,6 +213,87 @@
         <p class="signup-link">
             <a href="#" onclick="closeChangePasswordModal(); return false;">Cancel</a>
         </p>
+    </div>
+</div>
+
+<!--===== Forgot Password Modal =====-->
+<div class="forgot-password-modal" id="forgotPasswordModal">
+    <!-- Floating Shapes Background -->
+    <div class="modal-floating-shapes">
+        <div class="float-shape shape-1"></div>
+        <div class="float-shape shape-2"></div>
+        <div class="float-shape shape-3"></div>
+    </div>
+    
+    <div class="forgot-password-box">
+        <button class="close-btn" onclick="closeForgotPasswordModal()">&times;</button>
+        
+        <div class="modal-header">
+            <h2 id="fpTitle">Reset Your Password</h2>
+            <p class="modal-subtitle" id="fpSubtitle">Enter your email to receive an OTP</p>
+        </div>
+        
+        <!-- Step 1: Email Input -->
+        <div id="fpStep1" class="forgot-password-step">
+            <form class="modal-form" id="fpEmailForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="fp-email">Email Address</label>
+                    <input type="email" id="fp-email" name="email" placeholder="you@example.com" required autofocus>
+                </div>
+                
+                <div id="fpEmailError" class="error-message" style="display:none; color:#f44336; font-size:14px; margin-bottom:12px;"></div>
+                
+                <button type="button" class="login-btn" id="fpSendOtpBtn" onclick="handleForgotPasswordEmail(event);">Send OTP</button>
+            </form>
+            
+            <p class="signup-link">
+                <a href="#" onclick="closeForgotPasswordModal(); openLoginModal(); return false;">Back to Login</a>
+            </p>
+        </div>
+        
+        <!-- Step 2: OTP Verification -->
+        <div id="fpStep2" class="forgot-password-step" style="display:none;">
+            <form class="modal-form" id="fpOtpForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="fp-otp">Enter OTP (6 digits)</label>
+                    <input type="text" id="fp-otp" name="otp" placeholder="000000" maxlength="6" inputmode="numeric" required>
+                    <small style="color:#999; font-size:12px; margin-top:4px;">Check your email for the OTP code</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fp-new-password">New Password</label>
+                    <input type="password" id="fp-new-password" name="newPassword" placeholder="Enter new password" minlength="6" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fp-confirm-password">Confirm Password</label>
+                    <input type="password" id="fp-confirm-password" name="confirmPassword" placeholder="Confirm password" minlength="6" required>
+                </div>
+                
+                <div id="fpVerifyError" class="error-message" style="display:none; color:#f44336; font-size:14px; margin-bottom:12px;"></div>
+                
+                <button type="button" class="login-btn" id="fpResetBtn" onclick="handleForgotPasswordOtp(event);">Reset Password</button>
+            </form>
+            
+            <div style="text-align:center; margin-top:16px; padding-top:12px; border-top:1px solid #eee;">
+                <small id="fpOtpValidity" style="color:#666; display:block; margin-bottom:8px;"></small>
+                <small style="color:#999;">
+                    Didn't receive the code? <a href="#" onclick="resendOtp(); return false;" style="color:#2196F3; text-decoration:none; font-weight:500;">Resend OTP</a>
+                </small>
+            </div>
+            
+            <p class="signup-link">
+                <a href="#" onclick="resetForgotPasswordModal(); return false;">Start Over</a>
+            </p>
+        </div>
+        
+        <!-- Step 3: Success -->
+        <div id="fpStep3" class="forgot-password-step" style="display:none; text-align:center;">
+            <div style="font-size:48px; margin-bottom:16px;">✅</div>
+            <h3 style="color:#4caf50; margin-bottom:8px;">Password Reset Successful!</h3>
+            <p style="color:#666; margin-bottom:24px;">Your password has been successfully updated. You can now log in with your new password.</p>
+            <button type="button" class="login-btn" onclick="closeForgotPasswordModal(); openLoginModal();">Go to Login</button>
+        </div>
     </div>
 </div>
 <!--===== Modals End =====-->

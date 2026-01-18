@@ -3,6 +3,7 @@ package com.Flatery.email;
 public enum EmailType {
     // Auth
     PASSWORD_RESET,
+    OTP_RESET_PASSWORD,
 
     // Tenant Lifecycle
     TENANT_ONBOARDING,
