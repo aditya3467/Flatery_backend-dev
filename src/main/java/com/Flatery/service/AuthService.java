@@ -35,7 +35,7 @@ public class AuthService {
         System.out.println("[Auth] Attempting authentication for: " + request.getUsername());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsername().trim().toLowerCase(),
+                        request.getUsername().trim(),
                         request.getPassword()
                 )
         );

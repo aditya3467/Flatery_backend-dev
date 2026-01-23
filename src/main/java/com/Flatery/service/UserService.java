@@ -24,10 +24,10 @@ public class UserService implements UserDetailsService {
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        String key = username.trim().toLowerCase();
-        System.out.println("[Auth] loadUserByUsername called with: " + username + " -> key: " + key);
-        User user = userRepo.findByUsernameOrEmail(key)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + key));
+        String identifier = username.trim();
+        System.out.println("[Auth] loadUserByUsername called with: " + username + " -> identifier: " + identifier);
+        User user = userRepo.findByUsernameOrEmail(identifier)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found with username, email, or phone: " + identifier));
         System.out.println("[Auth] User resolved: id=" + user.getId() + ", username=" + user.getUsername() + ", email=" + user.getEmail());
 
         Set<GrantedAuthority> authorities = user.getRoles().stream()
