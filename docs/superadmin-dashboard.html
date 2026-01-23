@@ -71,7 +71,7 @@
                 // Check if user is authenticated and is superadmin
                 if (!apiService.isAuthenticated()) {
                     console.log('Not authenticated, redirecting to home');
-                    window.location.href = '/frontend/index.html';
+                    window.location.href = '/index.html';
                     return;
                 }
 
@@ -81,7 +81,7 @@
                 
                 if (!storedRoles.includes('SUPERADMIN')) {
                     console.log('Not a superadmin, redirecting to home');
-                    window.location.href = '/frontend/index.html';
+                    window.location.href = '/index.html';
                     return;
                 }
 
@@ -104,7 +104,7 @@
                 if (error.status === 403 || error.status === 401) {
                     // Unauthorized - redirect to home after showing error
                     setTimeout(() => {
-                        window.location.href = '/frontend/index.html';
+                        window.location.href = '/index.html';
                     }, 2000);
                 }
             }

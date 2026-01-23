@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!apiService.isAuthenticated()) {
             // If on protected page, redirect to login
             if (window.location.pathname.includes('superadmin-dashboard.html')) {
-                window.location.href = '/frontend/index.html';
+                window.location.href = '/index.html';
             }
             return;
         }
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Protect superadmin dashboard
             if (currentPath.includes('superadmin-dashboard.html')) {
                 if (!storedRoles.includes('SUPERADMIN')) {
-                    window.location.href = '/frontend/index.html';
+                    window.location.href = '/index.html';
                     return;
                 }
             }

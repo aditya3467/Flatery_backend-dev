@@ -126,7 +126,7 @@ async function loadTenantData() {
         if (!token) {
             console.error('No auth token found, redirecting to login');
             alert('Please login first to access your profile');
-            window.location.href = '/frontend/index.html';
+            window.location.href = '/index.html';
             return;
         }
 

@@ -746,17 +746,17 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {
         setTimeout(() => {
-            window.location.href = '/frontend/superadmin-dashboard.html';
+            window.location.href = '/superadmin-dashboard.html';
         }, 100);
         return; // Stop further execution
     } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
         setTimeout(() => {
-            window.location.href = '/frontend/owner/owner-dashboard.html';
+            window.location.href = '/owner/owner-dashboard.html';
         }, 100);
         return;
   } else if (roles.includes('USER')) {
     setTimeout(() => {
-      window.location.href = '/frontend/index.html';
+      window.location.href = '/index.html';
     }, 100);
     return;
     }
@@ -819,7 +819,7 @@ async function handleLogout() {
     setupLoginButtonListeners();
 
   // Redirect to home page after logout (use absolute path to avoid folder-relative issues)
-  window.location.href = '/frontend/index.html';
+  window.location.href = '/index.html';
 
   } catch (error) {
     showError('Logout failed: ' + error.message);
@@ -1017,13 +1017,13 @@ async function handleChangePassword(e) {
     const roles = JSON.parse(localStorage.getItem('roles') || '[]');
     setTimeout(() => {
       if (roles.includes('USER')) {
-        window.location.href = '/frontend/tenant.html';
+        window.location.href = '/tenant.html';
       } else if (roles.includes('ADMIN')) {
-        window.location.href = '/frontend/owner/Owner.html';
+        window.location.href = '/owner/Owner.html';
       } else if (roles.includes('SUPERADMIN')) {
-        window.location.href = '/frontend/superadmin-dashboard.html';
+        window.location.href = '/superadmin-dashboard.html';
       } else {
-        window.location.href = '/frontend/index.html';
+        window.location.href = '/index.html';
       }
     }, 1500);
   } catch (error) {
