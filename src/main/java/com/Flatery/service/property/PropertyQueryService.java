@@ -47,67 +47,62 @@ public class PropertyQueryService {
             Double radiusKm,
             Pageable pageable
     ) {
-        List<Property> all = propertyRepository.findAll();
-
-        // Basic attribute filters first
-        // Skip city/location filters when doing radius search (lat/lng provided)
+        // If no location filters at all, use DB pagination for speed
         boolean isRadiusSearch = (lat != null && lng != null);
-        List<Property> filtered = all.stream()
-                .filter(p -> isRadiusSearch || city == null || equalsIgnoreCase(p.getCity(), city))
-                .filter(p -> isRadiusSearch || location == null || containsIgnoreCase(p.getLocation(), location))
-                .filter(p -> type == null || type == p.getType())
-                .filter(p -> bhk == null || bhk == p.getBhkType())
-                .filter(p -> minRent == null || (p.getExpectedRent() != null && p.getExpectedRent() >= minRent))
-                .filter(p -> maxRent == null || (p.getExpectedRent() != null && p.getExpectedRent() <= maxRent))
-                .filter(p -> furnishing == null || furnishing == p.getFurnishing())
+        
+        if (!isRadiusSearch) {
+            // Simple DB query with pagination - FAST
+            Page<Property> page = propertyRepository.searchProperties(
+                city, location, type, bhk, minRent, maxRent, furnishing, pageable
+            );
+            
+            // Batch fetch images for the page
+            List<Long> propertyIds = page.getContent().stream()
+                .map(Property::getId)
                 .toList();
-
-        Double usedRadius = null;
-        if (lat != null && lng != null) {
-            double[] radii = radiusKm != null ? new double[]{radiusKm} : new double[]{2, 5, 10};
-            for (double r : radii) {
-                List<Property> within = filtered.stream()
-                        .filter(p -> hasCoords(p))
-                        .filter(p -> distanceKm(lat, lng, p.getLatitude(), p.getLongitude()) <= r)
-                        .toList();
-                if (!within.isEmpty()) {
-                    filtered = within;
-                    usedRadius = r;
-                    break;
-                }
-            }
+            Map<Long, String> imageMap = imageService.getPrimaryImageUrls(propertyIds);
+            
+            List<PropertySummary> summaries = page.getContent().stream()
+                .map(p -> mapper.toSummary(p, imageMap.get(p.getId())))
+                .toList();
+            
+            return new PageImpl<>(summaries, pageable, page.getTotalElements());
         }
-
-        // Sort: by distance if available, else posted date desc
-        filtered = filtered.stream()
-                .sorted((a, b) -> {
-                    Double da = (lat != null && lng != null && hasCoords(a)) ? distanceKm(lat, lng, a.getLatitude(), a.getLongitude()) : null;
-                    Double db = (lat != null && lng != null && hasCoords(b)) ? distanceKm(lat, lng, b.getLatitude(), b.getLongitude()) : null;
-                    if (da != null && db != null) return da.compareTo(db);
-                    if (da != null) return -1;
-                    if (db != null) return 1;
-                    // fallback: postedOn desc
-                    if (a.getPostedOn() != null && b.getPostedOn() != null) return b.getPostedOn().compareTo(a.getPostedOn());
-                    return 0;
-                })
-                .toList();
-
+        
+        // Radius search - need to load all and filter by distance
+        List<Property> all = propertyRepository.searchProperties(
+            null, null, type, bhk, minRent, maxRent, furnishing, Pageable.unpaged()
+        ).getContent();
+        
+        Double usedRadius = radiusKm != null ? radiusKm : 10.0; // Default 10km
+        
+        List<Property> filtered = all.stream()
+            .filter(this::hasCoords)
+            .filter(p -> distanceKm(lat, lng, p.getLatitude(), p.getLongitude()) <= usedRadius)
+            .sorted((a, b) -> {
+                double da = distanceKm(lat, lng, a.getLatitude(), a.getLongitude());
+                double db = distanceKm(lat, lng, b.getLatitude(), b.getLongitude());
+                return Double.compare(da, db);
+            })
+            .toList();
+        
         // Manual pagination
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), filtered.size());
-        List<Property> pageContent = start > end ? List.of() : filtered.subList(start, end);
-
+        List<Property> pageContent = start >= filtered.size() ? List.of() : filtered.subList(start, end);
+        
+        // Batch fetch images
+        List<Long> propertyIds = pageContent.stream().map(Property::getId).toList();
+        Map<Long, String> imageMap = imageService.getPrimaryImageUrls(propertyIds);
+        
         // Map with distance
         List<PropertySummary> summaries = pageContent.stream()
-                .map(p -> {
-                    Double d = null;
-                    if (lat != null && lng != null && hasCoords(p)) {
-                        d = distanceKm(lat, lng, p.getLatitude(), p.getLongitude());
-                    }
-                    return mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId()), d);
-                })
-                .toList();
-
+            .map(p -> {
+                Double d = distanceKm(lat, lng, p.getLatitude(), p.getLongitude());
+                return mapper.toSummary(p, imageMap.get(p.getId()), d);
+            })
+            .toList();
+        
         return new PageImpl<>(summaries, pageable, filtered.size());
     }
 

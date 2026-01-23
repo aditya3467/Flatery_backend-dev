@@ -32,4 +32,27 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
     
     // Count properties by owner
     long countByOwnerId(Long ownerId);
+    
+    // Efficient search with filters at database level
+    @Query("""
+        SELECT p FROM Property p 
+        WHERE (:city IS NULL OR LOWER(p.city) = LOWER(:city))
+        AND (:location IS NULL OR LOWER(p.location) LIKE LOWER(CONCAT('%', :location, '%')))
+        AND (:type IS NULL OR p.type = :type)
+        AND (:bhk IS NULL OR p.bhkType = :bhk)
+        AND (:minRent IS NULL OR p.expectedRent >= :minRent)
+        AND (:maxRent IS NULL OR p.expectedRent <= :maxRent)
+        AND (:furnishing IS NULL OR p.furnishing = :furnishing)
+        ORDER BY p.postedOn DESC
+        """)
+    Page<Property> searchProperties(
+        String city,
+        String location,
+        com.Flatery.model.property.enums.PropertyType type,
+        com.Flatery.model.property.enums.BhkType bhk,
+        Integer minRent,
+        Integer maxRent,
+        com.Flatery.model.property.enums.Furnishing furnishing,
+        Pageable pageable
+    );
 }
