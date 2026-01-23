@@ -4,7 +4,9 @@ import com.Flatery.model.PasswordResetOtp;
 import com.Flatery.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,12 +40,16 @@ public interface PasswordResetOtpRepository extends JpaRepository<PasswordResetO
     /**
      * Delete expired OTPs (older than expiresAt date)
      */
+    @Modifying
+    @Transactional
     @Query("DELETE FROM PasswordResetOtp p WHERE p.expiresAt < CURRENT_TIMESTAMP")
     void deleteExpiredOtps();
 
     /**
      * Delete used OTPs (optional cleanup)
      */
+    @Modifying
+    @Transactional
     @Query("DELETE FROM PasswordResetOtp p WHERE p.isUsed = true AND p.expiresAt < CURRENT_TIMESTAMP")
     void deleteUsedAndExpiredOtps();
 
