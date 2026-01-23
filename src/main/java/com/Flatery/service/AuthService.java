@@ -98,6 +98,27 @@ public class AuthService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public UserDetailsResponse getUserByUsername(String username) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Set<String> roles = user.getRoles().stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+        
+        String fullName = user.getFirstName() + " " + user.getLastName();
+        
+        return new UserDetailsResponse(
+                user.getId(),
+                user.getUsername(),
+                fullName,
+                user.getEmail(),
+                user.getPhoneNumber(),
+                roles
+        );
+    }
+
     @Transactional
     public void changePassword(String token, String currentPassword, String newPassword) {
         String username = jwtService.extractUsername(token);

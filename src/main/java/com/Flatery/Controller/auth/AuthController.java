@@ -7,6 +7,8 @@ import com.Flatery.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -57,15 +59,20 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            // Extract token from "Bearer <token>"
-            String jwtToken = token.substring(7);
-            var userDetails = authService.getUserFromToken(jwtToken);
-            return ResponseEntity.ok(userDetails);
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Not authenticated"));
+            }
+            
+            var user = authService.getUserByUsername(userDetails.getUsername());
+            return ResponseEntity.ok(user);
         } catch (Exception e) {
+            System.err.println("[Auth] Error in /me endpoint: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("Invalid or expired token"));
+                    .body(new ErrorResponse("Failed to fetch user details"));
         }
     }
 
