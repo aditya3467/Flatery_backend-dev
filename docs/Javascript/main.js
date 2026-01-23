@@ -1041,7 +1041,10 @@ async function handleChangePassword(e) {
 // Google OAuth2 Sign-In
 function loginWithGoogle() {
   // Redirect to backend OAuth2 authorization endpoint
-  window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+  const oauthBase = window.location.hostname === 'localhost'
+    ? 'http://localhost:8081'
+    : 'https://flatery-backend-render1.onrender.com';
+  window.location.href = `${oauthBase}/oauth2/authorization/google`;
 }
 
 // Handle OAuth2 callback (token in URL)
