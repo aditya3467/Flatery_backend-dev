@@ -2,7 +2,7 @@
 // Base URL for your Spring Boot backend - uses environment or production URL
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8081/api'
-    : 'https://flatery-backend-render1.onrender.com/api';
+    : 'https://flatery-backend-render.onrender.com';
 
 // API Service Class
 class ApiService {
