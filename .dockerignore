@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README*
+docs/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Build artifacts
+target/
+*.jar
+*.war
+*.class
+*.log
+
+# Frontend files (not needed for backend Docker image)
+frontend/
+
+# Test files
+src/test/
+
+# Local uploads (use external storage in production)
+uploads/
+
+# SQL scripts
+*.sql
+
+# Maven wrapper jar (keep the executable)
+!.mvn/wrapper/maven-wrapper.jar
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
