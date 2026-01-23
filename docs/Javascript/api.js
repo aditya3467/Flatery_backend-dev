@@ -1,17 +1,11 @@
 // API Service for Flatery Backend
-// Base URL for your Spring Boot backend
-const API_BASE_URL = 'http://localhost:8081/api';
+// Base URL for your Spring Boot backend - uses environment or production URL
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8081/api'
+    : 'https://flatery-backend-render1.onrender.com/api';
 
 // API Service Class
 class ApiService {
-    // Get total active security deposits for owner
-    async getOwnerSecurityDeposits() {
-        try {
-            return await this.makeRequest('/admin/properties/security-deposits');
-        } catch (error) {
-            throw new Error('Failed to fetch security deposits: ' + error.message);
-        }
-    }
     constructor() {
         this.baseURL = API_BASE_URL;
         this.token = localStorage.getItem('authToken');
