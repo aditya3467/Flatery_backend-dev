@@ -13,8 +13,8 @@
     --primary-blue: #0F3C76;
     --primary-blue-light: #124B9C;
     --white: #FFFFFF;
-    --text-muted: rgba(255, 255, 255, 0.7);
-    --text-light: rgba(255, 255, 255, 0.5);
+    --text-muted: rgba(255, 255, 255, 0.85);
+    --text-light: rgba(255, 255, 255, 0.75);
     --glass-bg: rgba(255, 255, 255, 0.06);
     --glass-border: rgba(255, 255, 255, 0.15);
     --input-bg: rgba(255, 255, 255, 0.1);
@@ -173,7 +173,7 @@
 .form-group label {
     font-size: 0.95rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.95);
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
@@ -183,18 +183,18 @@
 .form-group input,
 .form-group select,
 .form-group textarea {
-    background: var(--input-bg);
-    border: 1px solid transparent;
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 12px;
     padding: 0.875rem 1.125rem;
     font-size: 1rem;
-    color: var(--white);
+    color: #FFFFFF !important;
     transition: all 0.3s ease;
 }
 
 .form-group input::placeholder,
 .form-group textarea::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 .form-group input:focus,
@@ -308,7 +308,7 @@
 
 .toggle-hint {
     font-size: 0.85rem;
-    color: var(--text-light);
+    color: rgba(255, 255, 255, 0.85);
     display: block;
 }
 
@@ -423,13 +423,23 @@
     border-radius: 12px;
 }
 
+.lookup-box input {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #FFFFFF !important;
+}
+
+.lookup-box input::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
 #lookupResult {
     margin-top: 1rem;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
-    color: var(--text-muted);
+    color: #FFFFFF;
     font-size: 0.95rem;
 }
 

@@ -338,6 +338,14 @@ class ApiService {
         }
     }
 
+    async getUnit(propertyId, unitId) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/units/${unitId}`);
+        } catch (error) {
+            throw new Error('Failed to fetch unit: ' + error.message);
+        }
+    }
+
     async createUnit(propertyId, payload) {
         try {
             return await this.makeRequest(`/admin/properties/${propertyId}/units`, {
@@ -364,6 +372,17 @@ class ApiService {
         try {
             return await this.makeRequest(`/admin/properties/units/${unitId}`, {
                 method: 'DELETE'
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async moveTenant(propertyId, payload) {
+        try {
+            return await this.makeRequest(`/admin/properties/${propertyId}/tenants/move`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
             });
         } catch (error) {
             throw error;
@@ -642,6 +661,20 @@ class ApiService {
         });
     }
 
+    // Get payment submissions for owner's specific property
+    async getOwnerPaymentsByProperty(propertyId) {
+        return this.makeRequest(`/transactions/owner/property/${propertyId}`, {
+            method: 'GET'
+        });
+    }
+
+    // Get pending payment submissions for owner's specific property
+    async getOwnerPendingPaymentsByProperty(propertyId) {
+        return this.makeRequest(`/transactions/owner/property/${propertyId}/pending`, {
+            method: 'GET'
+        });
+    }
+
     // Owner payment info (public) by ownerId – used by tenant dashboard to show QR
     async getOwnerPaymentInfoByOwnerId(ownerId) {
         return this.makeRequest(`/owner-payment-info/public/${ownerId}`, {
@@ -734,4 +767,11 @@ ApiService.prototype.manualEmailDispatch = function(payload) {
 
 ApiService.prototype.getRecentEmailLogs = function() {
     return this.get('/superadmin/email/logs/recent');
+};
+
+// WhatsApp Reminders are now sent directly via wa.me links (no API call needed)
+// This method is kept for backwards compatibility but is no longer used
+ApiService.prototype.sendWhatsAppRentReminder = function(payload) {
+    console.warn('sendWhatsAppRentReminder: Use direct WhatsApp links via window.open(wa.me/...) instead');
+    return Promise.resolve({ message: 'Use direct WhatsApp links instead' });
 };

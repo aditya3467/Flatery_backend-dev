@@ -92,6 +92,20 @@ public class ComplaintService {
             );
         }
 
+        // Send email to owner when complaint is submitted
+        try {
+            notificationService.sendMaintenanceRequestEmail(
+                ownerId,
+                "Tenant",  // Default tenant name
+                "Unit",    // Default unit number
+                request.getTitle(),
+                request.getDescription(),
+                priority.toString()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send maintenance request email: {}", e.getMessage());
+        }
+
         return queryService.buildDetailResponse(complaint);
     }
 
@@ -155,6 +169,36 @@ public class ComplaintService {
                 "Your complaint status was updated to " + request.getNewStatus(),
                 "/tenant-dashboard.html#complaints"
             );
+            
+            // Send email to tenant when complaint is acknowledged (IN_PROGRESS status)
+            if ("IN_PROGRESS".equalsIgnoreCase(request.getNewStatus().toString())) {
+                try {
+                    notificationService.sendMaintenanceAcknowledgedEmail(
+                        complaint.getTenantId(),
+                        complaint.getTitle(),
+                        complaint.getCategory() != null ? complaint.getCategory().toString() : "Maintenance",
+                        "IN_PROGRESS",
+                        "2-3 days",
+                        request.getMessage() != null ? request.getMessage() : "Your request has been received and is being worked on."
+                    );
+                } catch (Exception e) {
+                    log.warn("Failed to send maintenance acknowledgment email: {}", e.getMessage());
+                }
+            }
+            
+            // Send email to tenant when complaint is resolved
+            if ("RESOLVED".equalsIgnoreCase(request.getNewStatus().toString())) {
+                try {
+                    notificationService.sendMaintenanceResolvedEmail(
+                        complaint.getTenantId(),
+                        complaint.getTitle(),
+                        complaint.getCategory() != null ? complaint.getCategory().toString() : "Maintenance",
+                        request.getMessage() != null ? request.getMessage() : "Your request has been resolved."
+                    );
+                } catch (Exception e) {
+                    log.warn("Failed to send maintenance resolved email: {}", e.getMessage());
+                }
+            }
         }
 
         return queryService.buildDetailResponse(complaint);

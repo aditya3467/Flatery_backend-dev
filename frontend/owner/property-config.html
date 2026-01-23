@@ -574,7 +574,7 @@
                       <th>Unit</th>
                       <th>Amount Due</th>
                       <th>Due Date</th>
-                      <th>Days Overdue</th>
+                      <th>Days Past Due</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -733,36 +733,14 @@
             </div>
             <div class="stat-content">
               <h3 id="totalPendingRent">₹0</h3>
-              <p>Pending</p>
+              <p>Due</p>
               <span class="stat-subtitle" id="pendingTenantsCount">0 tenants</span>
-            </div>
-          </div>
-
-          <div class="collection-stat-card overdue">
-            <div class="stat-icon">
-              <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="stat-content">
-              <h3 id="totalOverdueRent">₹0</h3>
-              <p>Overdue</p>
-              <span class="stat-subtitle" id="overdueTenantsCount">0 tenants</span>
             </div>
           </div>
         </div>
 
         <!-- Rent Due Categories -->
         <div class="rent-due-categories">
-          <!-- Overdue Section -->
-          <div class="due-category overdue-section">
-            <div class="category-header">
-              <h3><i class="fas fa-exclamation-circle"></i> Overdue Payments</h3>
-              <span class="category-count" id="overdueCount">0</span>
-            </div>
-            <div class="tenants-list" id="overdueTenantsContainer">
-              <div class="no-data-message">No overdue payments</div>
-            </div>
-          </div>
-
           <!-- Due Today Section -->
           <div class="due-category due-today-section">
             <div class="category-header">
@@ -2335,6 +2313,101 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Unit Details Modal - View Tenants and Move Between Units -->
+  <div id="unitDetailsModal" class="modal large-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUnitDetailsModal()">&times;</span>
+      <h2><i class="fas fa-door-open"></i> Unit Details & Tenant Management</h2>
+      
+      <div class="unit-details-layout">
+        <!-- Unit Information -->
+        <div class="unit-info-section">
+          <div class="unit-header">
+            <h3 id="unitDetailsNumber">Unit -</h3>
+            <span class="unit-status-badge" id="unitDetailsStatus">-</span>
+          </div>
+          <div class="unit-meta">
+            <div class="meta-item">
+              <label>Type:</label>
+              <span id="unitDetailsType">-</span>
+            </div>
+            <div class="meta-item">
+              <label>Total Beds:</label>
+              <span id="unitDetailsBeds">-</span>
+            </div>
+            <div class="meta-item">
+              <label>Rent:</label>
+              <span id="unitDetailsRent">-</span>
+            </div>
+            <div class="meta-item">
+              <label>Occupancy:</label>
+              <span id="unitDetailsOccupancy">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tenants List -->
+        <div class="tenants-in-unit-section">
+          <div class="section-header">
+            <h3><i class="fas fa-users"></i> Tenants in this Unit</h3>
+            <span class="tenant-count-badge" id="tenantCountBadge">0</span>
+          </div>
+          
+          <div class="tenants-list-container" id="unitTenantsList">
+            <div class="no-data-message">
+              <i class="fas fa-user-slash"></i>
+              <p>No tenants assigned to this unit</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeUnitDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Move Tenant Modal -->
+  <div id="moveTenantModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeMoveTenantModal()">&times;</span>
+      <h2><i class="fas fa-exchange-alt"></i> Move Tenant to Another Unit</h2>
+      <p class="modal-subtitle">Transfer <strong id="moveTenantName">-</strong> from <strong id="moveFromUnit">-</strong> to another unit</p>
+      
+      <form id="moveTenantForm" onsubmit="handleMoveTenant(event)">
+        <input type="hidden" id="moveTenantId" />
+        <input type="hidden" id="moveFromUnitId" />
+        
+        <div class="form-group">
+          <label>Select Destination Unit <span class="required">*</span></label>
+          <select id="moveToUnit" required>
+            <option value="">-- Select Unit --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Reason for Transfer (Optional)</label>
+          <textarea id="transferReason" rows="3" placeholder="Enter reason for tenant transfer..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="notifyTenant" checked />
+            <span>Notify tenant about the transfer</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeMoveTenantModal()">Cancel</button>
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-check"></i> Confirm Transfer
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

@@ -114,7 +114,7 @@ class ComplaintManager {
      */
     async createComplaint(formData) {
         try {
-            const response = await fetch('http://localhost:8081/api/complaints', {
+            const response = await fetch(`${API_BASE_URL}/complaints`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -147,8 +147,9 @@ class ComplaintManager {
             if (filters.status) queryParams.append('status', filters.status);
             if (filters.category) queryParams.append('category', filters.category);
 
-            const endpoint = this.isOwner() ? 'http://localhost:8081/api/complaints/owner/my-complaints' : 'http://localhost:8081/api/complaints/tenant/my-complaints';
-            const url = queryParams.toString() ? `${endpoint}?${queryParams}` : endpoint;
+            // Use backend API base URL
+                const endpoint = this.isOwner() ? `${API_BASE_URL}/complaints/owner/my-complaints` : `${API_BASE_URL}/complaints/tenant/my-complaints`;
+                const url = queryParams.toString() ? `${endpoint}?${queryParams}` : endpoint;
 
             const response = await fetch(url, {
                 headers: {
@@ -175,7 +176,7 @@ class ComplaintManager {
      */
     async getComplaintDetails(complaintId) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}`, {
+                const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
                     'Content-Type': 'application/json'
@@ -200,7 +201,7 @@ class ComplaintManager {
      */
     async updateComplaintStatus(complaintId, status, comment = '') {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/status`, {
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/status`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -232,7 +233,7 @@ class ComplaintManager {
      */
     async addComplaintResponse(complaintId, message) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/responses`, {
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/responses`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -263,7 +264,7 @@ class ComplaintManager {
      */
     async verifyComplaint(complaintId) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/verify`, {
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/verify`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -290,7 +291,7 @@ class ComplaintManager {
      */
     async reopenComplaint(complaintId, reason) {
         try {
-            const response = await fetch(`http://localhost:8081/api/complaints/${complaintId}/reopen`, {
+            const response = await fetch(`${API_BASE_URL}/complaints/${complaintId}/reopen`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -318,7 +319,7 @@ class ComplaintManager {
      */
     async getComplaintStats() {
         try {
-            const endpoint = this.isOwner() ? 'http://localhost:8081/api/complaints/owner/stats' : 'http://localhost:8081/api/complaints/tenant/stats';
+            const endpoint = this.isOwner() ? `${API_BASE_URL}/complaints/owner/stats` : `${API_BASE_URL}/complaints/tenant/stats`;
             
             const response = await fetch(endpoint, {
                 headers: {
@@ -370,7 +371,7 @@ class ComplaintManager {
         
         // Extract filename from URL path
         const filename = attachmentUrl.split('/').pop();
-        return `http://localhost:8081/api/complaints/uploads/complaints/${complaintId}/${filename}`;
+        return `${API_BASE_URL}/complaints/uploads/complaints/${complaintId}/${filename}`;
     }
 
     // ===================== UI RENDERING FUNCTIONS =====================

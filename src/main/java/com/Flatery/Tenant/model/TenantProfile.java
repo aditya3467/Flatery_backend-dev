@@ -87,6 +87,7 @@ public class TenantProfile {
     private String paymentMode;
 
     @Column(name = "profile_completed")
+    @Builder.Default
     private boolean profileCompleted = false;
 
     @CreationTimestamp

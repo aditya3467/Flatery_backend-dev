@@ -2,6 +2,8 @@ package com.Flatery.service.payment;
 
 import com.Flatery.dto.payment.PaymentRequestDto;
 import com.Flatery.dto.payment.TransactionResponseDto;
+import com.Flatery.email.EmailType;
+import com.Flatery.email.service.EmailEvents;
 import com.Flatery.model.Notification;
 import com.Flatery.model.User;
 import com.Flatery.model.payment.PaymentMode;
@@ -25,7 +27,9 @@ import jakarta.persistence.PersistenceContext;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -37,6 +41,7 @@ public class TransactionService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final TenantMonthlyPaymentStatusRepository monthlyPaymentStatusRepository;
+    private final EmailEvents emailEvents;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -46,13 +51,15 @@ public class TransactionService {
     public TransactionService(TransactionRepository repository, TenantRepository tenantRepository, 
                             UserRepository userRepository, NotificationService notificationService, 
                             PlatformTransactionManager transactionManager,
-                            TenantMonthlyPaymentStatusRepository monthlyPaymentStatusRepository) {
+                            TenantMonthlyPaymentStatusRepository monthlyPaymentStatusRepository,
+                            EmailEvents emailEvents) {
         this.repository = repository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.transactionManager = transactionManager;
         this.monthlyPaymentStatusRepository = monthlyPaymentStatusRepository;
+        this.emailEvents = emailEvents;
     }
 
     public Transaction save(Transaction transaction) {
@@ -162,6 +169,33 @@ public class TransactionService {
             // Don't fail the transaction if notification fails
         }
         
+        // Send email to owner about new payment submission
+        try {
+            Optional<User> ownerOpt = userRepository.findById(ownerId);
+            Optional<Tenant> tenantOpt = tenantRepository.findById(tenantId);
+            
+            if (ownerOpt.isPresent() && tenantOpt.isPresent()) {
+                User owner = ownerOpt.get();
+                Tenant tenant = tenantOpt.get();
+                
+                Map<String, Object> emailData = new HashMap<>();
+                emailData.put("owner_name", owner.getFirstName() != null ? owner.getFirstName() : "Property Owner");
+                emailData.put("tenant_name", tenant.getTenantName() != null ? tenant.getTenantName() : "Tenant");
+                emailData.put("amount", String.format("%.2f", saved.getAmount()));
+                emailData.put("payment_month", saved.getPaymentMonth());
+                emailData.put("payment_mode", saved.getPaymentMode().toString().replace("_", " "));
+                emailData.put("submission_date", LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")));
+                emailData.put("dashboard_url", "https://flatery.in/owner/property-config.html?id=" + propertyId);
+                
+                emailEvents.publish(EmailType.PAYMENT_SUBMISSION, owner.getEmail(), emailData);
+                System.out.println("Payment submission email sent to owner: " + owner.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send payment submission email: " + e.getMessage());
+            e.printStackTrace();
+            // Don't fail the transaction if email fails
+        }
+        
         return mapToDto(saved);
     }
 
@@ -259,6 +293,24 @@ public class TransactionService {
     }
 
     /**
+     * Get transactions for a specific property of an owner
+     */
+    public List<TransactionResponseDto> getTransactionsByOwnerAndProperty(Long ownerId, Long propertyId) {
+        return repository.findByOwnerIdAndPropertyId(ownerId, propertyId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get pending transactions for a specific property of an owner
+     */
+    public List<TransactionResponseDto> getPendingTransactionsByOwnerAndProperty(Long ownerId, Long propertyId) {
+        return repository.findByOwnerIdAndPropertyIdAndStatus(ownerId, propertyId, PaymentStatus.PENDING).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Mark payment as VERIFIED, sets paymentDate to now.
      * Checks that the owner owns the transaction.
      * Sends notification to tenant when payment is approved.
@@ -337,6 +389,35 @@ public class TransactionService {
             System.err.println("Failed to send payment approval notification: " + e.getMessage());
             e.printStackTrace(); // Print stack trace for debugging
             // Don't fail the transaction if notification fails
+        }
+        
+        // Send email to tenant about payment approval
+        try {
+            Optional<Tenant> tenantOpt = tenantRepository.findById(transaction.getTenantId());
+            Optional<User> tenantUserOpt = userRepository.findByPhoneNumber(
+                tenantOpt.isPresent() ? tenantOpt.get().getPhoneNumber() : null
+            );
+            
+            if (tenantUserOpt.isPresent() && tenantOpt.isPresent()) {
+                User tenant = tenantUserOpt.get();
+                Tenant tenantEntity = tenantOpt.get();
+                
+                Map<String, Object> emailData = new HashMap<>();
+                emailData.put("tenant_name", tenantEntity.getTenantName() != null ? tenantEntity.getTenantName() : "Tenant");
+                emailData.put("amount", String.format("%.2f", transaction.getAmount()));
+                emailData.put("property_name", "Your Property");
+                emailData.put("payment_month", transaction.getPaymentMonth());
+                emailData.put("approval_date", LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+                emailData.put("transaction_id", "TXN-" + transaction.getId());
+                emailData.put("payment_history_url", "https://flatery.in/tenant-dashboard.html#payments");
+                
+                emailEvents.publish(EmailType.PAYMENT_APPROVED, tenant.getEmail(), emailData);
+                System.out.println("Payment approval email sent to tenant: " + tenant.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send payment approval email: " + e.getMessage());
+            e.printStackTrace();
+            // Don't fail the transaction if email fails
         }
         
         System.out.println("=== VERIFY TRANSACTION END ===");
@@ -443,6 +524,35 @@ public class TransactionService {
         } catch (Exception e) {
             System.err.println("Failed to send payment rejection notification: " + e.getMessage());
             // Don't fail the transaction if notification fails
+        }
+        
+        // Send email to tenant about payment rejection
+        try {
+            Optional<Tenant> tenantOpt = tenantRepository.findById(transaction.getTenantId());
+            Optional<User> tenantUserOpt = userRepository.findByPhoneNumber(
+                tenantOpt.isPresent() ? tenantOpt.get().getPhoneNumber() : null
+            );
+            
+            if (tenantUserOpt.isPresent() && tenantOpt.isPresent()) {
+                User tenant = tenantUserOpt.get();
+                Tenant tenantEntity = tenantOpt.get();
+                
+                Map<String, Object> emailData = new HashMap<>();
+                emailData.put("tenant_name", tenantEntity.getTenantName() != null ? tenantEntity.getTenantName() : "Tenant");
+                emailData.put("amount", String.format("%.2f", transaction.getAmount()));
+                emailData.put("property_name", "Your Property");
+                emailData.put("payment_month", transaction.getPaymentMonth());
+                emailData.put("rejection_reason", "Payment verification failed. Please contact owner for details.");
+                emailData.put("rejection_date", LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+                emailData.put("submit_payment_url", "https://flatery.in/tenant-dashboard.html#payments");
+                
+                emailEvents.publish(EmailType.PAYMENT_REJECTED, tenant.getEmail(), emailData);
+                System.out.println("Payment rejection email sent to tenant: " + tenant.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send payment rejection email: " + e.getMessage());
+            e.printStackTrace();
+            // Don't fail the transaction if email fails
         }
         
         return mapToDto(updated);

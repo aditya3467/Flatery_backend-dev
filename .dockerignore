@@ -8,18 +8,28 @@
 README*
 docs/
 
+<<<<<<< Updated upstream
 # IDE files
+=======
+# IDE
+>>>>>>> Stashed changes
 .idea/
 .vscode/
 *.iml
 *.iws
+<<<<<<< Updated upstream
 *.ipr
 
 # Build artifacts
+=======
+
+# Build outputs
+>>>>>>> Stashed changes
 target/
 *.jar
 *.war
 *.class
+<<<<<<< Updated upstream
 *.log
 
 # Frontend files (not needed for backend Docker image)
@@ -29,20 +39,38 @@ frontend/
 src/test/
 
 # Local uploads (use external storage in production)
+=======
+
+# Frontend files (not needed in backend image)
+frontend/
+
+# Uploads (should use external storage in production)
+>>>>>>> Stashed changes
 uploads/
 
 # SQL scripts
 *.sql
 
+<<<<<<< Updated upstream
 # Maven wrapper jar (keep the executable)
 !.mvn/wrapper/maven-wrapper.jar
+=======
+# Logs
+*.log
+>>>>>>> Stashed changes
 
 # OS files
 .DS_Store
 Thumbs.db
+<<<<<<< Updated upstream
 *.swp
 *.swo
 
 # Environment files
 .env
 .env.local
+=======
+
+# Maven wrapper (keep mvnw files)
+!.mvn/wrapper/maven-wrapper.jar
+>>>>>>> Stashed changes

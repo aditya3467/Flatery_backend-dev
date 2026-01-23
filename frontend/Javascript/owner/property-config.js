@@ -9,6 +9,7 @@ let propertyData = null;
 let floors = [];
 let units = [];
 let tenants = [];
+let paymentSubmissions = [];
 let currentView = 'dashboard'; // 'dashboard', 'floors' or 'tenants'
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -146,6 +147,7 @@ function showFinancialSection() {
   toggleTopMeta(false);
   loadFinancialData();
 }
+
 
 function toggleTopMeta(show) {
   const pageTitle = document.querySelector('.page-title-section');
@@ -290,6 +292,29 @@ function showMaintenanceSection() {
   const noticesSection = document.querySelector('.notices-section');
   if (noticesSection) noticesSection.style.display = 'none';
   toggleTopMeta(false);
+
+  // Load complaints/maintenance list for this property
+  loadOwnerComplaints();
+}
+
+function showManagePaymentsSection() {
+  currentView = 'manage-payments';
+  document.querySelector('.dashboard-section').style.display = 'none';
+  document.querySelector('.financial-section').style.display = 'none';
+  document.querySelector('.floors-section').style.display = 'none';
+  document.querySelector('.tenants-section').style.display = 'none';
+  document.querySelector('.payments-section').style.display = 'none';
+  const paymentSettingsSection = document.querySelector('.payment-settings-section');
+  if (paymentSettingsSection) paymentSettingsSection.style.display = 'none';
+  const managePaymentsSection = document.querySelector('.manage-payments-section');
+  if (managePaymentsSection) managePaymentsSection.style.display = 'block';
+  const maintenanceSection = document.querySelector('.maintenance-section');
+  if (maintenanceSection) maintenanceSection.style.display = 'none';
+  const noticesSection = document.querySelector('.notices-section');
+  if (noticesSection) noticesSection.style.display = 'none';
+  toggleTopMeta(false);
+
+  refreshPaymentSubmissions();
 }
 
 function showNoticesSection() {
@@ -333,17 +358,40 @@ async function loadDashboardData(period = 'month') {
     document.getElementById('kpiOccupied').textContent = occupiedBeds;
     document.getElementById('kpiOccupancyRate').textContent = `(${occupancyRate}%)`;
     
-    // Calculate rent collected (mock data - replace with actual API)
-    const totalRent = units.reduce((sum, u) => sum + (u.rent * u.occupied), 0);
-    const collectedRent = Math.floor(totalRent * 0.75); // Mock: 75% collected
-    const pendingRent = totalRent - collectedRent;
+    // Calculate real rent collected from tenant data
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    let totalRent = 0;
+    let collectedRent = 0;
+    let pendingRent = 0;
+    
+    allTenants.forEach(tenant => {
+      const rent = tenant.rent || 0;
+      totalRent += rent;
+      
+      // Check if tenant has paid for current month
+      if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
+        collectedRent += rent;
+      } else {
+        pendingRent += rent;
+      }
+    });
     
     document.getElementById('kpiRentCollected').textContent = `₹${formatNumber(collectedRent)}`;
     document.getElementById('kpiPendingDues').textContent = `₹${formatNumber(pendingRent)}`;
     
-    // Mock data for complaints
-    const complaintsCount = Math.floor(Math.random() * 5) + 1;
-    document.getElementById('kpiComplaints').textContent = complaintsCount;
+    // Get real complaints count via complaint manager (shared help module)
+    try {
+      let complaints = [];
+      if (window.complaintManager && typeof complaintManager.getComplaints === 'function') {
+        complaints = await complaintManager.getComplaints();
+      }
+      const activeComplaints = complaints.filter(c => c.status !== 'RESOLVED').length;
+      document.getElementById('kpiComplaints').textContent = activeComplaints;
+    } catch (error) {
+      document.getElementById('kpiComplaints').textContent = '0';
+    }
     
     // Load quick lists
     loadTenantsDuesList();
@@ -364,8 +412,13 @@ function loadTenantsDuesList() {
   const listContainer = document.getElementById('tenantsDuesList');
   const countBadge = document.getElementById('duesCount');
   
-  // Get tenants with pending dues from loaded tenant data
-  const tenantsWithDues = allTenants.filter(t => t.dues && t.dues > 0);
+  // Get tenants with pending dues based on payment status
+  const tenantsWithDues = allTenants.filter(tenant => {
+    const paymentStatus = (tenant.paymentStatus || 'DUE').toUpperCase();
+    const isNotPaid = paymentStatus !== 'PAID' && !tenant.isCurrentMonthPaid;
+    const hasDue = tenant.isDue || tenant.isOverdue;
+    return isNotPaid || hasDue;
+  });
   
   countBadge.textContent = tenantsWithDues.length;
   
@@ -375,16 +428,19 @@ function loadTenantsDuesList() {
   }
   
   let html = '';
-  tenantsWithDues.forEach(tenant => {
+  tenantsWithDues.slice(0, 5).forEach(tenant => {
     const initials = getInitials(tenant.name);
+    const dueAmount = tenant.rent || 0;
+    const roomInfo = tenant.roomNumber ? `Room ${tenant.roomNumber}` : (tenant.flatRoomNumber ? `Flat ${tenant.flatRoomNumber}` : 'Unit');
+    
     html += `
-      <div class="list-item">
+      <div class="list-item" onclick="openTenantProfileDrawer(${tenant.id})" style="cursor: pointer;">
         <div class="item-avatar">${initials}</div>
         <div class="item-details">
           <div class="item-name">${tenant.name}</div>
-          <div class="item-info">Unit ${tenant.roomNumber} • ₹${formatNumber(tenant.dues)} pending</div>
+          <div class="item-info">${roomInfo} • ₹${formatNumber(dueAmount)} due</div>
         </div>
-        <div class="item-amount">₹${formatNumber(tenant.dues)}</div>
+        <div class="item-amount">₹${formatNumber(dueAmount)}</div>
       </div>
     `;
   });
@@ -432,6 +488,404 @@ async function loadMaintenanceList() {
     listContainer.innerHTML = '<div class="no-data-small">No active requests</div>';
     countBadge.textContent = '0';
   }
+}
+
+// Load owner complaints (maintenance issues) and render table + stats
+async function loadOwnerComplaints() {
+  const tableBody = document.getElementById('complaintsTableBody');
+  const resultsCountEl = document.getElementById('resultsCount');
+  const totalEl = document.getElementById('totalComplaints');
+  const openEl = document.getElementById('openComplaints');
+  const inProgressEl = document.getElementById('inProgressComplaints');
+  const resolvedEl = document.getElementById('resolvedComplaints');
+
+  // Show loading state
+  if (tableBody) {
+    tableBody.innerHTML = `
+      <tr class="loading-row">
+        <td colspan="9" class="text-center">
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            Loading maintenance issues...
+          </div>
+        </td>
+      </tr>`;
+  }
+
+  try {
+    let complaints = [];
+    if (window.complaintManager && typeof complaintManager.getComplaints === 'function') {
+      complaints = await complaintManager.getComplaints();
+    }
+
+    const propertyIdNum = Number(currentPropertyId);
+    const filtered = complaints.filter(c => {
+      const pid = Number(c.propertyId);
+      if (Number.isFinite(pid)) return pid === propertyIdNum;
+      if (c.propertyName && propertyData?.name) return c.propertyName === propertyData.name;
+      return true; // fallback if no property info
+    });
+
+    const statusVal = c => (c.status || '').toUpperCase();
+    const total = filtered.length;
+    const openCount = filtered.filter(c => ['OPEN', 'REOPENED'].includes(statusVal(c))).length;
+    const inProgressCount = filtered.filter(c => ['IN_PROGRESS', 'ACKNOWLEDGED'].includes(statusVal(c))).length;
+    const resolvedCount = filtered.filter(c => ['RESOLVED', 'CLOSED'].includes(statusVal(c))).length;
+
+    if (totalEl) totalEl.textContent = total;
+    if (openEl) openEl.textContent = openCount;
+    if (inProgressEl) inProgressEl.textContent = inProgressCount;
+    if (resolvedEl) resolvedEl.textContent = resolvedCount;
+    if (resultsCountEl) resultsCountEl.textContent = `${total} issues found`;
+
+    if (!tableBody) return;
+
+    if (total === 0) {
+      tableBody.innerHTML = '<tr><td colspan="9" class="text-center no-data">No complaints found</td></tr>';
+      return;
+    }
+
+    const formatDate = (dt) => {
+      if (!dt) return '-';
+      const d = new Date(dt);
+      if (Number.isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+    const rows = filtered.map(c => {
+      const category = c.category || 'GENERAL';
+      const priority = (c.priority || 'MEDIUM').toUpperCase();
+      const status = statusVal(c);
+      const updatedOn = c.updatedAt || c.lastUpdatedAt || c.resolvedAt || c.createdAt;
+      return `
+        <tr>
+          <td>${c.propertyName || propertyData?.name || '-'}</td>
+          <td>${c.unitName || c.unit || c.roomNumber || '-'}</td>
+          <td>${c.tenantName || c.submittedBy || '-'}</td>
+          <td>${c.title || c.issueTitle || c.issue || 'Issue'}</td>
+          <td>${category}</td>
+          <td><span class="priority-badge priority-${priority.toLowerCase()}">${priority}</span></td>
+          <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+          <td>${formatDate(updatedOn)}</td>
+          <td>
+            <button class="table-action-btn view" onclick="complaintManager.viewComplaint(${c.id || c.complaintId})">
+              <i class="fas fa-eye"></i> View
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    tableBody.innerHTML = rows;
+  } catch (error) {
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" class="text-center no-data">Failed to load complaints</td></tr>';
+    if (totalEl) totalEl.textContent = '0';
+    if (openEl) openEl.textContent = '0';
+    if (inProgressEl) inProgressEl.textContent = '0';
+    if (resolvedEl) resolvedEl.textContent = '0';
+    if (resultsCountEl) resultsCountEl.textContent = '0 issues found';
+  }
+}
+
+// ===================== PAYMENT SUBMISSIONS (MANAGE PAYMENTS) =====================
+function mapStatusBadge(status) {
+  const s = (status || '').toUpperCase();
+  if (s === 'VERIFIED' || s === 'APPROVED') return { text: 'APPROVED', cls: 'approved' };
+  if (s === 'REJECTED') return { text: 'REJECTED', cls: 'rejected' };
+  return { text: 'PENDING', cls: 'pending' };
+}
+
+function mapPaymentMode(mode) {
+  const m = (mode || '').toUpperCase();
+  if (m.includes('UPI')) return { text: 'UPI', cls: 'upi' };
+  if (m.includes('BANK')) return { text: 'BANK TRANSFER', cls: 'bank' };
+  if (m.includes('CASH')) return { text: 'CASH', cls: 'cash' };
+  return { text: m || 'OTHER', cls: 'other' };
+}
+
+function formatDateShort(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatMonthLabel(paymentMonth, paymentDate) {
+  const key = normalizePaymentMonth(paymentMonth, paymentDate);
+  if (!key) return paymentMonth || '-';
+  const [year, month] = key.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+}
+
+function getMonthOptionKey(paymentMonth, paymentDate) {
+  const key = normalizePaymentMonth(paymentMonth, paymentDate);
+  if (key) {
+    const [year, month] = key.split('-');
+    return `${month}-${year}`; // matches dropdown format e.g., 11-2024
+  }
+  return '';
+}
+
+async function loadPaymentSubmissions() {
+  const tableBody = document.getElementById('paymentSubmissionsTableBody');
+  if (tableBody) {
+    tableBody.innerHTML = '<tr><td colspan="9" class="text-center"><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading payment submissions...</div></td></tr>';
+  }
+
+  try {
+    // Load payments only for the current property, not all payments
+    const propertyIdNum = Number(currentPropertyId);
+    const all = await apiService.getOwnerPaymentsByProperty(propertyIdNum);
+    paymentSubmissions = Array.isArray(all) ? all : [];
+
+    updatePaymentSubmissionStats(paymentSubmissions);
+    populateSubmissionMonthFilter(paymentSubmissions);
+    renderPaymentSubmissions(paymentSubmissions);
+  } catch (error) {
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" class="text-center no-data">Failed to load submissions</td></tr>';
+    const ids = ['pendingSubmissionsCount','approvedSubmissionsCount','rejectedSubmissionsCount','totalSubmittedAmount'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = id === 'totalSubmittedAmount' ? '₹0' : '0'; });
+  }
+}
+
+function updatePaymentSubmissionStats(list) {
+  const statusVal = t => (t.status || '').toUpperCase();
+  const pending = list.filter(t => statusVal(t) === 'PENDING').length;
+  const approved = list.filter(t => ['VERIFIED', 'APPROVED'].includes(statusVal(t))).length;
+  const rejected = list.filter(t => statusVal(t) === 'REJECTED').length;
+  const totalAmount = list.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+  const pendingEl = document.getElementById('pendingSubmissionsCount');
+  const approvedEl = document.getElementById('approvedSubmissionsCount');
+  const rejectedEl = document.getElementById('rejectedSubmissionsCount');
+  const totalEl = document.getElementById('totalSubmittedAmount');
+  if (pendingEl) pendingEl.textContent = pending;
+  if (approvedEl) approvedEl.textContent = approved;
+  if (rejectedEl) rejectedEl.textContent = rejected;
+  if (totalEl) totalEl.textContent = `₹${formatNumber(totalAmount)}`;
+}
+
+function populateSubmissionMonthFilter(list) {
+  const select = document.getElementById('submissionMonthFilter');
+  if (!select) return;
+  const seen = new Set();
+  const options = ['<option value="">All Months</option>'];
+
+  list.forEach(t => {
+    const key = getMonthOptionKey(t.paymentMonth, t.paymentDate);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    const [month, year] = key.split('-');
+    const label = new Date(Number(year), Number(month) - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+    options.push(`<option value="${key}">${label}</option>`);
+  });
+
+  select.innerHTML = options.join('');
+}
+
+function renderPaymentSubmissions(list) {
+  const tableBody = document.getElementById('paymentSubmissionsTableBody');
+  if (!tableBody) return;
+
+  if (!list || list.length === 0) {
+    tableBody.innerHTML = '<tr><td colspan="9" class="text-center no-data">No payment submissions found</td></tr>';
+    return;
+  }
+
+  const rows = list.map(t => {
+    const status = mapStatusBadge(t.status);
+    const mode = mapPaymentMode(t.paymentMode);
+    const monthLabel = formatMonthLabel(t.paymentMonth, t.paymentDate);
+    const submitted = formatDateShort(t.paymentDate || t.submissionDate || t.createdAt);
+    const proofUrl = t.screenshotUrl || t.paymentProofUrl || t.paymentScreenshotUrl || t.proofUrl;
+    const remark = t.ownerRemark || t.remark || '';
+    const tenantName = t.tenantName || 'Tenant';
+    const unitInfo = t.unitNumber || t.unitName || t.roomNumber || '';
+    const isPending = (t.status || '').toUpperCase() === 'PENDING';
+
+    // Only show action buttons for PENDING payments
+    const actionsHtml = isPending ? `
+      <div class="payment-actions">
+        <button class="btn-icon success" title="Approve" onclick="approvePaymentSubmission(${t.id})"><i class="fas fa-check"></i></button>
+        <button class="btn-icon danger" title="Reject" onclick="showRejectModal(${t.id})"><i class="fas fa-times"></i></button>
+      </div>` : '-';
+
+    return `
+      <tr>
+        <td>
+          <div class="tenant-info">
+            <div class="tenant-avatar">${tenantName.charAt(0).toUpperCase()}</div>
+            <div>
+              <strong>${tenantName}</strong>
+              <small>${unitInfo || ''}</small>
+            </div>
+          </div>
+        </td>
+        <td>${monthLabel}</td>
+        <td><strong>₹${formatNumber(t.amount || 0)}</strong></td>
+        <td><span class="payment-mode-badge ${mode.cls}">${mode.text}</span></td>
+        <td><div class="date-info"><div>${submitted}</div></div></td>
+        <td><span class="status-badge ${status.cls}">${status.text}</span></td>
+        <td>
+          ${proofUrl ? `<button class="btn-icon" onclick="viewPaymentProof('${proofUrl}')" title="View Proof"><i class="fas fa-image"></i></button>` : '-'}
+        </td>
+        <td><div class="tenant-remark"><small>${remark || ''}</small></div></td>
+        <td>${actionsHtml}</td>
+      </tr>`;
+  }).join('');
+
+  tableBody.innerHTML = rows;
+}
+
+function filterPaymentSubmissions() {
+  const statusVal = document.getElementById('submissionStatusFilter')?.value || '';
+  const monthVal = document.getElementById('submissionMonthFilter')?.value || '';
+  const searchVal = (document.getElementById('submissionTenantSearch')?.value || '').toLowerCase();
+
+  let filtered = paymentSubmissions.slice();
+
+  if (statusVal) {
+    filtered = filtered.filter(t => (t.status || '').toUpperCase() === statusVal.toUpperCase());
+  }
+
+  if (monthVal) {
+    filtered = filtered.filter(t => getMonthOptionKey(t.paymentMonth, t.paymentDate) === monthVal);
+  }
+
+  if (searchVal) {
+    filtered = filtered.filter(t => (t.tenantName || '').toLowerCase().includes(searchVal));
+  }
+
+  renderPaymentSubmissions(filtered);
+}
+
+function refreshPaymentSubmissions() {
+  loadPaymentSubmissions();
+}
+
+// Proof modal helpers
+function viewPaymentProof(url) {
+  if (!url) return;
+  const modal = document.getElementById('viewProofModal');
+  const img = document.getElementById('proofImage');
+  if (img) img.src = url;
+  if (modal) modal.style.display = 'block';
+  window.currentProofUrl = url;
+}
+
+function closeProofModal() {
+  const modal = document.getElementById('viewProofModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function downloadProof() {
+  if (!window.currentProofUrl) return;
+  const link = document.createElement('a');
+  link.href = window.currentProofUrl;
+  link.download = 'payment-proof';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function openProofInNewTab() {
+  if (!window.currentProofUrl) return;
+  window.open(window.currentProofUrl, '_blank');
+}
+
+// Approve payment submission
+async function approvePaymentSubmission(transactionId) {
+  if (!transactionId) return;
+  
+  try {
+    // Show confirmation
+    if (!confirm('Are you sure you want to approve this payment?')) return;
+    
+    const response = await apiService.verifyPaymentSubmission(transactionId);
+    
+    if (response) {
+      showNotification('Payment approved successfully!', 'success');
+      // Reload the payment submissions
+      loadPaymentSubmissions();
+    }
+  } catch (error) {
+    console.error('Error approving payment:', error);
+    showNotification('Failed to approve payment. Please try again.', 'error');
+  }
+}
+
+// Show rejection modal
+function showRejectModal(transactionId) {
+  window.currentRejectTransactionId = transactionId;
+  const modal = document.getElementById('rejectPaymentModal');
+  if (!modal) {
+    // Create modal if it doesn't exist
+    createRejectPaymentModal();
+  }
+  const rejectModal = document.getElementById('rejectPaymentModal');
+  if (rejectModal) rejectModal.style.display = 'block';
+  const reasonInput = document.getElementById('rejectionReasonInput');
+  if (reasonInput) reasonInput.value = '';
+}
+
+// Reject payment submission
+async function rejectPaymentSubmission() {
+  const transactionId = window.currentRejectTransactionId;
+  const reasonInput = document.getElementById('rejectionReasonInput');
+  const reason = reasonInput ? reasonInput.value.trim() : '';
+  
+  if (!transactionId) return;
+  if (!reason) {
+    showNotification('Please enter a rejection reason', 'warning');
+    return;
+  }
+  
+  try {
+    const response = await apiService.rejectPaymentSubmission(transactionId, reason);
+    
+    if (response) {
+      showNotification('Payment rejected successfully!', 'success');
+      closeRejectModal();
+      // Reload the payment submissions
+      loadPaymentSubmissions();
+    }
+  } catch (error) {
+    console.error('Error rejecting payment:', error);
+    showNotification('Failed to reject payment. Please try again.', 'error');
+  }
+}
+
+function closeRejectModal() {
+  const modal = document.getElementById('rejectPaymentModal');
+  if (modal) modal.style.display = 'none';
+  window.currentRejectTransactionId = null;
+}
+
+// Create reject payment modal if it doesn't exist in HTML
+function createRejectPaymentModal() {
+  if (document.getElementById('rejectPaymentModal')) return;
+  
+  const modalHtml = `
+    <div id="rejectPaymentModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Reject Payment</h2>
+          <button class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Rejection Reason <span style="color: red;">*</span></label>
+            <textarea id="rejectionReasonInput" class="form-control" placeholder="Enter reason for rejection..." rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-action secondary" onclick="closeRejectModal()">Cancel</button>
+          <button class="btn-action danger" onclick="rejectPaymentSubmission()">Reject Payment</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
 async function loadUpcomingEvents() {
@@ -569,24 +1023,34 @@ function renderRentCollectionChart() {
     window.rentCollectionChart.destroy();
   }
   
-  // Generate data for last 6 months
+  // Generate data for last 6 months using real tenant data
   const months = [];
   const collectedData = [];
-  const pendingData = [];
+  const dueData = [];
   const today = new Date();
-  const baseRevenue = units.reduce((sum, u) => sum + (u.rent * u.occupied), 0);
   
   for (let i = 5; i >= 0; i--) {
     const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
     months.push(date.toLocaleDateString('en-IN', { month: 'short' }));
     
-    const variance = Math.random() * 0.3 - 0.15;
-    const totalRent = baseRevenue * (1 + variance);
-    const collected = totalRent * (0.7 + Math.random() * 0.25); // 70-95% collected
-    const pending = totalRent - collected;
+    // Calculate for this specific month
+    const monthCollected = allTenants.reduce((sum, tenant) => {
+      // For current month (i === 0), use actual payment status
+      if (i === 0) {
+        if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
+          return sum + (tenant.rent || 0);
+        }
+        return sum;
+      }
+      // For past months, assume 80-95% collection rate (mock historical data)
+      return sum + (tenant.rent || 0) * (0.8 + Math.random() * 0.15);
+    }, 0);
     
-    collectedData.push(Math.floor(collected));
-    pendingData.push(Math.floor(pending));
+    const monthTotal = allTenants.reduce((sum, tenant) => sum + (tenant.rent || 0), 0);
+    const monthDue = monthTotal - monthCollected;
+    
+    collectedData.push(Math.floor(monthCollected));
+    dueData.push(Math.floor(Math.max(0, monthDue)));
   }
   
   window.rentCollectionChart = new Chart(ctx, {
@@ -602,9 +1066,9 @@ function renderRentCollectionChart() {
           borderSkipped: false
         },
         {
-          label: 'Pending',
-          data: pendingData,
-          backgroundColor: '#f59e0b',
+          label: 'Due',
+          data: dueData,
+          backgroundColor: '#ef4444',
           borderRadius: 6,
           borderSkipped: false
         }
@@ -804,6 +1268,9 @@ async function loadPropertyConfig() {
     // Load floors and units from backend
     await loadFloorsAndUnitsFromApi();
     
+    // Load tenants
+    await loadTenants();
+    
     // Render the configuration
     renderFloorsAndUnits();
     updateStats();
@@ -998,9 +1465,186 @@ function closeAddUnitModal() {
 }
 
 function openUnitDetails(unit) {
-  // Show unit details modal or navigate to unit management page
-  alert(`Unit: ${unit.number}\nType: ${unit.type}\nBeds: ${unit.beds}\nRent: ₹${unit.rent}\nStatus: ${unit.status}`);
-  // In production, open a detailed modal or page
+  // Populate unit details
+  document.getElementById('unitDetailsNumber').textContent = `Unit ${unit.number}`;
+  document.getElementById('unitDetailsStatus').textContent = unit.status.toUpperCase();
+  document.getElementById('unitDetailsStatus').className = `unit-status-badge status-${unit.status}`;
+  document.getElementById('unitDetailsType').textContent = unit.type || '-';
+  document.getElementById('unitDetailsBeds').textContent = `${unit.beds} bed${unit.beds > 1 ? 's' : ''}`;
+  document.getElementById('unitDetailsRent').textContent = `₹${formatNumber(unit.rent)}/month`;
+  document.getElementById('unitDetailsOccupancy').textContent = `${unit.occupied || 0}/${unit.beds} occupied`;
+
+  // Load tenants for this unit
+  loadTenantsForUnit(unit.id);
+
+  // Show modal
+  document.getElementById('unitDetailsModal').classList.add('active');
+}
+
+function closeUnitDetailsModal() {
+  document.getElementById('unitDetailsModal').classList.remove('active');
+}
+
+async function loadTenantsForUnit(unitId) {
+  const container = document.getElementById('unitTenantsList');
+  
+  try {
+    // Ensure we have loaded tenants - use allTenants which is populated by loadTenants()
+    let unitTenants = allTenants.filter(t => t.unitId === unitId);
+
+    if (!unitTenants || unitTenants.length === 0) {
+      container.innerHTML = `
+        <div class="no-data-message">
+          <i class="fas fa-user-slash"></i>
+          <p>No tenants assigned to this unit</p>
+        </div>
+      `;
+      document.getElementById('tenantCountBadge').textContent = '0';
+      return;
+    }
+
+    document.getElementById('tenantCountBadge').textContent = unitTenants.length;
+
+    let html = '';
+    unitTenants.forEach(tenant => {
+      const initials = getInitials(tenant.name || `${tenant.firstName || ''} ${tenant.lastName || ''}`, '');
+      html += `
+        <div class="tenant-card">
+          <div class="tenant-card-header">
+            <div>
+              <div class="tenant-name">${tenant.name || `${tenant.firstName || ''} ${tenant.lastName || ''}`}</div>
+              <div class="tenant-info-small">
+                <i class="fas fa-phone"></i>
+                ${tenant.phone || tenant.mobileNumber || '-'}
+              </div>
+              <div class="tenant-info-small">
+                <i class="fas fa-envelope"></i>
+                ${truncateEmail(tenant.email || tenant.emailAddress) || '-'}
+              </div>
+              <div class="tenant-info-small">
+                <i class="fas fa-calendar"></i>
+                Since ${formatDateShort(tenant.checkInDate || tenant.moveInDate)}
+              </div>
+            </div>
+            <div class="tenant-avatar">${initials}</div>
+          </div>
+          <div class="tenant-card-actions">
+            <button class="btn-move-tenant" onclick="openMoveTenantModal('${tenant.id}', '${tenant.name || `${tenant.firstName || ''} ${tenant.lastName || ''}`}', ${unitId})">
+              <i class="fas fa-exchange-alt"></i> Move
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to load tenants:', error);
+    container.innerHTML = `
+      <div class="no-data-message">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>Failed to load tenants</p>
+      </div>
+    `;
+  }
+}
+
+function getInitials(firstName, lastName) {
+  const first = (firstName || '').charAt(0).toUpperCase();
+  const last = (lastName || '').charAt(0).toUpperCase();
+  return (first + last) || '?';
+}
+
+function truncateEmail(email) {
+  if (!email) return '';
+  if (email.length > 20) {
+    return email.substring(0, 17) + '...';
+  }
+  return email;
+}
+
+function formatDateShort(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function openMoveTenantModal(tenantId, tenantName, fromUnitId) {
+  document.getElementById('moveTenantId').value = tenantId;
+  document.getElementById('moveFromUnitId').value = fromUnitId;
+  document.getElementById('moveTenantName').textContent = tenantName;
+
+  // Get the current unit name
+  const currentUnit = units.find(u => u.id === fromUnitId);
+  document.getElementById('moveFromUnit').textContent = currentUnit ? `Unit ${currentUnit.number}` : 'Current Unit';
+
+  // Populate available units (excluding current unit)
+  populateMoveUnitOptions(fromUnitId);
+
+  document.getElementById('moveTenantModal').classList.add('active');
+}
+
+function closeMoveTenantModal() {
+  document.getElementById('moveTenantModal').classList.remove('active');
+  document.getElementById('moveTenantForm').reset();
+}
+
+function populateMoveUnitOptions(excludeUnitId) {
+  const select = document.getElementById('moveToUnit');
+  select.innerHTML = '<option value="">-- Select Unit --</option>';
+
+  units.forEach(unit => {
+    if (unit.id !== excludeUnitId) {
+      const occupancyText = `${unit.occupied || 0}/${unit.beds} beds`;
+      const option = document.createElement('option');
+      option.value = unit.id;
+      option.textContent = `${unit.number} (${occupancyText}) - ${unit.status}`;
+      select.appendChild(option);
+    }
+  });
+}
+
+async function handleMoveTenant(event) {
+  event.preventDefault();
+
+  const tenantId = document.getElementById('moveTenantId').value;
+  const fromUnitId = parseInt(document.getElementById('moveFromUnitId').value);
+  const toUnitId = parseInt(document.getElementById('moveToUnit').value);
+  const reason = document.getElementById('transferReason').value;
+  const notifyTenant = document.getElementById('notifyTenant').checked;
+
+  if (!toUnitId) {
+    showAlert('error', 'Please select a destination unit');
+    return;
+  }
+
+  try {
+    // Call API to move tenant
+    await apiService.moveTenant(currentPropertyId, {
+      tenantId,
+      fromUnitId,
+      toUnitId,
+      reason,
+      notifyTenant
+    });
+
+    showAlert('success', 'Tenant moved successfully');
+    closeMoveTenantModal();
+
+    // Reload data
+    await loadFloorsAndUnitsFromApi();
+    renderFloorsAndUnits();
+    updateStats();
+
+    // Reload the modal with updated tenant list
+    const movedUnit = units.find(u => u.id === fromUnitId);
+    if (movedUnit) {
+      openUnitDetails(movedUnit);
+    }
+  } catch (error) {
+    showAlert('error', error.message || 'Failed to move tenant');
+  }
 }
 
 // Form Handlers
@@ -1278,84 +1922,273 @@ document.addEventListener('DOMContentLoaded', function() {
 let financialData = {
   monthlyRent: 0,
   yearlyRent: 0,
+  expectedMonthlyRent: 0,
   outstandingDues: 0,
   securityDeposits: 0,
+  depositCount: 0,
   monthlyExpense: 0,
   yearlyExpense: 0,
+  paymentModeBreakdown: {},
+  revenueSeries: [],
+  expenseSeries: [],
+  duesTenants: [],
+  transactions: [],
   expenses: []
 };
 
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getMonthKey(dateLike) {
+  const date = new Date(dateLike);
+  if (Number.isNaN(date.getTime())) return null;
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${date.getFullYear()}-${month}`;
+}
+
+function normalizePaymentMonth(paymentMonth, paymentDate) {
+  if (!paymentMonth && paymentDate) return getMonthKey(paymentDate);
+  if (typeof paymentMonth === 'string') {
+    const trimmed = paymentMonth.trim();
+    if (/^\d{4}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    const parsed = new Date(`${trimmed}-01`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return getMonthKey(parsed);
+    }
+  }
+  return paymentDate ? getMonthKey(paymentDate) : null;
+}
+
+function monthKeyToDate(key) {
+  if (!key || typeof key !== 'string' || !/^\d{4}-\d{2}$/.test(key)) return null;
+  const [year, month] = key.split('-').map(Number);
+  return new Date(year, month - 1, 1);
+}
+
+function computeTrend(current, previous) {
+  if (!previous) return 0;
+  const delta = ((current - previous) / previous) * 100;
+  return Math.round(delta * 10) / 10;
+}
+
+function buildRevenueSeries(transactions, months = 6) {
+  const results = [];
+  const now = new Date();
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = getMonthKey(d);
+    const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+    const revenue = transactions
+      .filter(txn => normalizePaymentMonth(txn.paymentMonth, txn.paymentDate) === key && (txn.status || '').toUpperCase() === 'VERIFIED')
+      .reduce((sum, txn) => sum + toNumber(txn.amount), 0);
+    results.push({ key, label, revenue });
+  }
+  return results;
+}
+
+function getTenantDueDate(tenant) {
+  if (tenant.nextDueDate) {
+    const d = new Date(tenant.nextDueDate);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  if (tenant.rentDueDate) {
+    const today = new Date();
+    const dueDay = Number(tenant.rentDueDate);
+    const d = new Date(today.getFullYear(), today.getMonth(), dueDay);
+    if (d < today) {
+      d.setMonth(d.getMonth() + 1);
+    }
+    return d;
+  }
+  return null;
+}
+
 async function loadFinancialData() {
   try {
-    // Calculate financial metrics from existing data
-    const totalRent = units.reduce((sum, u) => sum + (u.rent * u.occupied), 0);
-    const collectedRent = Math.floor(totalRent * 0.75); // Mock: 75% collected
-    const pendingRent = totalRent - collectedRent;
-    
-    financialData.monthlyRent = collectedRent;
-    financialData.yearlyRent = collectedRent * 12;
-    financialData.outstandingDues = pendingRent;
-    
-    // Fetch real security deposits from tenants for this property
-    try {
-      const tenantsData = await apiService.getTenants();
-      const propertyTenants = tenantsData.filter(t => 
-        t.propertyId === parseInt(currentPropertyId) && 
-        t.status === 'ACTIVE'
-      );
-      
-      // Sum security deposits from active tenants only
-      financialData.securityDeposits = propertyTenants.reduce((sum, t) => {
-        return sum + (t.securityDeposit || 0);
-      }, 0);
-      
-    } catch (err) {
-      console.error('Failed to fetch tenants for security deposits:', err);
-      // Fallback to mock calculation if API fails
-      const totalTenants = units.reduce((sum, u) => sum + u.occupied, 0);
-      financialData.securityDeposits = totalRent * 2;
+    // Ensure tenants are loaded
+    if (!allTenants || allTenants.length === 0) {
+      await loadTenants();
     }
+
+    // Fetch owner transactions with detailed filtering
+    let ownerTransactions = [];
+    try {
+      const transactions = await apiService.getOwnerAllPayments();
+      
+      const propertyIdNum = parseInt(currentPropertyId);
+      
+      if (!Array.isArray(transactions)) {
+        ownerTransactions = [];
+      } else if (transactions.length > 0) {
+        ownerTransactions = transactions.filter(txn => {
+          const txnPropertyId = Number(txn.propertyId);
+          const match = txnPropertyId === propertyIdNum;
+          return match;
+        });
+      }
+    } catch (err) {
+      ownerTransactions = [];
+    }
+
+    // Calculate active tenants
+    const activeTenants = (allTenants || []).filter(t => {
+      const status = (t.status || '').toUpperCase();
+      return status !== 'VACATED' && status !== 'INACTIVE';
+    });
+
+    const expectedRent = activeTenants.reduce((sum, t) => {
+      const tenantRent = toNumber(t.rent);
+      return sum + tenantRent;
+    }, 0);
     
-    // Mock expenses
-    financialData.monthlyExpense = Math.floor(totalRent * 0.30); // 30% of rent
-    financialData.yearlyExpense = financialData.monthlyExpense * 12;
+    const securityDeposits = activeTenants.reduce((sum, t) => sum + toNumber(t.securityDeposit), 0);
+    const depositCount = activeTenants.filter(t => toNumber(t.securityDeposit) > 0).length;
+    const monthlyExpense = toNumber(propertyData?.monthlyMaintenance) || 0;
+    const yearlyExpense = monthlyExpense * 12;
+
+
+    const currentMonthKey = getMonthKey(new Date());
     
-    // Update overview cards
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+
+    // Calculate collected rent for this month USING SAME METHOD AS DASHBOARD
+    // (Check tenant payment status, not transaction verification)
+    let collectedThisMonth = 0;
+    let pendingDuesThisMonth = 0;
+    
+    activeTenants.forEach(tenant => {
+      const rent = toNumber(tenant.rent) || 0;
+      
+      // SAME LOGIC AS DASHBOARD - Check if tenant has paid for current month
+      if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
+        collectedThisMonth += rent;
+      } else {
+        pendingDuesThisMonth += rent;
+      }
+    });
+    
+
+    const collectedThisYear = ownerTransactions.reduce((sum, txn) => {
+      const monthKey = normalizePaymentMonth(txn.paymentMonth, txn.paymentDate);
+      const monthDate = monthKeyToDate(monthKey);
+      const status = (txn.status || '').toUpperCase();
+      if (status === 'VERIFIED' && monthDate && monthDate >= twelveMonthsAgo) {
+        return sum + toNumber(txn.amount);
+      }
+      return sum;
+    }, 0);
+
+
+    // Build revenue and expense series
+    const revenueSeries = buildRevenueSeries(ownerTransactions, 6);
+    const expenseSeries = revenueSeries.map(item => ({ key: item.key, label: item.label, expense: monthlyExpense }));
+
+
+    // Calculate dues
+    const duesTenants = activeTenants.filter(t => {
+      const status = (t.paymentStatus || '').toUpperCase();
+      return status !== 'PAID' && !t.isCurrentMonthPaid;
+    });
+
+    // Payment mode breakdown for current month
+    // Only count payment modes for tenants who have marked rent as paid
+    const paidTenantIds = activeTenants
+      .filter(t => t.isCurrentMonthPaid || (t.paymentStatus || '').toUpperCase() === 'PAID')
+      .map(t => t.id);
+    
+    const paymentModeBreakdown = ownerTransactions.reduce((acc, txn) => {
+      const monthKey = normalizePaymentMonth(txn.paymentMonth, txn.paymentDate);
+      const status = (txn.status || '').toUpperCase();
+      // Only count transactions from paid tenants, for current month, with VERIFIED status
+      if (monthKey !== currentMonthKey || status !== 'VERIFIED' || !paidTenantIds.includes(txn.tenantId)) return acc;
+      const mode = (txn.paymentMode || 'OTHER').toUpperCase();
+      acc[mode] = (acc[mode] || 0) + toNumber(txn.amount);
+      return acc;
+    }, {});
+
+
+    // Update financial data with ACTUAL collected amounts (same as dashboard)
+    financialData = {
+      ...financialData,
+      transactions: ownerTransactions,
+      monthlyRent: collectedThisMonth,  // ACTUAL collected rent from tenant status
+      yearlyRent: collectedThisMonth * 12,  // Estimate yearly (monthly × 12)
+      expectedMonthlyRent: expectedRent,  // What should be collected
+      outstandingDues: pendingDuesThisMonth,  // Direct from tenant payment status
+      collectedThisMonth: collectedThisMonth,
+      securityDeposits,
+      depositCount,
+      monthlyExpense,
+      yearlyExpense,
+      paymentModeBreakdown,
+      revenueSeries,
+      expenseSeries,
+      duesTenants
+    };
+
+
+    // Update UI
     updateFinancialOverview();
-    
-    // Render charts
     renderRevenueExpenseChart();
     renderPaymentModeChart();
-    
-    // Load expenses
     loadExpenseData();
     loadDuesReport();
     
+    console.log('[Financial] Financial section updated successfully');
   } catch (error) {
-    console.error('Failed to load financial data:', error);
+    console.error('[Financial] Failed to load financial data:', error);
+    console.error('[Financial] Error stack:', error.stack);
+    // Show partial data without crashing
+    updateFinancialOverview();
   }
 }
 
 function updateFinancialOverview() {
-  // Total Rent Collected (default to month)
-  document.getElementById('finTotalRent').textContent = `₹${formatNumber(financialData.monthlyRent)}`;
-  document.getElementById('finRentTrend').textContent = '+12%';
+  const rentEl = document.getElementById('finTotalRent');
+  const rentTrendEl = document.getElementById('finRentTrend');
+  const expenseTrendEl = document.getElementById('finExpenseTrend');
+
+  const currentRevenue = financialData.monthlyRent;  // ACTUAL collected rent
+  const previousRevenue = financialData.revenueSeries.length > 1 
+    ? financialData.revenueSeries[financialData.revenueSeries.length - 2].revenue 
+    : 0;
+  const rentTrend = computeTrend(currentRevenue, previousRevenue);
+
+  if (rentEl) {
+    rentEl.textContent = `₹${formatNumber(currentRevenue)}`;
+  }
   
-  // Outstanding Dues
+  // Always show "Total Rent Collected" - the actual collected amount
+  const rentLabel = document.querySelector('.total-rent p');
+  if (rentLabel) {
+    rentLabel.textContent = 'Total Rent Collected';
+  }
+  
+  if (rentTrendEl) rentTrendEl.textContent = `${rentTrend >= 0 ? '+' : ''}${rentTrend}%`;
+  const rentTrendContainer = rentTrendEl ? rentTrendEl.parentElement : null;
+  if (rentTrendContainer && rentTrendContainer.classList.contains('fin-trend')) {
+    rentTrendContainer.className = `fin-trend ${rentTrend >= 0 ? 'positive' : 'negative'}`;
+  }
+
   document.getElementById('finOutstandingDues').textContent = `₹${formatNumber(financialData.outstandingDues)}`;
-  const duesCount = generateMockDues().length;
-  document.getElementById('finDuesCount').textContent = duesCount;
-  
-  // Security Deposits
+  document.getElementById('finDuesCount').textContent = financialData.duesTenants.length;
+
   document.getElementById('finSecurityDeposits').textContent = `₹${formatNumber(financialData.securityDeposits)}`;
-  const totalTenants = units.reduce((sum, u) => sum + u.occupied, 0);
-  document.getElementById('finDepositCount').textContent = totalTenants;
-  
-  // Maintenance Expense (default to month)
+  document.getElementById('finDepositCount').textContent = financialData.depositCount;
+
   document.getElementById('finMaintenanceExpense').textContent = `₹${formatNumber(financialData.monthlyExpense)}`;
-  document.getElementById('finExpenseTrend').textContent = '+8%';
-  
-  // Profit/Loss
+  const expenseTrend = computeTrend(financialData.monthlyExpense, financialData.monthlyExpense);
+  if (expenseTrendEl) expenseTrendEl.textContent = `${expenseTrend >= 0 ? '+' : ''}${expenseTrend}%`;
+  const expenseTrendContainer = expenseTrendEl ? expenseTrendEl.parentElement : null;
+  if (expenseTrendContainer && expenseTrendContainer.classList.contains('fin-trend')) {
+    expenseTrendContainer.className = 'fin-trend neutral';
+  }
+
   const profitLoss = financialData.monthlyRent - financialData.monthlyExpense;
   document.getElementById('finProfitLoss').textContent = `₹${formatNumber(Math.abs(profitLoss))}`;
   
@@ -1406,29 +2239,13 @@ function renderRevenueExpenseChart() {
     window.revenueExpenseChart.destroy();
   }
   
-  // Generate data for last 6 months
-  const months = [];
-  const revenueData = [];
-  const expenseData = [];
-  const profitData = [];
-  const today = new Date();
-  
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    months.push(date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }));
-    
-    const variance = Math.random() * 0.2 - 0.1;
-    const revenue = financialData.monthlyRent * (1 + variance);
-    const expense = financialData.monthlyExpense * (1 + variance);
-    
-    revenueData.push(Math.floor(revenue));
-    expenseData.push(Math.floor(expense));
-    profitData.push(Math.floor(revenue - expense));
-  }
-  
-  // Calculate averages
-  const avgRev = Math.floor(revenueData.reduce((a, b) => a + b, 0) / revenueData.length);
-  const avgExp = Math.floor(expenseData.reduce((a, b) => a + b, 0) / expenseData.length);
+  const months = financialData.revenueSeries.map(item => item.label);
+  const revenueData = financialData.revenueSeries.map(item => item.revenue);
+  const expenseData = financialData.expenseSeries.map(item => item.expense ?? financialData.monthlyExpense);
+  const profitData = revenueData.map((rev, idx) => rev - (expenseData[idx] || 0));
+
+  const avgRev = revenueData.length ? Math.floor(revenueData.reduce((a, b) => a + b, 0) / revenueData.length) : 0;
+  const avgExp = expenseData.length ? Math.floor(expenseData.reduce((a, b) => a + b, 0) / expenseData.length) : 0;
   const avgProf = avgRev - avgExp;
   
   document.getElementById('avgRevenue').textContent = `₹${formatNumber(avgRev)}`;
@@ -1508,26 +2325,33 @@ function renderPaymentModeChart() {
     window.paymentModeChart.destroy();
   }
   
-  // Mock payment distribution
-  const total = financialData.monthlyRent;
-  const cash = Math.floor(total * 0.30);
-  const upi = Math.floor(total * 0.50);
-  const bank = total - cash - upi;
-  
+  const breakdown = financialData.paymentModeBreakdown || {};
+  const cash = toNumber(breakdown.CASH);
+  const upi = toNumber(breakdown.UPI);
+  const bank = toNumber(breakdown.BANK_TRANSFER);
+  const gateway = toNumber(breakdown.GATEWAY);
+  const total = cash + upi + bank + gateway;
+
+  const percent = (value) => total ? `${Math.round((value / total) * 100)}%` : '0%';
+
   document.getElementById('cashPayments').textContent = `₹${formatNumber(cash)}`;
-  document.getElementById('cashPercent').textContent = '30%';
+  document.getElementById('cashPercent').textContent = percent(cash);
   document.getElementById('upiPayments').textContent = `₹${formatNumber(upi)}`;
-  document.getElementById('upiPercent').textContent = '50%';
+  document.getElementById('upiPercent').textContent = percent(upi);
   document.getElementById('bankPayments').textContent = `₹${formatNumber(bank)}`;
-  document.getElementById('bankPercent').textContent = '20%';
+  document.getElementById('bankPercent').textContent = percent(bank);
   
+  if (!total) {
+    return;
+  }
+
   window.paymentModeChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Cash', 'UPI', 'Bank Transfer'],
+      labels: ['Cash', 'UPI', 'Bank Transfer', 'Gateway'],
       datasets: [{
-        data: [cash, upi, bank],
-        backgroundColor: ['#10b981', '#6366f1', '#f59e0b'],
+        data: [cash, upi, bank, gateway],
+        backgroundColor: ['#10b981', '#6366f1', '#f59e0b', '#0ea5e9'],
         borderWidth: 0
       }]
     },
@@ -1547,32 +2371,40 @@ function renderPaymentModeChart() {
 
 function loadDuesReport() {
   const tbody = document.getElementById('duesReportTableBody');
-  const duesList = generateMockDues();
+  const duesList = financialData.duesTenants || [];
   
   if (duesList.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" class="no-data-row">No pending dues</td></tr>';
     return;
   }
   
+  const today = new Date();
   let html = '';
-  duesList.forEach(due => {
-    const daysOverdue = Math.floor(Math.random() * 30) + 1;
-    let overdueClass = 'low';
-    if (daysOverdue > 20) overdueClass = 'high';
-    else if (daysOverdue > 10) overdueClass = 'medium';
+  duesList.forEach(tenant => {
+    const amount = toNumber(tenant.dues) || toNumber(tenant.rent);
+    const dueDateObj = getTenantDueDate(tenant);
+    const dueDate = dueDateObj ? dueDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not set';
+    let daysPastDue = 0;
+    if (dueDateObj) {
+      const diff = today - dueDateObj;
+      daysPastDue = diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0;
+    }
+    let pastDueClass = 'low';
+    if (daysPastDue > 20) pastDueClass = 'high';
+    else if (daysPastDue > 10) pastDueClass = 'medium';
     
     html += `
       <tr>
-        <td><strong>${due.name}</strong></td>
-        <td>${due.unit}</td>
-        <td><strong style="color: #ef4444;">₹${formatNumber(due.amount)}</strong></td>
-        <td>${due.dueDate}</td>
-        <td><span class="overdue-badge ${overdueClass}">${daysOverdue} days</span></td>
+        <td><strong>${tenant.name || 'Tenant'}</strong></td>
+        <td>${tenant.roomNumber ? `Room ${tenant.roomNumber}` : '-'}</td>
+        <td><strong style="color: #ef4444;">₹${formatNumber(amount)}</strong></td>
+        <td>${dueDate}</td>
+        <td><span class="overdue-badge ${pastDueClass}">${daysPastDue} days</span></td>
         <td>
-          <button class="table-action-btn remind" onclick="remindTenant('${due.name}')">
+          <button class="table-action-btn remind" onclick="remindTenant('${tenant.name || 'Tenant'}')">
             <i class="fas fa-bell"></i> Remind
           </button>
-          <button class="table-action-btn view" onclick="viewDuesDetails('${due.name}')">
+          <button class="table-action-btn view" onclick="viewDuesDetails('${tenant.name || 'Tenant'}')">
             <i class="fas fa-eye"></i> View
           </button>
         </td>
@@ -1584,44 +2416,40 @@ function loadDuesReport() {
 }
 
 function loadExpenseData() {
-  // Generate mock expense categories
-  const categoryTotals = {
-    electricity: Math.floor(financialData.monthlyExpense * 0.25),
-    cleaning: Math.floor(financialData.monthlyExpense * 0.15),
-    staff: Math.floor(financialData.monthlyExpense * 0.35),
-    repairs: Math.floor(financialData.monthlyExpense * 0.15),
-    other: Math.floor(financialData.monthlyExpense * 0.10)
-  };
+  const expenses = financialData.expenses || [];
+  const categoryTotals = expenses.reduce((acc, expense) => {
+    const key = (expense.category || 'Other').toLowerCase();
+    acc[key] = (acc[key] || 0) + toNumber(expense.amount);
+    return acc;
+  }, {});
+
+  document.getElementById('expenseElectricity').textContent = `₹${formatNumber(categoryTotals.electricity || 0)}`;
+  document.getElementById('expenseCleaning').textContent = `₹${formatNumber(categoryTotals.cleaning || 0)}`;
+  document.getElementById('expenseStaff').textContent = `₹${formatNumber(categoryTotals['staff salary'] || categoryTotals.staff || 0)}`;
+  document.getElementById('expenseRepairs').textContent = `₹${formatNumber(categoryTotals.repairs || 0)}`;
+  document.getElementById('expenseOther').textContent = `₹${formatNumber(categoryTotals.other || 0)}`;
   
-  document.getElementById('expenseElectricity').textContent = `₹${formatNumber(categoryTotals.electricity)}`;
-  document.getElementById('expenseCleaning').textContent = `₹${formatNumber(categoryTotals.cleaning)}`;
-  document.getElementById('expenseStaff').textContent = `₹${formatNumber(categoryTotals.staff)}`;
-  document.getElementById('expenseRepairs').textContent = `₹${formatNumber(categoryTotals.repairs)}`;
-  document.getElementById('expenseOther').textContent = `₹${formatNumber(categoryTotals.other)}`;
-  
-  // Generate mock expense list
   const tbody = document.getElementById('expenseListTableBody');
-  const mockExpenses = generateMockExpenses();
   
-  if (mockExpenses.length === 0) {
+  if (!expenses.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="no-data-row">No expenses recorded</td></tr>';
     return;
   }
   
   let html = '';
-  mockExpenses.forEach(expense => {
+  expenses.forEach(expense => {
     html += `
       <tr>
-        <td>${expense.date}</td>
-        <td><strong>${expense.category}</strong></td>
-        <td>${expense.description}</td>
+        <td>${expense.date || '-'}</td>
+        <td><strong>${expense.category || 'Other'}</strong></td>
+        <td>${expense.description || '-'}</td>
         <td><strong>₹${formatNumber(expense.amount)}</strong></td>
-        <td>${expense.paymentMode}</td>
+        <td>${expense.paymentMode || '-'}</td>
         <td>
-          <button class="table-action-btn view" onclick="viewExpense(${expense.id})">
+          <button class="table-action-btn view" onclick="viewExpense(${expense.id || 0})">
             <i class="fas fa-eye"></i> View
           </button>
-          <button class="table-action-btn delete" onclick="deleteExpense(${expense.id})">
+          <button class="table-action-btn delete" onclick="deleteExpense(${expense.id || 0})">
             <i class="fas fa-trash"></i> Delete
           </button>
         </td>
@@ -1630,41 +2458,6 @@ function loadExpenseData() {
   });
   
   tbody.innerHTML = html;
-}
-
-function generateMockExpenses() {
-  const categories = ['Electricity', 'Cleaning', 'Staff Salary', 'Repairs', 'Water', 'Internet'];
-  const descriptions = [
-    'Monthly electricity bill',
-    'Cleaning service charges',
-    'Monthly staff salary payment',
-    'AC repair work',
-    'Water bill payment',
-    'Internet broadband charges',
-    'Plumbing repairs',
-    'Painting work',
-    'Security charges'
-  ];
-  const paymentModes = ['Cash', 'UPI', 'Bank Transfer', 'Cheque'];
-  
-  const expenses = [];
-  const count = Math.floor(Math.random() * 8) + 5;
-  
-  for (let i = 0; i < count; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-    
-    expenses.push({
-      id: i + 1,
-      date: date.toLocaleDateString('en-IN'),
-      category: categories[Math.floor(Math.random() * categories.length)],
-      description: descriptions[Math.floor(Math.random() * descriptions.length)],
-      amount: Math.floor(Math.random() * 10000) + 1000,
-      paymentMode: paymentModes[Math.floor(Math.random() * paymentModes.length)]
-    });
-  }
-  
-  return expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
 function openAddExpenseModal() {
@@ -1741,6 +2534,10 @@ window.deleteFloor = deleteFloor;
 window.deleteFloorById = deleteFloorById;
 window.loadPropertyConfig = loadPropertyConfig;
 window.openUnitDetails = openUnitDetails;
+window.closeUnitDetailsModal = closeUnitDetailsModal;
+window.openMoveTenantModal = openMoveTenantModal;
+window.closeMoveTenantModal = closeMoveTenantModal;
+window.handleMoveTenant = handleMoveTenant;
 window.toggleTenantMenu = toggleTenantMenu;
 window.editTenant = editTenant;
 window.removeTenant = removeTenant;
@@ -1813,7 +2610,7 @@ async function loadTenants() {
         // Payment status fields from backend
         paymentStatus: tenant.paymentStatus || 'DUE',
         isCurrentMonthPaid: tenant.isCurrentMonthPaid || false,
-        isOverdue: tenant.isOverdue || false,
+        isDue: tenant.isDue || tenant.isOverdue || false,
         nextDueDate: tenant.nextDueDate || null,
         // Additional fields for profile
         dateOfBirth: tenant.dateOfBirth || null,
@@ -1903,10 +2700,10 @@ function renderTenantsTable(tenants) {
       const diffTime = dueDate - today;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      // Check if overdue
-      if (tenant.isOverdue || (tenant.paymentStatus || '').toUpperCase() === 'OVERDUE' || diffDays < 0) {
-        paymentStatusText = 'Overdue';
-        paymentStatusClass = 'overdue';
+      // Check if due
+      if (tenant.isDue || (tenant.paymentStatus || '').toUpperCase() === 'DUE' || diffDays < 0) {
+        paymentStatusText = 'Due';
+        paymentStatusClass = 'due';
       } else if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
         paymentStatusText = 'Paid';
         paymentStatusClass = 'paid';
@@ -1928,9 +2725,9 @@ function renderTenantsTable(tenants) {
       if (tenant.isCurrentMonthPaid || (tenant.paymentStatus || '').toUpperCase() === 'PAID') {
         paymentStatusText = 'Paid';
         paymentStatusClass = 'paid';
-      } else if (tenant.isOverdue || (tenant.paymentStatus || '').toUpperCase() === 'OVERDUE') {
-        paymentStatusText = 'Overdue';
-        paymentStatusClass = 'overdue';
+      } else if (tenant.isDue || (tenant.paymentStatus || '').toUpperCase() === 'DUE') {
+        paymentStatusText = 'Due';
+        paymentStatusClass = 'due';
       } else {
         paymentStatusText = 'Pending';
         paymentStatusClass = 'upcoming';
@@ -1960,6 +2757,10 @@ function renderTenantsTable(tenants) {
           <div class="action-buttons">
             <button class="action-btn view" onclick="viewTenantProfile(${tenant.id})">
               <i class="fas fa-eye"></i> View
+            </button>
+            
+            <button class="action-btn whatsapp" onclick="sendWhatsAppReminder(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}', '${tenant.phone}')" title="Send WhatsApp Reminder">
+              <i class="fab fa-whatsapp"></i> WhatsApp
             </button>
             
             <button class="action-btn remove" onclick="confirmRemoveTenant(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}')">
@@ -2130,12 +2931,12 @@ function generateMockPayments(tenant) {
   const payments = [];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
   const modes = ['UPI', 'Cash', 'Bank Transfer', 'Cheque'];
-  const statuses = ['paid', 'pending', 'overdue'];
+  const statuses = ['paid', 'pending', 'due'];
   
   for (let i = 0; i < 6; i++) {
     const monthIndex = new Date().getMonth() - i;
     const month = months[monthIndex >= 0 ? monthIndex : 12 + monthIndex];
-    const status = i === 0 ? 'pending' : (i === 1 ? 'paid' : (Math.random() > 0.3 ? 'paid' : 'overdue'));
+    const status = i === 0 ? 'pending' : (i === 1 ? 'paid' : (Math.random() > 0.3 ? 'paid' : 'due'));
     
     payments.push({
       id: `pay-${tenant.id}-${i}`,
@@ -2168,7 +2969,7 @@ function loadRentTimeline(tenant) {
       <div class="timeline-content">
         <div class="timeline-month">${payment.month}</div>
         <div class="timeline-details">
-          <span>${payment.status === 'paid' ? 'Paid on ' + formatDate(payment.date) : payment.status === 'pending' ? 'Payment Due' : 'Overdue'}</span>
+          <span>${payment.status === 'paid' ? 'Paid on ' + formatDate(payment.date) : payment.status === 'pending' ? 'Payment Due' : 'Due'}</span>
           <span class="timeline-amount">₹${payment.amount.toLocaleString()}</span>
         </div>
       </div>
@@ -2317,16 +3118,41 @@ function exportTenantsToExcel() {
 // Send WhatsApp reminder
 function sendWhatsAppReminder() {
   const tenant = allTenants.find(t => t.id === currentTenantId);
-  if (!tenant) return;
-  
-  const message = `Hi ${tenant.name}, this is a reminder for your pending rent of ₹${tenant.dues || 0}. Please make the payment at your earliest convenience. Thank you!`;
-  const phoneNumber = tenant.phone ? tenant.phone.replace(/[^0-9]/g, '') : '';
-  
-  if (phoneNumber) {
-    window.open(`https://wa.me/91${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
-  } else {
-    alert('Phone number not available for this tenant');
+  if (!tenant) {
+    showAlert('error', 'Tenant not found');
+    return;
   }
+
+  // Validate phone number
+  const phone = tenant.phone;
+  if (!phone || phone.trim() === '') {
+    showAlert('error', 'Tenant phone number not available');
+    return;
+  }
+
+  // Clean phone number (remove non-digits)
+  let cleanPhone = phone.replace(/[^0-9+]/g, '');
+  
+  // Add country code if not present (assuming India +91)
+  if (!cleanPhone.startsWith('+')) {
+    if (cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone; // Add India country code
+    }
+    cleanPhone = '+' + cleanPhone;
+  }
+
+  // Create WhatsApp message with rent details
+  const rentAmount = tenant.rent || 0;
+  const dueDays = 5;
+  const message = `🏠 *Rent Reminder - Flatery*\n\nDear ${tenant.name},\n\nThis is a friendly reminder regarding your rent payment.\n\n💰 *Amount Due:* ₹${rentAmount}\n*Due within ${dueDays} days*\n\nPlease submit your payment at your earliest convenience. If you've already paid, please ignore this message.\n\nFor any queries, feel free to contact us.\n\nThank you! 🙏`;
+
+  // Open WhatsApp with pre-filled message
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+  
+  // Show confirmation
+  showAlert('success', `Opening WhatsApp chat with ${tenant.name}. Message is ready to send.`);
+  console.log('WhatsApp chat opened for tenant:', tenant.name);
 }
 
 // Generate agreement
@@ -2457,7 +3283,7 @@ async function loadRentCollectionOverview() {
     monthFromNow.setDate(monthFromNow.getDate() + 30);
     
     // Categorize tenants
-    const overdueTenants = [];
+    const dueTenants = [];
     const dueTodayTenants = [];
     const dueThisWeekTenants = [];
     const upcomingTenants = [];
@@ -2465,8 +3291,7 @@ async function loadRentCollectionOverview() {
     
     let totalExpected = 0;
     let totalCollected = 0;
-    let totalPending = 0;
-    let totalOverdue = 0;
+    let totalDue = 0;
     
     allTenants.forEach(tenant => {
       const rentAmount = tenant.rent || 0;
@@ -2474,7 +3299,7 @@ async function loadRentCollectionOverview() {
       
       // Check payment status from backend
       const paymentStatus = (tenant.paymentStatus || 'DUE').toUpperCase();
-      const isOverdue = tenant.isOverdue === true;
+      const isDue = tenant.isDue === true || tenant.isOverdue === true;
       const nextDueDateStr = tenant.nextDueDate;
       
       // Parse next due date
@@ -2488,34 +3313,34 @@ async function loadRentCollectionOverview() {
       if (paymentStatus === 'PAID' || tenant.isCurrentMonthPaid === true) {
         paidTenants.push(tenant);
         totalCollected += rentAmount;
-      } else if (isOverdue || paymentStatus === 'OVERDUE') {
-        overdueTenants.push(tenant);
-        totalOverdue += rentAmount;
+      } else if (isDue || paymentStatus === 'DUE' || (nextDueDate && nextDueDate < today)) {
+        dueTenants.push(tenant);
+        totalDue += rentAmount;
       } else if (nextDueDate) {
         // Check date proximity
         if (nextDueDate >= today && nextDueDate <= todayEnd) {
           dueTodayTenants.push(tenant);
-          totalPending += rentAmount;
+          totalDue += rentAmount;
         } else if (nextDueDate > today && nextDueDate <= weekFromNow) {
           dueThisWeekTenants.push(tenant);
-          totalPending += rentAmount;
+          totalDue += rentAmount;
         } else if (nextDueDate > weekFromNow && nextDueDate <= monthFromNow) {
           upcomingTenants.push(tenant);
-          totalPending += rentAmount;
+          totalDue += rentAmount;
         } else {
           // Future due date beyond 30 days
           upcomingTenants.push(tenant);
-          totalPending += rentAmount;
+          totalDue += rentAmount;
         }
       } else {
         // No due date available - put in upcoming
         upcomingTenants.push(tenant);
-        totalPending += rentAmount;
+        totalDue += rentAmount;
       }
     });
     
     console.log('Categorized tenants:', {
-      overdue: overdueTenants.length,
+      due: dueTenants.length,
       dueToday: dueTodayTenants.length,
       dueThisWeek: dueThisWeekTenants.length,
       upcoming: upcomingTenants.length,
@@ -2523,11 +3348,10 @@ async function loadRentCollectionOverview() {
     });
     
     // Update stats
-    updateCollectionStats(totalExpected, totalCollected, totalPending, totalOverdue, allTenants.length);
+    updateCollectionStats(totalExpected, totalCollected, totalDue, allTenants.length);
     
-    // Render each category
-    renderTenantCategory('overdueTenantsContainer', overdueTenants, 'overdue');
-    renderTenantCategory('dueTodayContainer', dueTodayTenants, 'due-today');
+    // Render each category (overdue container now shows all due tenants)
+    renderTenantCategory('dueTodayContainer', dueTenants, 'due');
     renderTenantCategory('dueWeekContainer', dueThisWeekTenants, 'due-week');
     renderTenantCategory('upcomingContainer', upcomingTenants, 'upcoming');
     renderTenantCategory('paidContainer', paidTenants, 'paid');
@@ -2538,8 +3362,7 @@ async function loadRentCollectionOverview() {
       if (el) el.textContent = count;
     };
     
-    updateCount('overdueCount', overdueTenants.length);
-    updateCount('dueTodayCount', dueTodayTenants.length);
+    updateCount('dueTodayCount', dueTenants.length);
     updateCount('dueWeekCount', dueThisWeekTenants.length);
     updateCount('upcomingCount', upcomingTenants.length);
     updateCount('paidCount', paidTenants.length);
@@ -2551,7 +3374,7 @@ async function loadRentCollectionOverview() {
 }
 
 // Update collection statistics
-function updateCollectionStats(expected, collected, pending, overdue, totalTenants) {
+function updateCollectionStats(expected, collected, due, totalTenants) {
   const collectionPercentage = expected > 0 ? Math.round((collected / expected) * 100) : 0;
   
   // Update stat cards
@@ -2563,10 +3386,8 @@ function updateCollectionStats(expected, collected, pending, overdue, totalTenan
   updateStat('totalExpectedRent', `₹${formatNumber(expected)}`);
   updateStat('totalCollectedRent', `₹${formatNumber(collected)}`);
   updateStat('collectedPercentage', `${collectionPercentage}%`);
-  updateStat('totalPendingRent', `₹${formatNumber(pending)}`);
-  updateStat('pendingTenantsCount', `${totalTenants - Math.floor(collected / (expected / totalTenants))} tenants`);
-  updateStat('totalOverdueRent', `₹${formatNumber(overdue)}`);
-  updateStat('overdueTenantsCount', `${Math.floor(overdue / (expected / totalTenants))} tenants`);
+  updateStat('totalPendingRent', `₹${formatNumber(due)}`);
+  updateStat('pendingTenantsCount', `${totalTenants - Math.floor(collected / (expected / totalTenants || 1))} tenants`);
 }
 
 // Render tenant cards for a category
@@ -2628,8 +3449,11 @@ function renderTenantCategory(containerId, tenants, categoryType) {
         </div>
         <div class="tenant-card-footer">
           ${categoryType !== 'paid' ? `
+            <button class="btn-small primary whatsapp" onclick="sendWhatsAppReminder(${tenant.id}, '${tenant.name.replace(/'/g, "\\'")}', '${tenant.phone}')" title="Send WhatsApp Reminder">
+              <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
             <button class="btn-small primary" onclick="sendPaymentReminder(${tenant.id})">
-              <i class="fas fa-bell"></i> Send Reminder
+              <i class="fas fa-bell"></i> Email/SMS
             </button>
           ` : ''}
           <button class="btn-small secondary" onclick="viewTenantDetails(${tenant.id})">
@@ -2657,6 +3481,51 @@ function sendPaymentReminder(tenantId) {
   console.log('TODO: Send payment reminder to tenant:', tenant);
 }
 
+/**
+ * Send WhatsApp rent due reminder to tenant
+ */
+function sendWhatsAppReminder(tenantId, tenantName, phone) {
+  const tenant = allTenants.find(t => t.id === tenantId);
+  if (!tenant) {
+    showAlert('error', 'Tenant not found');
+    return;
+  }
+
+  // Validate phone number
+  if (!phone || phone.trim() === '') {
+    showAlert('error', 'Tenant phone number not available');
+    return;
+  }
+
+  // Clean phone number (remove non-digits)
+  let cleanPhone = phone.replace(/[^0-9+]/g, '');
+  
+  // Add country code if not present (assuming India +91)
+  if (!cleanPhone.startsWith('+')) {
+    if (cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone; // Add India country code
+    }
+    cleanPhone = '+' + cleanPhone;
+  }
+
+  // Create WhatsApp message
+  const rentAmount = tenant.rent || 0;
+  const dueDays = 5; // Default reminder days
+  const message = `🏠 *Rent Reminder - Flatery*\n\nDear ${tenantName},\n\nThis is a friendly reminder regarding your rent payment.\n\n💰 *Amount Due:* ₹${rentAmount}\n*Due within ${dueDays} days*\n\nPlease submit your payment at your earliest convenience. If you've already paid, please ignore this message.\n\nFor any queries, feel free to contact us.\n\nThank you! 🙏`;
+
+  // Open WhatsApp with pre-filled message
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+  
+  // Show success message
+  showAlert('success', `Opening WhatsApp chat with ${tenantName}. Message is ready to send.`);
+  console.log('WhatsApp chat opened:', {
+    tenant: tenantName,
+    phone: cleanPhone,
+    messageLength: message.length
+  });
+}
+
 // View tenant details
 function viewTenantDetails(tenantId) {
   // Reuse existing tenant profile view function
@@ -2677,7 +3546,7 @@ function generateMockPayments() {
   allTenants.forEach((tenant, index) => {
     months.forEach((month, monthIndex) => {
       const status = monthIndex === 0 ? (Math.random() > 0.3 ? 'paid' : 'pending') : 
-                     monthIndex === 1 ? (Math.random() > 0.5 ? 'paid' : 'overdue') : 
+                     monthIndex === 1 ? (Math.random() > 0.5 ? 'paid' : 'due') : 
                      'paid';
       
       const date = new Date(month + '-' + (5 + Math.floor(Math.random() * 5)));
@@ -2713,8 +3582,8 @@ function updatePaymentWidgets() {
   const totalPending = currentMonthPayments.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0);
   const pendingCount = currentMonthPayments.filter(p => p.status === 'pending').length;
   
-  const totalOverdue = currentMonthPayments.filter(p => p.status === 'overdue').reduce((sum, p) => sum + p.amount, 0);
-  const overdueCount = currentMonthPayments.filter(p => p.status === 'overdue').length;
+  const totalDue = currentMonthPayments.filter(p => p.status === 'due').reduce((sum, p) => sum + p.amount, 0);
+  const dueCount = currentMonthPayments.filter(p => p.status === 'due').length;
   
   const totalBeds = units.reduce((sum, u) => sum + (u.beds || 0), 0);
   const averageRent = totalBeds > 0 ? Math.round(units.reduce((sum, u) => sum + (u.rent || 0) * u.beds, 0) / totalBeds) : 0;
@@ -2725,8 +3594,7 @@ function updatePaymentWidgets() {
   document.getElementById('totalPending').textContent = `₹${totalPending.toLocaleString()}`;
   document.getElementById('pendingCount').textContent = pendingCount;
   
-  document.getElementById('totalOverdue').textContent = `₹${totalOverdue.toLocaleString()}`;
-  document.getElementById('overdueCount').textContent = overdueCount;
+  // Note: totalOverdue and overdueCount elements removed from HTML, no longer updating them
   
   document.getElementById('averageRent').textContent = `₹${averageRent.toLocaleString()}`;
   document.getElementById('totalBeds').textContent = totalBeds;
@@ -2747,7 +3615,7 @@ function renderRentCollectionChart(period = '6months') {
   const labels = [];
   const collectedData = [];
   const pendingData = [];
-  const overdueData = [];
+  const dueData = [];
   
   for (let i = months - 1; i >= 0; i--) {
     const date = new Date();
@@ -2760,11 +3628,11 @@ function renderRentCollectionChart(period = '6months') {
     const monthPayments = allPayments.filter(p => p.month === monthKey);
     const collected = monthPayments.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0);
     const pending = monthPayments.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0);
-    const overdue = monthPayments.filter(p => p.status === 'overdue').reduce((sum, p) => sum + p.amount, 0);
+    const due = monthPayments.filter(p => p.status === 'due').reduce((sum, p) => sum + p.amount, 0);
     
     collectedData.push(collected);
     pendingData.push(pending);
-    overdueData.push(overdue);
+    dueData.push(due);
   }
   
   rentCollectionChart = new Chart(ctx, {
@@ -2787,8 +3655,8 @@ function renderRentCollectionChart(period = '6months') {
           borderWidth: 2
         },
         {
-          label: 'Overdue',
-          data: overdueData,
+          label: 'Due',
+          data: dueData,
           backgroundColor: 'rgba(231, 76, 60, 0.8)',
           borderColor: 'rgba(231, 76, 60, 1)',
           borderWidth: 2

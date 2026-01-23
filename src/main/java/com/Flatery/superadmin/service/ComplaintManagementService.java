@@ -3,7 +3,6 @@ package com.Flatery.superadmin.service;
 import com.Flatery.model.help.Complaint;
 import com.Flatery.model.help.helpstatus;
 import com.Flatery.model.help.Priority;
-import com.Flatery.model.help.Category;
 import com.Flatery.model.property.Property;
 import com.Flatery.model.User;
 import com.Flatery.repository.help.ComplaintRepository;

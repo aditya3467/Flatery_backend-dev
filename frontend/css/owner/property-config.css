@@ -4305,6 +4305,24 @@
   transform: translateY(-2px);
 }
 
+.btn-small.whatsapp {
+  background: #25d366;
+  color: white;
+  flex: 0.8;
+}
+
+.btn-small.whatsapp:hover:not(:disabled) {
+  background: #20ba58;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.btn-small.whatsapp:disabled {
+  background: #a8d5ba;
+  cursor: wait;
+  opacity: 0.8;
+}
+
 /* Pulse animation for overdue items */
 @keyframes pulse {
   0%, 100% {
@@ -5565,6 +5583,227 @@ input:checked + .slider:before {
 
   .form-actions .btn-primary,
   .form-actions .btn-secondary {
+    width: 100%;
+  }
+}
+
+/* Unit Details Modal Styles */
+.unit-details-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+  margin-bottom: 30px;
+  padding: 20px 0;
+}
+
+.unit-info-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 20px;
+  color: white;
+}
+
+.unit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.unit-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.unit-status-badge {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.unit-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.meta-item label {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.meta-item span {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Tenants in Unit Section */
+.tenants-in-unit-section {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.tenant-count-badge {
+  background: #667eea;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tenants-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.tenant-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tenant-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #667eea;
+}
+
+.tenant-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.tenant-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.tenant-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tenant-info-small {
+  font-size: 12px;
+  color: #64748b;
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tenant-info-small i {
+  color: #667eea;
+}
+
+.tenant-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-move-tenant {
+  flex: 1;
+  padding: 6px 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-move-tenant:hover {
+  background: #764ba2;
+  transform: translateY(-2px);
+}
+
+.no-data-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+}
+
+.no-data-message i {
+  font-size: 32px;
+  opacity: 0.5;
+  margin-bottom: 10px;
+}
+
+/* Move Tenant Modal Styles */
+.modal-subtitle {
+  color: #64748b;
+  margin: 10px 0 20px;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .unit-details-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .tenants-list-container {
+    grid-template-columns: 1fr;
+  }
+
+  .tenant-card-actions {
+    flex-direction: column;
+  }
+
+  .btn-move-tenant {
     width: 100%;
   }
 }

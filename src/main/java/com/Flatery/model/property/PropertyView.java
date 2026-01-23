@@ -43,5 +43,6 @@ public class PropertyView {
     private String referrer; // Where they came from (listing/search/share)
 
     @Column(name = "is_owner_view", nullable = false)
+    @Builder.Default
     private boolean ownerView = false; // Flag owner views separately
 }

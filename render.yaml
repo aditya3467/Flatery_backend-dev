@@ -1,5 +1,6 @@
 services:
   - type: web
+<<<<<<< Updated upstream
     name: flatery-backend-render1
     env: docker
     region: singapore
@@ -11,6 +12,14 @@ services:
         value: prod
       - key: PORT
         value: 8080
+=======
+    name: flatery-backend
+    env: docker
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+>>>>>>> Stashed changes
       - key: DATABASE_URL
         sync: false
       - key: DB_USERNAME
@@ -23,6 +32,7 @@ services:
         value: "36000000"
       - key: FRONTEND_URL
         sync: false
+<<<<<<< Updated upstream
       - key: MAIL_HOST
         sync: false
       - key: MAIL_PORT
@@ -32,3 +42,6 @@ services:
       - key: MAIL_PASSWORD
         sync: false
     healthCheckPath: /
+=======
+    healthCheckPath: /  # or /actuator/health if you use actuator
+>>>>>>> Stashed changes

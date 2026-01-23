@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.List;
 
 @Service
@@ -34,6 +35,7 @@ public class TenancyHistoryService {
     @Transactional
     public TenancyHistory vacateTenant(Long tenantId, String vacateReason, 
                                      BigDecimal finalSettlement, BigDecimal depositReturned) {
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
         log.info("Vacating tenant with ID: {}", tenantId);
         
         // Find the active tenant

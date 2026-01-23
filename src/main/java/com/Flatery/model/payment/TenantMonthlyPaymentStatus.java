@@ -27,6 +27,7 @@ public class TenantMonthlyPaymentStatus {
     private String paymentMonth; // Format: "YYYY-MM"
     
     @Column(name = "is_paid", nullable = false)
+    @Builder.Default
     private boolean isPaid = false;
     
     @Column(name = "marked_paid_date")
@@ -36,9 +37,11 @@ public class TenantMonthlyPaymentStatus {
     private String markedBy;
     
     @Column(name = "created_at", nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     
     @Column(name = "updated_at", nullable = false)
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
     
     @PreUpdate

@@ -3369,3 +3369,240 @@ const additionalStyles = `
 
 // Inject additional styles
 document.head.insertAdjacentHTML('beforeend', additionalStyles);
+
+// ===== WHATSAPP REMINDER FUNCTIONS =====
+
+/**
+ * Send WhatsApp reminder to tenant with due rent
+ */
+async function sendWhatsAppReminder(tenantId, tenantPhone, tenantName, property, dueAmount, dueDate) {
+    try {
+        // Show loading state
+        const btn = event.target.closest('.btn-send-reminder');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        }
+        
+        // Prepare message
+        const message = `Hello ${tenantName},\n\nThis is a friendly reminder that your rent payment of ₹${dueAmount.toLocaleString()} for ${property} was due on ${dueDate}.\n\nPlease submit your payment at your earliest convenience.\n\nThank you,\nYour Property Manager`;
+        
+        // Call API to send WhatsApp message
+        const response = await fetch('/api/notifications/whatsapp/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+            },
+            body: JSON.stringify({
+                recipientPhone: tenantPhone,
+                recipientName: tenantName,
+                tenantId: tenantId,
+                messageType: 'RENT_REMINDER',
+                amount: dueAmount,
+                property: property,
+                dueDate: dueDate,
+                message: message
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showWhatsAppToast(`WhatsApp reminder sent to ${tenantName}`, 'success');
+            console.log('[WhatsApp] Message sent successfully:', result);
+        } else {
+            showWhatsAppToast(`Failed to send WhatsApp reminder: ${result.message || 'Unknown error'}`, 'error');
+            console.error('[WhatsApp] Error sending message:', result);
+        }
+        
+    } catch (error) {
+        console.error('[WhatsApp] Error:', error);
+        showWhatsAppToast('Error sending WhatsApp reminder: ' + error.message, 'error');
+    } finally {
+        // Restore button state
+        const btn = event.target.closest('.btn-send-reminder');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send Reminder';
+        }
+    }
+}
+
+/**
+ * Show WhatsApp toast notification
+ */
+function showWhatsAppToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `whatsapp-toast ${type}`;
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        toast.style.animation = 'slideOutDown 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+/**
+ * Render due payments as cards - includes all payments that are due or overdue
+ */
+function renderDuePayments() {
+    if (!window.flatDashboard) return;
+    
+    const tenantsData = window.flatDashboard.tenantsData || [];
+    const paymentsData = window.flatDashboard.paymentsData || [];
+    const propertiesData = window.flatDashboard.propertiesData || [];
+    
+    // Find tenants with due rent
+    const currentDate = new Date();
+    const duePayments = [];
+    
+    tenantsData.forEach(tenant => {
+        if (tenant.status !== 'ACTIVE') return;
+        
+        const property = propertiesData.find(p => p.id === tenant.propertyId);
+        if (!property) return;
+        
+        // Check if tenant has due payment
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        
+        const hasCurrentMonthPayment = paymentsData.some(payment => {
+            try {
+                const paymentDate = new Date(payment.paymentDate || payment.createdAt);
+                if (isNaN(paymentDate.getTime())) return false;
+                
+                return payment.propertyId === property.id &&
+                       paymentDate.getMonth() === currentMonth &&
+                       paymentDate.getFullYear() === currentYear &&
+                       (payment.status === 'VERIFIED' || payment.status === 'PENDING');
+            } catch (e) {
+                return false;
+            }
+        });
+        
+        if (!hasCurrentMonthPayment) {
+            duePayments.push({
+                tenant: tenant,
+                property: property,
+                amount: property.rentAmount || 0,
+                dueDate: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1).toLocaleDateString(),
+                daysPastDue: Math.floor((currentDate - new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)) / (1000 * 60 * 60 * 24))
+            });
+        }
+    });
+    
+    const section = document.getElementById('overduePaymentsSection');
+    const grid = document.getElementById('overduePaymentsGrid');
+    const badge = document.getElementById('overdueCount');
+    
+    if (duePayments.length === 0) {
+        if (section) section.style.display = 'none';
+        return;
+    }
+    
+    // Show section
+    if (section) section.style.display = 'block';
+    if (badge) badge.textContent = duePayments.length;
+    
+    // Render cards
+    if (grid) {
+        grid.innerHTML = duePayments.map(item => `
+            <div class="overdue-payment-card">
+                <div class="overdue-payment-card-header">
+                    <div class="overdue-payment-tenant-info">
+                        <p class="overdue-payment-tenant-name">${item.tenant.tenantName}</p>
+                        <p class="overdue-payment-unit">${window.flatDashboard.generateFlatName(item.property, item.tenant)}</p>
+                    </div>
+                    <span class="overdue-status-badge">DUE</span>
+                </div>
+                
+                <div class="overdue-payment-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Rent Amount:</span>
+                        <span class="detail-value amount">₹${item.amount.toLocaleString()}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Due Date:</span>
+                        <span class="detail-value date">${item.dueDate}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Contact:</span>
+                        <span class="detail-value">${item.tenant.phoneNumber || 'N/A'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Days Past Due:</span>
+                        <span class="detail-value">${item.daysPastDue} days</span>
+                    </div>
+                </div>
+                
+                <div class="overdue-payment-actions">
+                    <button class="btn-send-reminder" onclick="sendWhatsAppReminder(
+                        ${item.tenant.id},
+                        '${item.tenant.phoneNumber}',
+                        '${item.tenant.tenantName}',
+                        '${window.flatDashboard.generateFlatName(item.property, item.tenant)}',
+                        ${item.amount},
+                        '${item.dueDate}'
+                    )">
+                        <i class="fab fa-whatsapp"></i> Send Reminder
+                    </button>
+                    <button class="btn-view-details" onclick="flatDashboard.viewTenantDetails(${item.tenant.id})">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+/**
+ * Add WhatsApp button to tenant table row
+ */
+function addWhatsAppButtonToTenantRow(row, tenant) {
+    const actionsCell = row.querySelector('td:last-child');
+    if (!actionsCell) return;
+    
+    const whatsappBtn = document.createElement('button');
+    whatsappBtn.className = 'btn-whatsapp';
+    whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> WhatsApp';
+    whatsappBtn.onclick = (e) => {
+        e.preventDefault();
+        sendWhatsAppReminder(
+            tenant.id,
+            tenant.phoneNumber,
+            tenant.tenantName,
+            window.flatDashboard.generateFlatName(window.flatDashboard.propertiesData.find(p => p.id === tenant.propertyId), tenant),
+            0,
+            'this month'
+        );
+    };
+    
+    // Add to table actions or directly to the cell
+    let actionsContainer = actionsCell.querySelector('.table-actions');
+    if (!actionsContainer) {
+        actionsContainer = document.createElement('div');
+        actionsContainer.className = 'table-actions';
+        actionsCell.innerHTML = '';
+        actionsCell.appendChild(actionsContainer);
+    }
+    
+    actionsContainer.appendChild(whatsappBtn);
+}
+
+// Hook into existing data loading to render due payments
+const originalLoadDashboardData = window.flatDashboard?.loadDashboardData;
+if (originalLoadDashboardData) {
+    window.flatDashboard.loadDashboardData = async function() {
+        await originalLoadDashboardData.call(this);
+        renderDuePayments();
+    };
+}

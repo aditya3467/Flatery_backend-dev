@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -21,7 +22,7 @@ public class ReceiptService {
     @Transactional
     public ReceiptResponseDto createReceipt(Long transactionId, String receiptUrl) {
         Receipt receipt = Receipt.builder()
-                .transactionId(transactionId)
+            .transactionId(Objects.requireNonNull(transactionId, "transactionId cannot be null"))
                 .receiptUrl(receiptUrl)
                 .build();
 
@@ -33,14 +34,16 @@ public class ReceiptService {
      * Get receipt by transaction ID
      */
     public Optional<ReceiptResponseDto> findByTransactionId(Long transactionId) {
-        return repository.findByTransactionId(transactionId).map(this::mapToDto);
+        return repository.findByTransactionId(Objects.requireNonNull(transactionId, "transactionId cannot be null"))
+                .map(this::mapToDto);
     }
 
     /**
      * Get receipt by receipt ID
      */
     public Optional<ReceiptResponseDto> findById(Long id) {
-        return repository.findById(id).map(this::mapToDto);
+        return repository.findById(Objects.requireNonNull(id, "id cannot be null"))
+                .map(this::mapToDto);
     }
 
     /**
@@ -48,7 +51,7 @@ public class ReceiptService {
      */
     @Transactional
     public void deleteReceipt(Long id) {
-        repository.deleteById(id);
+        repository.deleteById(Objects.requireNonNull(id, "id cannot be null"));
     }
 
     /**

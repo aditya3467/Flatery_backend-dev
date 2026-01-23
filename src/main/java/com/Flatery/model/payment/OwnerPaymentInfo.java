@@ -43,6 +43,7 @@ public class OwnerPaymentInfo {
     private String accountNumber;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @CreationTimestamp
@@ -54,6 +55,7 @@ public class OwnerPaymentInfo {
     private LocalDateTime updatedAt;
 
     @Column(name = "created_by", length = 50)
+    @Builder.Default
     private String createdBy = "SYSTEM";
 
     @Column(name = "updated_by", length = 50)

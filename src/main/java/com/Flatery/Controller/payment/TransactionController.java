@@ -119,6 +119,30 @@ public class TransactionController {
     }
 
     /**
+     * Owner fetches all transactions for a specific property
+     */
+    @GetMapping("/owner/property/{propertyId}")
+    public ResponseEntity<List<TransactionResponseDto>> getTransactionsByProperty(
+            @PathVariable Long propertyId,
+            Authentication authentication) {
+        Long ownerId = getAuthenticatedUserId(authentication);
+        List<TransactionResponseDto> transactions = transactionService.getTransactionsByOwnerAndProperty(ownerId, propertyId);
+        return ResponseEntity.ok(transactions);
+    }
+
+    /**
+     * Owner fetches pending transactions for a specific property
+     */
+    @GetMapping("/owner/property/{propertyId}/pending")
+    public ResponseEntity<List<TransactionResponseDto>> getPendingTransactionsByProperty(
+            @PathVariable Long propertyId,
+            Authentication authentication) {
+        Long ownerId = getAuthenticatedUserId(authentication);
+        List<TransactionResponseDto> transactions = transactionService.getPendingTransactionsByOwnerAndProperty(ownerId, propertyId);
+        return ResponseEntity.ok(transactions);
+    }
+
+    /**
      * Tenant fetches their own transaction history
      */
     @GetMapping("/tenant/my-payments")

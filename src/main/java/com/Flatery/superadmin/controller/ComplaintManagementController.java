@@ -1,6 +1,5 @@
 package com.Flatery.superadmin.controller;
 
-import com.Flatery.model.help.Complaint;
 import com.Flatery.model.help.helpstatus;
 import com.Flatery.model.help.Priority;
 import com.Flatery.superadmin.dto.ComplaintDto;

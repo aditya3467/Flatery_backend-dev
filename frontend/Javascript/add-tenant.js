@@ -139,28 +139,8 @@ async function handleSubmit(e) {
     return showAlert('error', 'Lease end date cannot be before lease start date');
   }
 
-  // Final check: verify no duplicate tenancy for this property + phone combination
-  try {
-    const tenants = await apiService.getTenants();
-    const normalizePhone = (phone) => {
-      if (!phone) return '';
-      return phone.replace(/^\+91/, '').replace(/\D/g, '');
-    };
-    
-    const inputPhone = normalizePhone(data.phoneNumber);
-    
-    // Check if tenant with same phone already exists for this property
-    const duplicate = tenants.find(t => {
-      const tenantPhone = normalizePhone(t.phoneNumber);
-      return t.propertyId === data.propertyId && tenantPhone === inputPhone;
-    });
-    
-    if (duplicate) {
-      return showAlert('error', 'This tenant is already assigned to this property. You can edit the tenancy details instead.');
-    }
-  } catch (err) {
-    // Continue with submission
-  }
+  // Duplicate check will be done server-side during tenant creation
+  // No need to fetch all tenants here - let the backend validate
 
   document.getElementById('loadingIndicator').style.display = 'block';
   form.style.display = 'none';
@@ -303,55 +283,11 @@ function setFormFieldsDisabled(disabled, exceptions = []) {
 }
 
 // Check if user already has tenancy for selected property
+// Duplicate validation will be done server-side
 async function checkDuplicateTenancy(user) {
-  const propertySelect = document.getElementById('propertyId');
-  
-  // Add listener for property selection changes
-  const checkHandler = async () => {
-    const selectedPropertyId = parseInt(propertySelect.value);
-    if (!selectedPropertyId || !user) return;
-    
-    try {
-      // Fetch all tenants for this owner
-      const tenants = await apiService.getTenants();
-      
-      // Normalize phone for comparison
-      const normalizePhone = (phone) => {
-        if (!phone) return '';
-        return phone.replace(/^\+91/, '').replace(/\D/g, '');
-      };
-      
-      const userPhone = normalizePhone(user.phoneNumber);
-      
-      // Check if this user already has a tenancy for the selected property
-      const existingTenancy = tenants.find(t => {
-        const tenantPhone = normalizePhone(t.phoneNumber);
-        return tenantPhone === userPhone && t.propertyId === selectedPropertyId;
-      });
-      
-      if (existingTenancy) {
-        showAlert('error', `⚠️ Tenant already assigned to this property! You can edit the tenancy details instead.`);
-        // Disable submit button
-        const submitBtn = document.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
-      } else {
-        hideAlert();
-        // Re-enable submit button
-        const submitBtn = document.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = false;
-      }
-    } catch (err) {
-    }
-  };
-  
-  // Check immediately if property is already selected
-  if (propertySelect.value) {
-    checkHandler();
-  }
-  
-  // Add listener for future changes
-  propertySelect.removeEventListener('change', checkHandler); // Remove any previous listener
-  propertySelect.addEventListener('change', checkHandler);
+  // Removed client-side duplicate checking
+  // The backend will validate during tenant creation to avoid loading all tenant data
+  return;
 }
 
 // Load floors and units for PG properties

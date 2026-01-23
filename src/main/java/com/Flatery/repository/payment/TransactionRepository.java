@@ -23,4 +23,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByCreatedBy(String createdBy);
     
     List<Transaction> findByTenantIdAndPaymentMonth(Long tenantId, String paymentMonth);
+
+    List<Transaction> findByOwnerIdAndPropertyId(Long ownerId, Long propertyId);
+
+    List<Transaction> findByOwnerIdAndPropertyIdAndStatus(Long ownerId, Long propertyId, PaymentStatus status);
 }

@@ -79,6 +79,48 @@ public class EmailTemplateSeeder implements CommandLineRunner {
                 "<h2>Property Listing Review</h2><p>Hi {{owner_name}},</p><p>Your property <strong>{{property_name}}</strong> is temporarily unavailable due to:</p><p><strong>Reason:</strong> {{block_reason}}</p><p>Please review our guidelines and update your listing. Contact support for assistance.</p><p><a href=\"{{support_url}}\">Contact Support</a></p>",
                 "Your property {{property_name}} requires review.\n\nReason: {{block_reason}}\n\nSupport: {{support_url}}",
                 Arrays.asList("owner_name", "property_name", "block_reason", "support_url")
+            ),
+            createTemplate(EmailType.PAYMENT_SUBMISSION,
+                "New Payment Submission - {{amount}} from {{tenant_name}}",
+                "<h2>New Payment Submission</h2><p>Hi {{owner_name}},</p><p><strong>{{tenant_name}}</strong> has submitted a payment for your approval.</p><p><strong>Amount:</strong> ₹{{amount}}<br><strong>Month:</strong> {{payment_month}}<br><strong>Payment Mode:</strong> {{payment_mode}}<br><strong>Date Submitted:</strong> {{submission_date}}</p><p><a href=\"{{dashboard_url}}\" style=\"background:#FF9500;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Review Payment</a></p><p>Please verify and approve or reject this payment submission.</p>",
+                "New Payment Submission\n\nTenant: {{tenant_name}}\nAmount: ₹{{amount}}\nMonth: {{payment_month}}\nMode: {{payment_mode}}\nDate: {{submission_date}}\n\nReview: {{dashboard_url}}",
+                Arrays.asList("owner_name", "tenant_name", "amount", "payment_month", "payment_mode", "submission_date", "dashboard_url")
+            ),
+            createTemplate(EmailType.PAYMENT_APPROVED,
+                "Your Payment has been Approved ✅",
+                "<h2>Payment Approved</h2><p>Hi {{tenant_name}},</p><p>Your payment of <strong>₹{{amount}}</strong> for {{property_name}} has been approved and verified by your owner.</p><p><strong>Month:</strong> {{payment_month}}<br><strong>Approval Date:</strong> {{approval_date}}<br><strong>Transaction ID:</strong> {{transaction_id}}</p><p><a href=\"{{payment_history_url}}\" style=\"background:#34C759;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">View Payment History</a></p><p>Thank you for your timely payment!</p>",
+                "Your Payment Approved ✅\n\nAmount: ₹{{amount}}\nMonth: {{payment_month}}\nApproved: {{approval_date}}\nTransaction ID: {{transaction_id}}\n\nPayment History: {{payment_history_url}}",
+                Arrays.asList("tenant_name", "amount", "property_name", "payment_month", "approval_date", "transaction_id", "payment_history_url")
+            ),
+            createTemplate(EmailType.PAYMENT_REJECTED,
+                "Your Payment Submission was Rejected ❌",
+                "<h2>Payment Rejected</h2><p>Hi {{tenant_name}},</p><p>Your payment submission of <strong>₹{{amount}}</strong> for {{property_name}} has been rejected.</p><p><strong>Month:</strong> {{payment_month}}<br><strong>Rejection Date:</strong> {{rejection_date}}<br><strong>Reason:</strong> {{rejection_reason}}</p><p>Please contact your owner for clarification or submit a corrected payment.</p><p><a href=\"{{submit_payment_url}}\" style=\"background:#FF3B30;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Submit Payment Again</a></p>",
+                "Your Payment was Rejected ❌\n\nAmount: ₹{{amount}}\nMonth: {{payment_month}}\nReason: {{rejection_reason}}\nRejected: {{rejection_date}}\n\nSubmit again: {{submit_payment_url}}",
+                Arrays.asList("tenant_name", "amount", "property_name", "payment_month", "rejection_reason", "rejection_date", "submit_payment_url")
+            ),
+            createTemplate(EmailType.PAYMENT_REMINDER,
+                "Payment Pending - {{amount}} from {{tenant_name}}",
+                "<h2>Payment Pending Review</h2><p>Hi {{owner_name}},</p><p><strong>{{tenant_name}}</strong> has submitted a payment of <strong>₹{{amount}}</strong> that is awaiting your review.</p><p><strong>Month:</strong> {{payment_month}}<br><strong>Days Pending:</strong> {{days_pending}}<br><strong>Status:</strong> Pending Approval</p><p><a href=\"{{dashboard_url}}\" style=\"background:#FF9500;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Approve or Reject</a></p><p>This payment has been pending for {{days_pending}} days. Please take action soon.</p>",
+                "Reminder: Pending Payment Review\n\nTenant: {{tenant_name}}\nAmount: ₹{{amount}}\nMonth: {{payment_month}}\nDays Pending: {{days_pending}}\n\nDashboard: {{dashboard_url}}",
+                Arrays.asList("owner_name", "tenant_name", "amount", "payment_month", "days_pending", "dashboard_url")
+            ),
+            createTemplate(EmailType.MAINTENANCE_REQUEST_SUBMITTED,
+                "New Maintenance Request from {{tenant_name}}",
+                "<h2>New Maintenance Request</h2><p>Hi {{owner_name}},</p><p><strong>{{tenant_name}}</strong> from Unit {{unit_number}} has submitted a maintenance request.</p><p><strong>Issue:</strong> {{issue_title}}<br><strong>Description:</strong> {{issue_description}}<br><strong>Priority:</strong> {{priority}}<br><strong>Date Submitted:</strong> {{submission_date}}</p><p><a href=\"{{dashboard_url}}\" style=\"background:#FF9500;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">View Request</a></p><p>Please respond to the tenant as soon as possible.</p>",
+                "New Maintenance Request\n\nFrom: {{tenant_name}} (Unit {{unit_number}})\nIssue: {{issue_title}}\nDescription: {{issue_description}}\nPriority: {{priority}}\nDate: {{submission_date}}\n\nView: {{dashboard_url}}",
+                Arrays.asList("owner_name", "tenant_name", "unit_number", "issue_title", "issue_description", "priority", "submission_date", "dashboard_url")
+            ),
+            createTemplate(EmailType.MAINTENANCE_REQUEST_ACKNOWLEDGED,
+                "Your Maintenance Request has been Acknowledged",
+                "<h2>Request Acknowledged</h2><p>Hi {{tenant_name}},</p><p>Your maintenance request for <strong>{{issue_title}}</strong> has been received and acknowledged by your owner.</p><p><strong>Unit:</strong> {{unit_number}}<br><strong>Status:</strong> {{status}}<br><strong>Expected Resolution:</strong> {{resolution_time}}<br><strong>Owner's Message:</strong> {{owner_message}}</p><p><a href=\"{{tracking_url}}\" style=\"background:#34C759;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Track Request</a></p><p>We will update you once the work is completed.</p>",
+                "Maintenance Request Acknowledged\n\nIssue: {{issue_title}}\nStatus: {{status}}\nExpected: {{resolution_time}}\nMessage: {{owner_message}}\n\nTrack: {{tracking_url}}",
+                Arrays.asList("tenant_name", "unit_number", "issue_title", "status", "resolution_time", "owner_message", "tracking_url")
+            ),
+            createTemplate(EmailType.MAINTENANCE_REQUEST_RESOLVED,
+                "Your Maintenance Request has been Resolved ✅",
+                "<h2>Request Completed</h2><p>Hi {{tenant_name}},</p><p>Your maintenance request for <strong>{{issue_title}}</strong> in Unit {{unit_number}} has been completed.</p><p><strong>Work Completed:</strong> {{completion_date}}<br><strong>Completion Notes:</strong> {{completion_notes}}</p><p>If you have any concerns or the issue persists, please contact your owner immediately.</p><p><a href=\"{{feedback_url}}\" style=\"background:#34C759;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Provide Feedback</a></p><p>Thank you for your patience!</p>",
+                "Maintenance Request Resolved ✅\n\nIssue: {{issue_title}}\nUnit: {{unit_number}}\nCompleted: {{completion_date}}\nNotes: {{completion_notes}}\n\nFeedback: {{feedback_url}}",
+                Arrays.asList("tenant_name", "unit_number", "issue_title", "completion_date", "completion_notes", "feedback_url")
             )
         );
 

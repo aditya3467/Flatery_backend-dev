@@ -339,7 +339,8 @@ async function handleSingleTenantSubmit(fd) {
   const isFlat = currentPropertyType === 'FLAT';
   
   // Clean phone number: remove country code and non-digits
-  const rawPhoneNumber = (fd.get('phoneNumber_0') || '').trim();
+  // Handle both field naming conventions: with and without _0 suffix
+  const rawPhoneNumber = (fd.get('phoneNumber_0') || fd.get('phoneNumber') || '').trim();
   const cleanPhoneNumber = rawPhoneNumber.replace(/^\+91/, '').replace(/\D/g, '');
   
   console.log('Phone number processing:', {
@@ -349,19 +350,19 @@ async function handleSingleTenantSubmit(fd) {
   });
   
   const data = {
-    tenantName: (fd.get('tenantName_0') || '').trim(),
+    tenantName: (fd.get('tenantName_0') || fd.get('tenantName') || '').trim(),
     phoneNumber: cleanPhoneNumber,
-    emailAddress: (fd.get('emailAddress_0') || '').trim() || null,
+    emailAddress: (fd.get('emailAddress_0') || fd.get('emailAddress') || '').trim() || null,
     propertyId: parseInt(document.getElementById('propertyId').value),
     flatRoomNumber: (fd.get('flatRoomNumber_0') || fd.get('flatRoomNumber') || '').trim(),
-    unitId: fd.get('unitId_0') ? parseInt(fd.get('unitId_0')) : null,
-    bedIndex: fd.get('bedIndex_0') ? parseInt(fd.get('bedIndex_0')) : null,
-    rentAmount: isFlat ? parseInt(fd.get('sharedRentAmount')) : parseInt(fd.get('rentAmount_0')),
-    securityDeposit: isFlat ? parseInt(fd.get('sharedSecurityDeposit')) : parseInt(fd.get('securityDeposit_0')),
-    rentDueDate: isFlat ? parseInt(fd.get('sharedRentDueDate')) : parseInt(fd.get('rentDueDate_0')),
-    leaseStartDate: isFlat ? fd.get('sharedLeaseStartDate') : fd.get('leaseStartDate_0'),
-    leaseEndDate: isFlat ? (fd.get('sharedLeaseEndDate') || null) : (fd.get('leaseEndDate_0') || null),
-    temporaryPassword: (fd.get('temporaryPassword_0') || '').trim() || null,
+    unitId: fd.get('unitId_0') ? parseInt(fd.get('unitId_0')) : (fd.get('unitId') ? parseInt(fd.get('unitId')) : null),
+    bedIndex: fd.get('bedIndex_0') ? parseInt(fd.get('bedIndex_0')) : (fd.get('bedIndex') ? parseInt(fd.get('bedIndex')) : null),
+    rentAmount: isFlat ? parseInt(fd.get('sharedRentAmount')) : parseInt(fd.get('rentAmount_0') || fd.get('rentAmount')),
+    securityDeposit: isFlat ? parseInt(fd.get('sharedSecurityDeposit')) : parseInt(fd.get('securityDeposit_0') || fd.get('securityDeposit')),
+    rentDueDate: isFlat ? parseInt(fd.get('sharedRentDueDate')) : parseInt(fd.get('rentDueDate_0') || fd.get('rentDueDateDate')),
+    leaseStartDate: isFlat ? fd.get('sharedLeaseStartDate') : (fd.get('leaseStartDate_0') || fd.get('leaseStartDate')),
+    leaseEndDate: isFlat ? (fd.get('sharedLeaseEndDate') || null) : (fd.get('leaseEndDate_0') || fd.get('leaseEndDate') || null),
+    temporaryPassword: (fd.get('temporaryPassword_0') || fd.get('temporaryPassword') || '').trim() || null,
     status: 'ACTIVE',
     primary: true // Single tenant is always primary
   };
@@ -815,17 +816,47 @@ async function lookupExistingUser() {
     hideAlert();
     const user = await apiService.findUser({ phone, email, username });
     existingUser = user;
+    
+    console.log('[Lookup] User found:', JSON.stringify(user, null, 2));
+    
     // Autofill
     const name = [user.firstName || '', user.lastName || ''].filter(Boolean).join(' ').trim();
-    if (name) document.querySelector('input[name="tenantName"]').value = name;
+    if (name) {
+      const nameField = document.querySelector('input[name="tenantName"]');
+      if (nameField) {
+        nameField.value = name;
+        console.log('[Lookup] Set name to:', name);
+      }
+    }
     if (user.phoneNumber) {
       // Strip country code if present (e.g., +91 for India)
       let phone = user.phoneNumber.replace(/^\+91/, '').replace(/\D/g, '');
-      document.querySelector('input[name="phoneNumber"]').value = phone;
+      const phoneField = document.querySelector('input[name="phoneNumber"]');
+      if (phoneField) {
+        phoneField.value = phone;
+        console.log('[Lookup] Set phone to:', phone, 'Field value:', phoneField.value);
+      } else {
+        console.error('[Lookup] Phone field not found!');
+      }
+    } else {
+      console.warn('[Lookup] No phoneNumber in user object - user needs to enter phone manually');
+      showAlert('warning', 'Phone number not found for this user. Please enter it manually.');
     }
-    if (user.email) document.querySelector('input[name="emailAddress"]').value = user.email;
-    // Lock fields to avoid accidental changes, but keep PG unit fields enabled
-    setFormFieldsDisabled(true, ['propertyId','flatRoomNumber','rentAmount','securityDeposit','rentDueDateDate','leaseStartDate','leaseEndDate','status','unitId','bedIndex']);
+    if (user.email) {
+      const emailField = document.querySelector('input[name="emailAddress"]');
+      if (emailField) {
+        emailField.value = user.email;
+        console.log('[Lookup] Set email to:', user.email);
+      }
+    }
+    // Lock fields to avoid accidental changes, but keep PG unit fields, payment checkbox, and initial rent amount enabled
+    // Phone and email are readonly only if phone was found (displayed but not editable)
+    const exceptions = ['propertyId','flatRoomNumber','rentAmount','securityDeposit','rentDueDateDate','leaseStartDate','leaseEndDate','status','unitId','bedIndex','receivedInitialRent','sharedInitialRentAmount','pgInitialRentAmount','emailAddress'];
+    if (!user.phoneNumber) {
+      // If phone is missing, allow user to enter it
+      exceptions.push('phoneNumber');
+    }
+    setFormFieldsDisabled(true, exceptions);
 
     const resEl = document.getElementById('lookupResult');
     resEl.style.display = 'block';
@@ -869,6 +900,8 @@ function setFormFieldsDisabled(disabled, exceptions = []) {
     if (el.id && pgElements.includes(el.id)) return;
     // keep buttons active
     if (el.tagName === 'BUTTON') return;
+    // Skip checkbox inputs (allow them to be interactive)
+    if (el.type === 'checkbox') return;
     // Use readonly instead of disabled so fields are still submitted
     if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.type === 'number' || el.tagName === 'TEXTAREA') {
       el.readOnly = disabled;

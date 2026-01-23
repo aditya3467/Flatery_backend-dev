@@ -14,6 +14,17 @@ public enum EmailType {
     RENT_DUE_REMINDER,
     RENT_OVERDUE,
     PAYMENT_CONFIRMATION,
+    
+    // Payment Submission & Verification (New)
+    PAYMENT_SUBMISSION,           // Tenant submits payment, owner gets notified
+    PAYMENT_APPROVED,             // Owner approves payment, tenant gets notified
+    PAYMENT_REJECTED,             // Owner rejects payment, tenant gets notified
+    PAYMENT_REMINDER,             // Owner reminds tenant about pending payment
+    
+    // Maintenance & Complaints (New)
+    MAINTENANCE_REQUEST_SUBMITTED,// Tenant submits complaint, owner gets notified
+    MAINTENANCE_REQUEST_ACKNOWLEDGED, // Owner acknowledges, tenant gets notified
+    MAINTENANCE_REQUEST_RESOLVED, // Issue resolved, tenant gets notified
 
     // System
     LISTING_APPROVED,
