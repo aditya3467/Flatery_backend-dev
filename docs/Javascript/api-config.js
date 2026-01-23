@@ -11,7 +11,7 @@ const API_CONFIG = {
             return 'http://localhost:8081/api';
         } else {
             // Production URL - change this to your actual Render URL
-            return 'https://flatery-backend-render1.onrender.com/api';
+            return 'https://flatery-backend-dev.onrender.com/api';
         }
     },
     

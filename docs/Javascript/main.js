@@ -1043,7 +1043,7 @@ function loginWithGoogle() {
   // Redirect to backend OAuth2 authorization endpoint
   const oauthBase = window.location.hostname === 'localhost'
     ? 'http://localhost:8081'
-    : 'https://flatery-backend-render1.onrender.com';
+    : 'https://flatery-backend-dev.onrender.com';
   window.location.href = `${oauthBase}/oauth2/authorization/google`;
 }
 

@@ -64,7 +64,7 @@ async function handleLogin(event) {
         // Call login API
             const apiBase = window.location.hostname === 'localhost'
                 ? 'http://localhost:8081/api'
-                : 'https://flatery-backend-render1.onrender.com/api';
+                : 'https://flatery-backend-dev.onrender.com/api';
             const response = await fetch(`${apiBase}/auth/login`, {
             method: 'POST',
             headers: {

@@ -18,7 +18,7 @@ async function loadProfileFromApi() {
     if (!token) return;
 
     try {
-        const resp = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-render1.onrender.com/api') + '/tenants/me/profile', {
+        const resp = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api') + '/tenants/me/profile', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -131,7 +131,7 @@ async function loadTenantData() {
         }
 
         // Load user basic info
-        const userResponse = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-render1.onrender.com/api') + '/auth/me', {
+        const userResponse = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api') + '/auth/me', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -146,7 +146,7 @@ async function loadTenantData() {
         }
 
         // Load tenant tenancy info (rent, security deposit, due date)
-        const tenancyResponse = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-render1.onrender.com/api') + '/tenants/me', {
+        const tenancyResponse = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api') + '/tenants/me', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -396,7 +396,7 @@ document.getElementById('profileForm').addEventListener('submit', async function
     let success = false;
     if (token) {
         try {
-            const resp = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-render1.onrender.com/api') + '/tenants/me/profile', {
+            const resp = await fetch('' + (window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api') + '/tenants/me/profile', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
