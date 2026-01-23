@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +22,7 @@ public class UserController {
 
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     @GetMapping("/search")
     public ResponseEntity<?> searchUser(
         @RequestParam(required = false) String username,
@@ -61,6 +63,7 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(Authentication authentication) {
         // Get authenticated username (phone number)

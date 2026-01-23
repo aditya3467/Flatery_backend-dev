@@ -409,7 +409,7 @@ class OwnerDashboard {
     // Data Loading Methods
     async loadOwnerData() {
         try {
-            const response = await apiService.get('/api/users/profile');
+            const response = await apiService.get('/users/profile');
             this.ownerData = response;
 
             // Update profile display
