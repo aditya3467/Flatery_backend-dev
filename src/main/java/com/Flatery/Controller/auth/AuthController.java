@@ -19,9 +19,26 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
+            System.out.println("=== LOGIN ATTEMPT ===");
+            System.out.println("Username: " + loginRequest.getUsername());
+            System.out.println("Password length: " + (loginRequest.getPassword() != null ? loginRequest.getPassword().length() : 0));
+            
             AuthResponse authResponse = authService.login(loginRequest);
+            
+            System.out.println("=== LOGIN SUCCESS ===");
+            System.out.println("Token: " + (authResponse.getToken() != null ? "Generated" : "null"));
+            
             return ResponseEntity.ok(authResponse);
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            System.err.println("=== AUTHENTICATION FAILED ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Invalid credentials: " + e.getMessage()));
         } catch (Exception e) {
+            System.err.println("=== LOGIN ERROR ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse("Invalid credentials"));
         }
