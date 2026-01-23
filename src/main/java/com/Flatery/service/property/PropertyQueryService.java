@@ -47,6 +47,10 @@ public class PropertyQueryService {
             Double radiusKm,
             Pageable pageable
     ) {
+        System.out.println("[PropertySearch] Query params: city=" + city + ", location=" + location + 
+            ", type=" + type + ", bhk=" + bhk + ", minRent=" + minRent + ", maxRent=" + maxRent + 
+            ", furnishing=" + furnishing + ", lat=" + lat + ", lng=" + lng + ", radiusKm=" + radiusKm);
+        
         // If no location filters at all, use DB pagination for speed
         boolean isRadiusSearch = (lat != null && lng != null);
         
@@ -55,6 +59,8 @@ public class PropertyQueryService {
             Page<Property> page = propertyRepository.searchProperties(
                 city, location, type, bhk, minRent, maxRent, furnishing, pageable
             );
+            
+            System.out.println("[PropertySearch] DB query returned " + page.getTotalElements() + " properties");
             
             // Batch fetch images for the page
             List<Long> propertyIds = page.getContent().stream()
@@ -70,9 +76,12 @@ public class PropertyQueryService {
         }
         
         // Radius search - need to load all and filter by distance
+        System.out.println("[PropertySearch] Performing radius search with radius=" + radiusKm);
         List<Property> all = propertyRepository.searchProperties(
             null, null, type, bhk, minRent, maxRent, furnishing, Pageable.unpaged()
         ).getContent();
+        
+        System.out.println("[PropertySearch] Found " + all.size() + " properties before distance filtering");
         
         Double usedRadius = radiusKm != null ? radiusKm : 10.0; // Default 10km
         
@@ -85,6 +94,8 @@ public class PropertyQueryService {
                 return Double.compare(da, db);
             })
             .toList();
+        
+        System.out.println("[PropertySearch] After distance filtering: " + filtered.size() + " properties within " + usedRadius + "km");
         
         // Manual pagination
         int start = (int) pageable.getOffset();
