@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 # Render Deployment Guide - render1 Branch
 
 ## Quick Start
@@ -214,6 +215,8 @@ In Render dashboard:
 - [ ] Database uses SSL connections
 - [ ] Environment variables are not committed to git
 =======
+=======
+>>>>>>> Stashed changes
 # Render Deployment Guide
 
 ## Prerequisites
@@ -372,4 +375,7 @@ FRONTEND_URL=https://yourusername.github.io/your-repo
 - Render Docs: https://render.com/docs
 - PlanetScale: https://planetscale.com/docs
 - GitHub Pages: https://docs.github.com/pages
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

@@ -1,7 +1,11 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 # Multi-stage build for Flatery Backend
 
 # Stage 1: Build with Maven
+=======
+# ---- Build stage: use Maven + JDK 17 to build the jar ----
+>>>>>>> Stashed changes
 =======
 # ---- Build stage: use Maven + JDK 17 to build the jar ----
 >>>>>>> Stashed changes
@@ -9,6 +13,7 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 # Copy pom.xml and download dependencies (better layer caching)
 COPY pom.xml .
@@ -37,6 +42,8 @@ EXPOSE 8080
 # Run the application
 ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod} -jar app.jar"]
 =======
+=======
+>>>>>>> Stashed changes
 # Copy Maven descriptor first (better caching)
 COPY pom.xml .
 RUN mvn -q -DskipTests dependency:go-offline
@@ -61,4 +68,7 @@ ENV JAVA_OPTS=""
 # Use SPRING_PROFILES_ACTIVE from env (prod on Render),
 # and bind server.port to $PORT (Render requirement)
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod} --server.port=${PORT:-8080}"]
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

@@ -9,7 +9,11 @@ README*
 docs/
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 # IDE files
+=======
+# IDE
+>>>>>>> Stashed changes
 =======
 # IDE
 >>>>>>> Stashed changes
@@ -18,9 +22,14 @@ docs/
 *.iml
 *.iws
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 *.ipr
 
 # Build artifacts
+=======
+
+# Build outputs
+>>>>>>> Stashed changes
 =======
 
 # Build outputs
@@ -29,6 +38,7 @@ target/
 *.jar
 *.war
 *.class
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 *.log
 
@@ -40,11 +50,16 @@ src/test/
 
 # Local uploads (use external storage in production)
 =======
+=======
+>>>>>>> Stashed changes
 
 # Frontend files (not needed in backend image)
 frontend/
 
 # Uploads (should use external storage in production)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 uploads/
 
@@ -52,8 +67,13 @@ uploads/
 *.sql
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 # Maven wrapper jar (keep the executable)
 !.mvn/wrapper/maven-wrapper.jar
+=======
+# Logs
+*.log
+>>>>>>> Stashed changes
 =======
 # Logs
 *.log
@@ -63,12 +83,18 @@ uploads/
 .DS_Store
 Thumbs.db
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 *.swp
 *.swo
 
 # Environment files
 .env
 .env.local
+=======
+
+# Maven wrapper (keep mvnw files)
+!.mvn/wrapper/maven-wrapper.jar
+>>>>>>> Stashed changes
 =======
 
 # Maven wrapper (keep mvnw files)
