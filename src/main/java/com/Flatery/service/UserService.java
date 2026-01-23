@@ -25,15 +25,18 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         String key = username.trim().toLowerCase();
+        System.out.println("[Auth] loadUserByUsername called with: " + username + " -> key: " + key);
         User user = userRepo.findByUsernameOrEmail(key)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + key));
+            .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + key));
+        System.out.println("[Auth] User resolved: id=" + user.getId() + ", username=" + user.getUsername() + ", email=" + user.getEmail());
 
         Set<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(r -> new SimpleGrantedAuthority("ROLE_" + r.name()))
                 .collect(Collectors.toSet());
 
+        System.out.println("[Auth] Authorities: " + authorities);
         return new org.springframework.security.core.userdetails.User(
-                user.getUsername(), user.getPassword(), authorities);
+            user.getUsername(), user.getPassword(), authorities);
     }
 
 

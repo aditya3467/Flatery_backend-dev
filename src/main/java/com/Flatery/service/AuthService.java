@@ -31,18 +31,21 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public AuthResponse login(LoginRequest request) {
+        System.out.println("[Auth] Attempting authentication for: " + request.getUsername());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername().trim().toLowerCase(),
                         request.getPassword()
                 )
         );
+        System.out.println("[Auth] Authentication successful for: " + request.getUsername());
 
         UserDetails principal = (UserDetails) authentication.getPrincipal();
         String jwtToken = jwtService.generateToken(principal);
         long expiresIn = jwtService.getExpirationTime();
 
         User user = userRepo.findByUsername(principal.getUsername()).orElseThrow();
+        System.out.println("[Auth] Generating token for user: " + user.getUsername() + " (id=" + user.getId() + ")");
         Set<String> roles = user.getRoles().stream().map(Enum::name).collect(Collectors.toSet());
 
         AuthResponse resp = new AuthResponse();
