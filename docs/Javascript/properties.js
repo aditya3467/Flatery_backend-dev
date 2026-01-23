@@ -381,7 +381,8 @@ async function fetchPropertyLocationSuggestions(query) {
     try {
         suggestionBox.innerHTML = '<div class="suggestion-item">Searching...</div>';
         suggestionBox.style.display = 'block';
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=in`;
+        const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+        const url = `${apiBase}/location/search?q=${encodeURIComponent(query)}&limit=5`;
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
         if (!res.ok) throw new Error('Geocode failed');
         const results = await res.json();
@@ -539,7 +540,8 @@ async function handleDetectLocation(radiusKm) {
             // Reverse geocode to get location name
             let locationName = 'Your location';
             try {
-                const reverseUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
+                const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+                const reverseUrl = `${apiBase}/location/reverse?lat=${latitude}&lon=${longitude}`;
                 const res = await fetch(reverseUrl, { headers: { 'Accept': 'application/json' } });
                 if (res.ok) {
                     const data = await res.json();
@@ -596,7 +598,8 @@ async function handleDetectLocation(radiusKm) {
 }
 
 async function geocodeLocation(query) {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in`;
+    const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api';
+    const url = `${apiBase}/location/search?q=${encodeURIComponent(query)}&limit=5`;
     const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!res.ok) throw new Error('Geocode failed');
     return res.json();

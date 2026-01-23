@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Using Nominatim (OpenStreetMap) geocoding service
             const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`,
+                `${window.location.hostname === 'localhost' ? 'http://localhost:8081/api' : 'https://flatery-backend-dev.onrender.com/api'}/location/search?q=${encodeURIComponent(query)}&limit=5`,
                 {
                     headers: {
                         'User-Agent': 'Flatery Property Management'
