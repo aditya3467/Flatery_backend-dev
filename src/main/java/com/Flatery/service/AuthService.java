@@ -30,6 +30,7 @@ public class AuthService {
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         System.out.println("[Auth] Attempting authentication for: " + request.getUsername());
         Authentication authentication = authenticationManager.authenticate(
