@@ -1,0 +1,32 @@
+name: Deploy Flatery Backend
+
+on:
+  push:
+    branches:
+      - Prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "🚀 Starting deployment..."
+
+            cd /var/www/flatery || exit
+
+            git pull origin Prod
+
+            # Build project
+            ./mvnw clean package || mvn clean package
+
+            # Restart service
+            systemctl restart flatery
+
+            echo "✅ Deployment completed!"
