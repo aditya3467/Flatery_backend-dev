@@ -1041,7 +1041,7 @@ async function handleChangePassword(e) {
 // Google OAuth2 Sign-In
 function loginWithGoogle() {
   // Redirect to backend OAuth2 authorization endpoint
-  window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+  window.location.href = window.location.origin + '/oauth2/authorization/google';
 }
 
 // Handle OAuth2 callback (token in URL)

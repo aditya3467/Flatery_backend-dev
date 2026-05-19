@@ -1,6 +1,6 @@
 // API Service for Flatery Backend
 // Base URL for your Spring Boot backend
-const API_BASE_URL = 'http://localhost:8081/api';
+const API_BASE_URL = window.location.origin + '/api';
 
 // API Service Class
 class ApiService {

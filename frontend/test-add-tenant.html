@@ -276,7 +276,7 @@
                 const token = localStorage.getItem('token');
                 log('Using JWT Token: ' + (token ? token.substring(0, 20) + '...' : 'NOT FOUND'), 'info');
 
-                const url = 'http://localhost:8081/api/tenants';
+                const url = '/api/tenants';
                 log('POST ' + url, 'info');
 
                 const response = await fetch(url, {
@@ -376,7 +376,7 @@
 
         // Log initial page load
         log('Test page loaded. Ready to test tenant creation.', 'success');
-        log('Make sure your backend is running on http://localhost:8081', 'info');
+        log('Make sure your backend is running on http://localhost:8080', 'info');
     </script>
 </body>
 </html>
