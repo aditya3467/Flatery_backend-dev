@@ -166,10 +166,10 @@ class ComponentLoader {
             // Determine the correct path to index.html and logo.png based on current location
             const currentPath = window.location.pathname;
             let indexPath = 'index.html';
-            let logoPath = 'img/logo.png';
+            let logoPath = 'img/icon.png';
             if (currentPath.includes('/owner/') || currentPath.includes('/tenant/')) {
                 indexPath = '../index.html';
-                logoPath = '../img/logo.png';
+                logoPath = '../img/icon.png';
             }
             logoLink.href = indexPath;
             if (logoImg) logoImg.src = logoPath;

@@ -1,84 +1,89 @@
 ﻿<!--===== Navbar Component =====-->
 <nav class="navbar">
-    <div class="container-nav">
-        <div class="row justify-content-between">
-            <div class="logo">
-                <a href="#" id="logoLink">
-                    <img id="flateryLogoImg" src="img/logo.png" alt="Flatery Logo" class="logo-img" style="max-height:48px;max-width:160px;object-fit:contain;">
-                </a>
-            </div>
-            <div class="options">
-                <a class="nav-link" href="#services">Features</a>
-                <a class="nav-link" href="#how-it-works">How It Works</a>
-                <a class="nav-link" href="#why-choose-us">Why Choose Us</a>
-            </div>
-            <div class="menu">
-                <div class="user-actions">
-                    <div class="nav-item"><a href="#" id="listPropertyBtn" class="nav-link list-property-btn">List Property</a></div>
-                    <!-- Login button, visible when logged out -->
-                    <div class="nav-item" id="loginNavItem"><button id="mainLoginBtn" class="btn-1">Login</button></div>
-                    <!-- Notification Bell, visible when logged in -->
-                    <div class="nav-item notification-section" id="notificationSection" style="display: none;">
-                        <div class="notification-bell" id="notificationBell">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-                        </div>
-                        <div class="notification-dropdown" id="notificationDropdown">
-                            <div class="notification-header">
-                                <h4>Notifications</h4>
-                                <button class="mark-all-read-btn" id="markAllReadBtn" title="Mark all as read">
-                                    <i class="fas fa-check-double"></i>
-                                </button>
-                            </div>
-                            <div class="notification-list" id="notificationList">
-                                <div class="notification-loading">
-                                    <i class="fas fa-spinner fa-spin"></i> Loading...
-                                </div>
-                            </div>
-                            <div class="notification-footer">
-                                <button class="clear-notifications-btn" id="clearNotificationsBtn">
-                                    <i class="fas fa-trash-alt"></i> Clear Read
-                                </button>
-                            </div>
+    <a class="logo" href="#" id="logoLink">
+        <img id="flateryLogoImg" src="img/icon.png" alt="Flatery Icon" class="logo-img logo-icon">
+        <span class="logo-text"><strong>FLAT</strong><span>ery</span></span>
+    </a>
+
+    <ul class="nav-links">
+        <li><a href="properties.html">Browse Properties</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="request-callback.html">Request Callback</a></li>
+    </ul>
+
+    <div class="nav-actions">
+        <div class="user-actions">
+            <!-- List Property Link -->
+            <a href="#" id="listPropertyBtn" class="nav-link list-property-btn">List Property</a>
+            
+            <!-- Dashboard Link, visible when logged in -->
+            <div id="dashboardLinkContainer" style="display: none;"><a href="#" id="dashboardLink" class="nav-link dashboard-link">Dashboard</a></div>
+            
+            <!-- Login button, visible when logged out -->
+            <div id="loginNavItem"><button id="mainLoginBtn" class="nav-login" type="button" style="display: none;">Login</button></div>
+            
+            <!-- Notification Bell, visible when logged in -->
+            <div class="notification-section" id="notificationSection" style="display: none;">
+                <div class="notification-bell" id="notificationBell">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </div>
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <h4>Notifications</h4>
+                        <button class="mark-all-read-btn" id="markAllReadBtn" title="Mark all as read">
+                            <i class="fas fa-check-double"></i>
+                        </button>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="notification-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
                         </div>
                     </div>
-                    <!-- Profile dropdown, visible when logged in -->
-                    <div class="nav-item profile-section" id="profileSection" style="display: none;">
-                        <i class="fas fa-user-circle profile-icon" id="profileIcon"></i>
-                        <div class="profile-dropdown" id="profileDropdown">
-                            <div class="dropdown-header">Hi, <span id="dropdownUsername">User</span>!</div>
-                            <a href="superadmin-dashboard.html" class="superadmin-only" style="display: none;"><i class="fas fa-chart-line"></i> Admin Dashboard</a>
-                            <a href="tenant-profile.html"><i class="fas fa-user-edit"></i> Profile Settings</a>
-                            <a href="#" onclick="openChangePasswordModal(); return false;"><i class="fas fa-key"></i> Change Password</a>
-                            <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                        </div>
+                    <div class="notification-footer">
+                        <button class="clear-notifications-btn" id="clearNotificationsBtn">
+                            <i class="fas fa-trash-alt"></i> Clear Read
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="hamburger">
-                <input type="checkbox" id="burger-toggle">
-                <!-- Burger Icon -->
-                <label for="burger-toggle" class="burger-container">
-                    <div class="burger-line"></div> 
-                    <div class="burger-line"></div>
-                    <div class="burger-line"></div>
-                </label>
-                <!-- Navigation Menu -->
-                <div class="nav-menu">
-                    <ul>
-                        <li class="superadmin-only" style="display: none;"><a href="/frontend/superadmin-dashboard.html">Admin Dashboard</a></li>
-                        <li id="dashboardLinkContainer" style="display: none;"><a href="/frontend/tenant-dashboard.html" id="dashboardLink">Dashboard</a></li>
-                        <li><a href="/frontend/about.html">About</a></li>
-                        <li><a href="/frontend/services.html">Services</a></li>
-                        <li><a href="/frontend/request-callback.html">Request a call back</a></li>
-                        <li><a href="/frontend/tenant-policies.html">Tenant Policies</a></li>
-                        <li><a href="/frontend/owner-policies.html">Owner Policies</a></li>
-                        <li><a href="/frontend/terms-conditions.html">Terms and conditions</a></li>
-                        <li><a href="/frontend/faqs.html">FAQs</a></li>
-                        <li><button class="logout-btn" style="display: none;">Logout</button></li> 
-                    </ul>
-                    <div id="burgerLoginBtn" class="burger-btn">Login</div>
+            
+            <!-- Profile dropdown, visible when logged in -->
+            <div class="profile-section" id="profileSection" style="display: none;">
+                <i class="fas fa-user-circle profile-icon" id="profileIcon"></i>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-header">Hi, <span id="dropdownUsername">User</span>!</div>
+                    <a href="superadmin-dashboard.html" class="superadmin-only" style="display: none;"><i class="fas fa-chart-line"></i> Admin Dashboard</a>
+                    <a href="tenant-profile.html"><i class="fas fa-user-edit"></i> Profile Settings</a>
+                    <a href="#" onclick="openChangePasswordModal(); return false;"><i class="fas fa-key"></i> Change Password</a>
+                    <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Hamburger Menu -->
+        <div class="nav-hamburger">
+            <input type="checkbox" id="nav-toggle">
+            <label for="nav-toggle" class="nav-burger" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+            <div class="mobile-menu">
+                <ul>
+                    <li><a href="properties.html">Browse Properties</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="request-callback.html">Request Callback</a></li>
+                    <li><a href="tenant-policies.html">Tenant Policies</a></li>
+                    <li><a href="owner-policies.html">Owner Policies</a></li>
+                    <li><a href="terms-conditions.html">Terms &amp; Conditions</a></li>
+                    <li><a href="faqs.html">FAQs</a></li>
+                    <li id="mobileListPropertyContainer"><a href="#" id="mobileListPropertyBtn">List Property</a></li>
+                    <li id="mobileDashboardLinkContainer" style="display: none;"><a href="#" id="mobileDashboardLink">Dashboard</a></li>
+                </ul>
+                <button id="burgerLoginBtn" class="mobile-login-btn" type="button">Login</button>
             </div>
         </div>
     </div>
