@@ -817,12 +817,6 @@ async function loadProperties() {
         
         activeRadiusKm = chosenRadius;
         
-        // Fetch full details for PG and APARTMENT to get names and images
-        await enrichPropertiesWithNames();
-        
-        // Fetch view counts for all properties
-        await fetchPropertyViewCounts(allProperties);
-        
         filteredProperties = [...allProperties];
         
         // Apply URL filters after loading
@@ -1093,15 +1087,21 @@ function displayProperties() {
         return;
     }
     
-    propertiesList.innerHTML = currentProperties.map(property => createPropertyCard(property)).join('');
-    
-    // After rendering, sync favorite states and setup carousels
+    propertiesList.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
+    currentProperties.forEach(property => {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = createPropertyCard(property);
+        while (wrapper.firstChild) {
+            fragment.appendChild(wrapper.firstChild);
+        }
+    });
+
+    propertiesList.appendChild(fragment);
+
+    // Sync favorite state for rendered cards
     updateFavoriteIcons();
-    setupCarouselEventListeners();
-    initializeCarousels();
-    
-    // Setup event listeners for manual carousel controls
-    setupCarouselEventListeners();
     
     // Show pagination if needed
     if (paginationContainer && filteredProperties.length > itemsPerPage) {
@@ -1189,18 +1189,13 @@ function createPropertyCard(property) {
     return `
       <div class="property-card" data-property-id="${property.id}" onclick="window.location.href='property-details.html?id=${property.id}'">
         <div class="property-media-container">
-          <div class="property-image" data-property-id="${property.id}" data-image-index="0" data-images="${encodeURIComponent(JSON.stringify(images))}">
+          <div class="property-image" data-property-id="${property.id}">
             <img src="${firstImage}" alt="${title}" ${onerrorAttr} />
             <span class="property-badge">${property.type}</span>
             ${viewsBadge}
             <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, ${property.id})" aria-label="Add to wishlist">
               <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
             </button>
-            <button class="carousel-btn prev" aria-label="Previous image">‹</button>
-            <button class="carousel-btn next" aria-label="Next image">›</button>
-            <div class="carousel-controls">
-              ${images.map((_, idx) => `<span class="carousel-dot ${idx===0?'active':''}" data-index="${idx}"></span>`).join('')}
-            </div>
           </div>
           <div class="property-quick-info">
             <div class="quick-info-item">

@@ -15,6 +15,34 @@
  *  - Buttons with .btn-1 (login/logout) and .burger-btn (menu/user)
  */
 
+function injectPerfResources() {
+  if (document.querySelector('link[href*="perf-overrides.css"]')) {
+    return;
+  }
+
+  const basePath = window.location.pathname.includes('/owner/') ? '../' : '';
+  const cssPath = `${basePath}css/perf-overrides.css`;
+  const perfScriptPath = `${basePath}Javascript/perf-fixes.js`;
+  const errorGuardPath = `${basePath}Javascript/error-guard.js`;
+
+  const perfCss = document.createElement('link');
+  perfCss.rel = 'stylesheet';
+  perfCss.href = cssPath;
+  document.head.appendChild(perfCss);
+
+  const perfScript = document.createElement('script');
+  perfScript.src = perfScriptPath;
+  perfScript.defer = true;
+  document.head.appendChild(perfScript);
+
+  const errorScript = document.createElement('script');
+  errorScript.src = errorGuardPath;
+  errorScript.defer = true;
+  document.head.appendChild(errorScript);
+}
+
+injectPerfResources();
+
 document.addEventListener('DOMContentLoaded', function () {
   /**
    * ✅ Ensure API Service is loaded before proceeding

@@ -386,28 +386,40 @@ class ComplaintManager {
             tbody.innerHTML = '<tr><td colspan="8" class="no-data">No complaints found</td></tr>';
             return;
         }
+        // Build rows with DocumentFragment to minimize reflows
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        complaints.forEach(complaint => {
+            const tr = document.createElement('tr');
 
-        tbody.innerHTML = complaints.map(complaint => `
-            <tr>
-                <td>${complaint.complaintId}</td>
-                <td>
-                    <span class="category-badge">
-                        <i class="${this.getCategoryIcon(complaint.category)}"></i>
-                        ${complaint.category}
-                    </span>
-                </td>
-                <td>${complaint.title}</td>
-                ${this.isOwner() ? `<td>${complaint.tenantName || 'N/A'}</td>` : ''}
-                <td>${this.getPriorityBadge(complaint.priority)}</td>
-                <td>${this.getStatusBadge(complaint.status)}</td>
-                <td>${this.formatDate(complaint.submittedAt)}</td>
-                <td>
-                    <button class="btn-action view" onclick="complaintManager.viewComplaint(${complaint.id})">
-                        <i class="fas fa-eye"></i> View
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+            const tdId = document.createElement('td'); tdId.textContent = complaint.complaintId; tr.appendChild(tdId);
+
+            const tdCategory = document.createElement('td');
+            const spanCat = document.createElement('span'); spanCat.className = 'category-badge';
+            const i = document.createElement('i'); i.className = this.getCategoryIcon(complaint.category);
+            spanCat.appendChild(i);
+            spanCat.appendChild(document.createTextNode(' ' + (complaint.category || '')));
+            tdCategory.appendChild(spanCat);
+            tr.appendChild(tdCategory);
+
+            const tdTitle = document.createElement('td'); tdTitle.textContent = complaint.title; tr.appendChild(tdTitle);
+
+            if (this.isOwner()) { const tdTenant = document.createElement('td'); tdTenant.textContent = complaint.tenantName || 'N/A'; tr.appendChild(tdTenant); }
+
+            const tdPriority = document.createElement('td'); tdPriority.innerHTML = this.getPriorityBadge(complaint.priority); tr.appendChild(tdPriority);
+            const tdStatus = document.createElement('td'); tdStatus.innerHTML = this.getStatusBadge(complaint.status); tr.appendChild(tdStatus);
+            const tdDate = document.createElement('td'); tdDate.textContent = this.formatDate(complaint.submittedAt); tr.appendChild(tdDate);
+
+            const tdActions = document.createElement('td');
+            const btn = document.createElement('button'); btn.className = 'btn-action view';
+            btn.innerHTML = '<i class="fas fa-eye"></i> View';
+            btn.addEventListener('click', () => this.viewComplaint(complaint.id));
+            tdActions.appendChild(btn);
+            tr.appendChild(tdActions);
+
+            frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
     }
 
     /**
@@ -440,17 +452,27 @@ class ComplaintManager {
             container.innerHTML = '<div class="no-responses">No communication yet</div>';
             return;
         }
+        container.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        responses.forEach(response => {
+            const div = document.createElement('div');
+            div.className = `response-item ${response.isOwnerResponse ? 'owner-response' : 'tenant-response'}`;
 
-        container.innerHTML = responses.map(response => `
-            <div class="response-item ${response.isOwnerResponse ? 'owner-response' : 'tenant-response'}">
-                <div class="response-header">
-                    <span class="responder">${response.isOwnerResponse ? 'Owner' : 'Tenant'}</span>
-                    <span class="response-time">${this.formatDateTime(response.respondedAt)}</span>
-                </div>
-                <div class="response-message">${response.message}</div>
-                ${response.responseType !== 'COMMENT' ? `<div class="response-type">${response.responseType}</div>` : ''}
-            </div>
-        `).join('');
+            const header = document.createElement('div'); header.className = 'response-header';
+            const who = document.createElement('span'); who.className = 'responder'; who.textContent = response.isOwnerResponse ? 'Owner' : 'Tenant';
+            const when = document.createElement('span'); when.className = 'response-time'; when.textContent = this.formatDateTime(response.respondedAt);
+            header.appendChild(who); header.appendChild(when);
+
+            const msg = document.createElement('div'); msg.className = 'response-message'; msg.textContent = response.message;
+
+            div.appendChild(header); div.appendChild(msg);
+            if (response.responseType && response.responseType !== 'COMMENT') {
+                const rt = document.createElement('div'); rt.className = 'response-type'; rt.textContent = response.responseType; div.appendChild(rt);
+            }
+
+            frag.appendChild(div);
+        });
+        container.appendChild(frag);
     }
 
     // ===================== MODAL FUNCTIONS =====================

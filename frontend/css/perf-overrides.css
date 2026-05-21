@@ -1,0 +1,55 @@
+/* Performance overrides: reduce heavy filters/animations globally */
+:root { --perf-reduced-opacity: 0.9; }
+
+/* Disable expensive backdrop-filter and heavy blur globally as a fallback */
+* {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Remove very large blur filters used purely for decoration */
+.float-shape, .modal-floating-shapes, .floating-icon {
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 0.12 !important;
+  pointer-events: none !important;
+}
+
+/* When scrolling, pause non-critical animations to reduce repaints */
+html.is-scrolling * {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
+
+/* Disable intensive SVG/group animations on high-DPI devices */
+@media (min-resolution: 192dpi), (-webkit-min-device-pixel-ratio: 2) {
+  svg g[style*="animation"], svg [style*="animation"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Respect reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* Prefer only cheap transitions on high-interaction elements */
+.property-card,
+.metric-card,
+.stat-pill,
+.filters-card,
+.search-box,
+.pg-card,
+.owner-card,
+.notification-item,
+.modal,
+.popup-content,
+.hero-strip,
+.card,
+.property-image img,
+.listing-card {
+  transition-property: transform, opacity, box-shadow, background-color, color !important;
+  transition-duration: 0.24s !important;
+  transition-timing-function: ease !important;
+}

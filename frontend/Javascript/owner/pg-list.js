@@ -380,7 +380,16 @@ class PGPortfolio {
         const end = start + this.itemsPerPage;
         const pageItems = this.filteredProperties.slice(start, end);
 
-        grid.innerHTML = pageItems.map(pg => this.createPGCard(pg)).join('');
+        // Build DOM using DocumentFragment to avoid repeated reflows
+        grid.innerHTML = ''; // clear quickly
+        const frag = document.createDocumentFragment();
+        pageItems.forEach(pg => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = this.createPGCard(pg);
+            // move children from wrapper to fragment
+            while (wrapper.firstChild) frag.appendChild(wrapper.firstChild);
+        });
+        grid.appendChild(frag);
         this.updatePagination();
     }
 
@@ -480,20 +489,24 @@ class PGPortfolio {
 
         // Generate page numbers
         if (paginationNumbers) {
-            const pages = [];
+            // Build pagination using DOM methods to avoid expensive innerHTML
+            paginationNumbers.innerHTML = '';
+            const pagFrag = document.createDocumentFragment();
             for (let i = 1; i <= totalPages; i++) {
                 if (i === 1 || i === totalPages || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
-                    pages.push(`
-                        <div class="page-number ${i === this.currentPage ? 'active' : ''}" 
-                             onclick="pgPortfolio.goToPage(${i})">
-                            ${i}
-                        </div>
-                    `);
+                    const div = document.createElement('div');
+                    div.className = `page-number ${i === this.currentPage ? 'active' : ''}`;
+                    div.textContent = i;
+                    div.addEventListener('click', () => this.goToPage(i));
+                    pagFrag.appendChild(div);
                 } else if (i === this.currentPage - 2 || i === this.currentPage + 2) {
-                    pages.push(`<span style="padding: 0 0.5rem;">...</span>`);
+                    const span = document.createElement('span');
+                    span.style.padding = '0 0.5rem';
+                    span.textContent = '...';
+                    pagFrag.appendChild(span);
                 }
             }
-            paginationNumbers.innerHTML = pages.join('');
+            paginationNumbers.appendChild(pagFrag);
         }
     }
 

@@ -2467,6 +2467,24 @@ body {
     .property-image { height:180px; }
 }
 
+/* Performance override: limit transition scope on listing cards */
+.property-card,
+.property-card-content,
+.property-image,
+.property-image img,
+.property-image .wishlist-btn,
+.property-card .btn,
+.carousel-btn,
+.property-card:hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease !important;
+    will-change: transform, opacity;
+}
+.property-card:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08) !important;
+}
+.carousel-btn { display: none !important; }
+
 /* ===== Footer Full Width Override ===== */
 /* Make footer span only the main content area, respecting the fixed sidebar */
 #footer-container {

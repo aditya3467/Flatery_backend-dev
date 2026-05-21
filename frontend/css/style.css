@@ -192,7 +192,7 @@ img
   top: 0;
   z-index: 100;
   background: rgba(247,244,239,0.88);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(26,39,68,0.10);
   padding: 0 6%;
   display: flex;
@@ -2137,7 +2137,7 @@ img
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2174,7 +2174,7 @@ img
   position: absolute;
   border-radius: 50%;
   opacity: 0.2;
-  filter: blur(40px);
+  filter: blur(12px);
   animation: floatShape 6s ease-in-out infinite;
 }
 
@@ -2206,7 +2206,7 @@ img
 
 .login-modal .login-box {
   background: rgba(31, 41, 55, 0.5);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
   border-radius: 1.5rem;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   padding: 2rem 2rem 2rem 2rem;
@@ -2763,7 +2763,7 @@ img
 
 .signup-modal .signup-box {
   background: rgba(31, 41, 55, 0.5);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
   border-radius: 1.5rem;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   padding: 2rem 2rem 2rem 2rem;
@@ -3822,7 +3822,7 @@ img
   .homepage nav {
     position: sticky; top: 0; z-index: 100;
     background: rgba(247,244,239,0.88);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--border);
     padding: 0 6%;
     display: flex; align-items: center; justify-content: space-between;
@@ -4156,6 +4156,63 @@ img
     transition: opacity 0.7s, transform 0.7s;
   }
   .observe-me.visible { opacity: 1; transform: none; }
+
+  /* Performance overrides for high-DPI / Retina devices */
+  @media (min-resolution: 192dpi), (-webkit-min-device-pixel-ratio: 2) {
+    /* Disable expensive backdrop and filter effects that cause heavy repaints on Retina displays */
+    .navbar,
+    .burger-container,
+    .nav-menu::before,
+    .login-modal,
+    .login-modal .login-box {
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      /* keep a subtle opaque background as fallback */
+      background-color: rgba(247,244,239,0.96) !important;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06) !important;
+    }
+
+    /* Turn off heavy blurred decorative shapes and drop-shadows */
+    .modal-floating-shapes,
+    .float-shape,
+    .floating-icon {
+      filter: none !important;
+      -webkit-filter: none !important;
+      opacity: 0.14 !important;
+      will-change: transform, opacity;
+      pointer-events: none !important;
+    }
+
+    /* Hide extremely large blurred shapes which cause repaints */
+    .modal-floating-shapes { display: none !important; }
+
+    /* Disable SVG/group animations on Retina devices (they're expensive to repaint) */
+    svg g[style*="animation"], svg [style*="animation"] {
+      animation: none !important;
+      transition: none !important;
+      will-change: transform;
+    }
+  }
+
+  /* Respect user's reduced motion preference and cut animations for accessibility/performance */
+  @media (prefers-reduced-motion: reduce) {
+    .floating-icon,
+    .float-shape,
+    .observe-me,
+    .hero-art g[style*="animation"],
+    svg g[style*="animation"] {
+      animation: none !important;
+      transition: none !important;
+    }
+    .observe-me { transition: none !important; opacity: 1 !important; transform: none !important; }
+  }
+
+  /* Hint the browser to promote frequently-animated SVG groups to their own layer */
+  .hero-art g[style*="animation"], svg g[style*="animation"], .float-card {
+    will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
 
   @media (max-width: 1024px) {
     nav { padding: 0 4%; }
