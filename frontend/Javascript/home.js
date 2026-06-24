@@ -43,7 +43,11 @@ function setupSearchButton() {
             params.append('city', selectedCity);
         
         if (propertyType) {
-            params.append('propertyType', propertyType);
+            if (propertyType.toLowerCase().includes('pg')) {
+                params.append('propertyType', 'PG');
+            } else if (propertyType.toLowerCase().includes('flat') || propertyType.toLowerCase().includes('apartment')) {
+                params.append('propertyType', 'FLAT');
+            }
         }
 
             // If user has selected a specific location with coordinates, use it
@@ -53,18 +57,18 @@ function setupSearchButton() {
                     city: selectedCity // Ensure city is part of stored location
                 });
                 if (localityText) {
-                    params.append('locality', localityText);
+                    params.append('keyword', localityText);
                 }
             } else if (localityText) {
                 // User entered locality text without selecting from suggestions
             clearPersistedLocation();
-                params.append('locality', localityText);
+                params.append('keyword', localityText);
         } else {
             clearPersistedLocation();
         }
 
         const queryString = params.toString();
-            window.location.href = `properties.html?${queryString}`;
+            window.location.href = `search-property.html?${queryString}`;
     };
 
     if (searchButton) {

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="img/icon.png">
+    <title>Search Properties - Flatery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=3">
+    <link rel="stylesheet" href="css/search-property.css?v=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="">
+    <script src="Javascript/component-loader.js" defer></script>
+    <script src="Javascript/api.js" defer></script>
+    <script src="Javascript/notifications.js" defer></script>
+    <script src="Javascript/main.js" defer></script>
+    <script src="Javascript/role-checker.js" defer></script>
+</head>
+<body class="search-property-page">
+    <div id="navbar-container" data-component="components/navbar.html"></div>
+
+    <main class="search-shell">
+        <aside class="search-filters" id="searchFilters">
+            <div class="mobile-filter-head">
+                <strong>Filters</strong>
+                <button type="button" class="icon-btn" id="closeFiltersBtn" aria-label="Close filters">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <section class="filter-card">
+                <h2>Property Type</h2>
+                <label class="check-row">
+                    <input type="checkbox" name="propertyType" value="FLAT" checked>
+                    <span>Flat / Apartment</span>
+                    <small id="countFlat">0</small>
+                </label>
+                <label class="check-row">
+                    <input type="checkbox" name="propertyType" value="PG">
+                    <span>PG / Hostel</span>
+                    <small id="countPg">0</small>
+                </label>
+                <label class="check-row">
+                    <input type="checkbox" name="propertyType" value="STUDIO">
+                    <span>Studio</span>
+                    <small id="countStudio">0</small>
+                </label>
+                <label class="check-row">
+                    <input type="checkbox" name="propertyType" value="VILLA">
+                    <span>Villa / Independent</span>
+                    <small id="countVilla">0</small>
+                </label>
+            </section>
+
+            <section class="filter-card">
+                <h2>BHK Config</h2>
+                <div class="pill-group" data-filter-group="bhk">
+                    <button type="button" class="filter-pill" data-value="RK_1">1 RK</button>
+                    <button type="button" class="filter-pill" data-value="BHK_1">1 BHK</button>
+                    <button type="button" class="filter-pill" data-value="BHK_2">2 BHK</button>
+                    <button type="button" class="filter-pill" data-value="BHK_3">3 BHK</button>
+                    <button type="button" class="filter-pill" data-value="BHK_4">4 BHK</button>
+                    <button type="button" class="filter-pill" data-value="PG">PG</button>
+                </div>
+            </section>
+
+            <section class="filter-card">
+                <h2>Price / Month</h2>
+                <div class="price-row">
+                    <label>
+                        <span class="sr-only">Minimum rent</span>
+                        <input type="number" id="minRentInput" min="0" step="500" value="0">
+                    </label>
+                    <label>
+                        <span class="sr-only">Maximum rent</span>
+                        <input type="number" id="maxRentInput" min="0" step="500" value="25000">
+                    </label>
+                </div>
+            </section>
+
+            <section class="filter-card">
+                <h2>Amenities</h2>
+                <label class="check-row">
+                    <input type="checkbox" name="amenity" value="WiFi">
+                    <span>Wifi included</span>
+                </label>
+                <label class="check-row">
+                    <input type="checkbox" name="amenity" value="AC">
+                    <span>AC</span>
+                </label>
+                <label class="check-row">
+                    <input type="checkbox" name="amenity" value="Furnished">
+                    <span>Furnished</span>
+                </label>
+                <label class="check-row">
+                    <input type="checkbox" name="amenity" value="Parking">
+                    <span>Parking</span>
+                </label>
+                <label class="check-row">
+                    <input type="checkbox" name="amenity" value="Gym">
+                    <span>Gym / Pool</span>
+                </label>
+                <button type="button" class="apply-btn" id="applyFiltersBtn">Apply filters</button>
+                <button type="button" class="clear-btn" id="clearFiltersBtn">Clear all</button>
+            </section>
+
+            <section class="filter-card">
+                <h2>Availability</h2>
+                <label class="radio-row">
+                    <input type="radio" name="availability" value="" checked>
+                    <span>Any time</span>
+                </label>
+                <label class="radio-row">
+                    <input type="radio" name="availability" value="now">
+                    <span>Available now</span>
+                </label>
+                <label class="radio-row">
+                    <input type="radio" name="availability" value="30">
+                    <span>Within 30 days</span>
+                </label>
+            </section>
+        </aside>
+        <button type="button" class="filter-backdrop" id="filterBackdrop" aria-label="Close filters"></button>
+
+        <section class="results-panel">
+            <div class="location-card search-location-card">
+                <div class="location-search-row">
+                    <i class="fas fa-location-dot location-pin"></i>
+                    <label class="location-search-field" for="locationSearchInput">
+                        <i class="fas fa-search"></i>
+                        <input type="search" id="locationSearchInput" placeholder="Search city, area, or landmark">
+                    </label>
+                    <label class="radius-field" for="radiusSelect">
+                        <span>Radius</span>
+                        <select id="radiusSelect">
+                            <option value="5">5 km</option>
+                            <option value="10" selected>10 km</option>
+                            <option value="20">20 km</option>
+                            <option value="50">50 km</option>
+                        </select>
+                    </label>
+                    <button type="button" class="location-search-btn" id="locationSearchBtn" aria-label="Search location">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div class="selected-location-row" id="selectedLocationWrap" hidden>
+                    <span>Showing results near</span>
+                    <strong id="selectedLocationLabel">Pune</strong>
+                    <small>within <span id="selectedRadiusLabel">10 km</span></small>
+                </div>
+            </div>
+
+            <button type="button" class="map-cta" id="mapToggleBtn">
+                <span class="map-icon"><i class="far fa-map"></i></span>
+                <span>
+                    <strong>View on map</strong>
+                    <small id="mapSummary">Loading properties...</small>
+                </span>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <div class="map-panel" id="mapPanel" hidden>
+                <div id="searchPropertyMap"></div>
+            </div>
+
+            <div class="results-toolbar">
+                <p><strong id="resultsTotal">0 homes</strong> <span>found in <span id="toolbarCity">Pune</span></span></p>
+                <div class="toolbar-actions">
+                    <label class="sort-label" for="sortSelect">Sort by</label>
+                    <select id="sortSelect">
+                        <option value="best">Best match</option>
+                        <option value="rent_low_high">Rent: Low to high</option>
+                        <option value="rent_high_low">Rent: High to low</option>
+                        <option value="newest">Newest first</option>
+                    </select>
+                    <button type="button" class="square-btn active" id="gridViewBtn" aria-label="Grid view">
+                        <i class="fas fa-border-all"></i>
+                    </button>
+                    <button type="button" class="square-btn" id="compactViewBtn" aria-label="Compact view">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button type="button" class="square-btn mobile-only" id="openFiltersBtn" aria-label="Open filters">
+                        <i class="fas fa-sliders"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="status-line" id="statusLine"></div>
+            <div class="property-results" id="propertyResults">
+                <div class="search-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Loading matching properties...</span>
+                </div>
+            </div>
+
+            <div class="pagination-strip" id="paginationStrip" hidden>
+                <button type="button" id="prevPageBtn"><i class="fas fa-chevron-left"></i></button>
+                <span id="pageLabel">Page 1</span>
+                <button type="button" id="nextPageBtn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
+    </main>
+
+    <div id="modals-container" data-component="components/modals.html"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="Javascript/search-property.js?v=1"></script>
+</body>
+</html>
