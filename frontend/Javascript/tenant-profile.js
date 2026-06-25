@@ -119,6 +119,17 @@ function loadSavedProfile() {
     }
 }
 
+function getFrontendBasePath() {
+    const path = window.location.pathname || '';
+    return path.startsWith('/frontend') ? '/frontend' : '';
+}
+
+function frontendUrl(path) {
+    const base = getFrontendBasePath();
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    return `${base}${normalized}`;
+}
+
 async function loadTenantData() {
     try {
         const token = localStorage.getItem('authToken');
@@ -126,7 +137,7 @@ async function loadTenantData() {
         if (!token) {
             console.error('No auth token found, redirecting to login');
             alert('Please login first to access your profile');
-            window.location.href = '/frontend/index.html';
+            window.location.href = frontendUrl('/index.html');
             return;
         }
 
@@ -428,6 +439,6 @@ document.getElementById('profileForm').addEventListener('submit', async function
 
     setTimeout(() => {
         alert('Profile completed successfully!');
-        window.location.href = '/frontend/tenant.html';
+        window.location.href = frontendUrl('/tenant.html');
     }, 1000);
 });

@@ -19,7 +19,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
-import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableMethodSecurity
@@ -48,9 +47,9 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
                         .requestMatchers("/api/owner-payment-info/public/**").permitAll() // Allow tenants to fetch owner QR/UPI
             .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
+            .requestMatchers("/", "/index.html", "/verify-email.html", "/about.html", "/search-property.html", "/request-callback.html", "/services.html", "/tenant.html", "/tenant-profile.html", "/tenant-dashboard.html", "/superadmin-dashboard.html", "/owner/**", "/components/**").permitAll()
             .requestMatchers("/verify-email").permitAll() // Public email verification landing route
             .requestMatchers("/css/**", "/Javascript/**", "/img/**").permitAll() // static assets
-            .requestMatchers("/").permitAll() // Allow access to root
             .requestMatchers("/error", "/favicon.ico").permitAll() // Allow error page and favicon
                         .requestMatchers("/uploads/properties/**").permitAll() // Allow access to uploaded images
                         .requestMatchers("/uploads/payment-proofs/**").permitAll() // Allow access to payment proofs

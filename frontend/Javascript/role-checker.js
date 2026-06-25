@@ -1,5 +1,16 @@
 // Checks user roles and redirects if needed
 document.addEventListener('DOMContentLoaded', function() {
+    function getFrontendBasePath() {
+        const path = window.location.pathname || '';
+        return path.startsWith('/frontend') ? '/frontend' : '';
+    }
+
+    function frontendUrl(path) {
+        const base = getFrontendBasePath();
+        const normalized = path.startsWith('/') ? path : `/${path}`;
+        return `${base}${normalized}`;
+    }
+
     // Wait for components to load first
     setTimeout(async function() {
         
@@ -17,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!apiService.isAuthenticated()) {
             // If on protected page, redirect to login
             if (window.location.pathname.includes('superadmin-dashboard.html')) {
-                window.location.href = '/frontend/index.html';
+                window.location.href = frontendUrl('/index.html');
             }
             return;
         }
@@ -31,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Protect superadmin dashboard
             if (currentPath.includes('superadmin-dashboard.html')) {
                 if (!storedRoles.includes('SUPERADMIN')) {
-                    window.location.href = '/frontend/index.html';
+                    window.location.href = frontendUrl('/index.html');
                     return;
                 }
             }

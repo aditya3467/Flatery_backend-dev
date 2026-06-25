@@ -12,6 +12,9 @@ import java.util.Optional;
 @Service
 public class NotificationService {
 
+    @org.springframework.beans.factory.annotation.Value("${flatery.frontend.base-path:/frontend}")
+    private String frontendBasePath;
+
     @Autowired
     private NotificationRepository notificationRepository;
 
@@ -129,7 +132,7 @@ public class NotificationService {
             "PaymentSubmitted",
             "New Payment Submitted",
             String.format("%s has submitted payment proof", tenantName),
-            "/frontend/owner/property-config.html#manage-payments"
+            frontendUrl("/owner/property-config.html#manage-payments")
         );
     }
 
@@ -143,7 +146,7 @@ public class NotificationService {
             "PaymentApproved",
             "Payment Approved",
             String.format("Your payment for %s has been approved", month),
-            "/frontend/tenant-dashboard.html#payments"
+            frontendUrl("/tenant-dashboard.html#payments")
         );
     }
 
@@ -157,7 +160,7 @@ public class NotificationService {
             "PaymentRejected",
             "Payment Rejected",
             String.format("Your payment for %s was rejected. Reason: %s", month, reason),
-            "/frontend/tenant-dashboard.html#payments"
+            frontendUrl("/tenant-dashboard.html#payments")
         );
     }
 
@@ -171,7 +174,7 @@ public class NotificationService {
             "TenantAdded",
             "Welcome to " + propertyName,
             "Your profile has been created. Please complete your details and upload documents.",
-            "/frontend/tenant-profile.html"
+            frontendUrl("/tenant-profile.html")
         );
     }
 
@@ -185,7 +188,7 @@ public class NotificationService {
             "MaintenanceRequest",
             "New Maintenance Request",
             String.format("%s has raised a maintenance request: %s", tenantName, issue),
-            "/frontend/owner/property-config.html#maintenance"
+            frontendUrl("/owner/property-config.html#maintenance")
         );
     }
 
@@ -199,7 +202,7 @@ public class NotificationService {
             "ReminderDue",
             "Rent Payment Due",
             String.format("Your rent of ₹%.2f is due on %s", amount, dueDate),
-            "/frontend/tenant-dashboard.html#payments"
+            frontendUrl("/tenant-dashboard.html#payments")
         );
     }
 
@@ -213,7 +216,17 @@ public class NotificationService {
             "ProfileUpdate",
             "Profile Updated",
             String.format("Your %s has been updated", updateType),
-            "/frontend/tenant-profile.html"
+            frontendUrl("/tenant-profile.html")
         );
+    }
+
+    private String frontendUrl(String path) {
+        String base = frontendBasePath == null ? "" : frontendBasePath.trim();
+        if (base.isEmpty() || "/".equals(base)) {
+            return path.startsWith("/") ? path : "/" + path;
+        }
+        String normalizedBase = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+        String normalizedPath = path.startsWith("/") ? path : "/" + path;
+        return normalizedBase + normalizedPath;
     }
 }

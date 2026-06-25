@@ -43,6 +43,17 @@ function injectPerfResources() {
 
 injectPerfResources();
 
+function getFrontendBasePath() {
+  const path = window.location.pathname || '';
+  return path.startsWith('/frontend') ? '/frontend' : '';
+}
+
+function frontendUrl(path) {
+  const base = getFrontendBasePath();
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${normalized}`;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   /**
    * ✅ Ensure API Service is loaded before proceeding
@@ -781,17 +792,17 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     // Immediate redirect based on role
     if (roles.includes('SUPERADMIN')) {
         setTimeout(() => {
-            window.location.href = '/frontend/superadmin-dashboard.html';
+            window.location.href = frontendUrl('/superadmin-dashboard.html');
         }, 100);
         return; // Stop further execution
     } else if (roles.includes('ADMIN')) { // The backend uses 'ADMIN' for owners
         setTimeout(() => {
-            window.location.href = '/frontend/owner/owner-dashboard.html';
+            window.location.href = frontendUrl('/owner/owner-dashboard.html');
         }, 100);
         return;
   } else if (roles.includes('USER')) {
     setTimeout(() => {
-      window.location.href = '/frontend/index.html';
+      window.location.href = frontendUrl('/index.html');
     }, 100);
     return;
     }
@@ -929,16 +940,16 @@ function updateUIForLoggedInUser() {
       }
       
       if (roles.includes('SUPERADMIN')) {
-          dashboardLink.href = '/frontend/superadmin-dashboard.html';
+          dashboardLink.href = frontendUrl('/superadmin-dashboard.html');
           dashboardLink.textContent = 'Admin Dashboard';
       } else if (roles.includes('ADMIN')) { // ADMIN role is for owners
-          dashboardLink.href = '/frontend/owner/owner-dashboard.html';
+          dashboardLink.href = frontendUrl('/owner/owner-dashboard.html');
           dashboardLink.textContent = 'Owner Dashboard';
       } else if (roles.includes('USER')) { // USER role is for tenants
-          dashboardLink.href = '/frontend/tenant-dashboard.html';
+          dashboardLink.href = frontendUrl('/tenant-dashboard.html');
           dashboardLink.textContent = 'Tenant Dashboard';
       } else {
-          dashboardLink.href = '/frontend/tenant-dashboard.html';
+          dashboardLink.href = frontendUrl('/tenant-dashboard.html');
           dashboardLink.textContent = 'Dashboard';
       }
 
@@ -1097,13 +1108,13 @@ async function handleChangePassword(e) {
     const roles = JSON.parse(localStorage.getItem('roles') || '[]');
     setTimeout(() => {
       if (roles.includes('USER')) {
-        window.location.href = '/frontend/tenant.html';
+        window.location.href = frontendUrl('/tenant.html');
       } else if (roles.includes('ADMIN')) {
-        window.location.href = '/frontend/owner/Owner.html';
+        window.location.href = frontendUrl('/owner/Owner.html');
       } else if (roles.includes('SUPERADMIN')) {
-        window.location.href = '/frontend/superadmin-dashboard.html';
+        window.location.href = frontendUrl('/superadmin-dashboard.html');
       } else {
-        window.location.href = '/frontend/index.html';
+        window.location.href = frontendUrl('/index.html');
       }
     }, 1500);
   } catch (error) {

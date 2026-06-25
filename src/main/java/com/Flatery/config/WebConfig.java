@@ -2,6 +2,7 @@ package com.Flatery.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -15,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     private String uploadDir;
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // Resolve absolute paths for resource locations
         String projectRoot = Paths.get("").toAbsolutePath().normalize().toString();
         String frontendPath = Paths.get(projectRoot, "frontend").toAbsolutePath().normalize().toUri().toString();
@@ -23,6 +24,41 @@ public class WebConfig implements WebMvcConfigurer {
         // Serve static files from the frontend directory (entire tree)
         registry.addResourceHandler("/frontend/**")
                 .addResourceLocations(frontendPath)
+                .setCachePeriod(0);
+
+        // Also serve the same files from the site root for production deployments without /frontend
+        registry.addResourceHandler(
+                        "/",
+                        "/index.html",
+                        "/verify-email.html",
+                        "/about.html",
+                        "/search-property.html",
+                        "/request-callback.html",
+                        "/services.html",
+                        "/tenant.html",
+                        "/tenant-profile.html",
+                        "/tenant-dashboard.html",
+                        "/superadmin-dashboard.html",
+                        "/owner/**",
+                        "/components/**",
+                        "/css/**",
+                        "/Javascript/**",
+                        "/img/**")
+                .addResourceLocations(frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath,
+                        frontendPath)
                 .setCachePeriod(0);
 
         // Optionally also expose common static subpaths if referenced directly

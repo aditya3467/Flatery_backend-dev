@@ -25,7 +25,7 @@
       <p id="verifyDescription">Validating your verification link...</p>
       <div id="verifyStatus" class="verify-status">Please wait...</div>
       <div class="verify-actions">
-        <a class="verify-btn primary" href="/frontend/index.html">Go to Home</a>
+        <a class="verify-btn primary" id="homeLink" href="#">Go to Home</a>
         <button class="verify-btn" id="resendBtn" style="display:none;" type="button">Resend verification email</button>
       </div>
     </div>
@@ -37,8 +37,14 @@
       const statusEl = document.getElementById('verifyStatus');
       const descriptionEl = document.getElementById('verifyDescription');
       const resendBtn = document.getElementById('resendBtn');
+      const homeLink = document.getElementById('homeLink');
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
+
+      const basePath = window.location.pathname.startsWith('/frontend') ? '/frontend' : '';
+      if (homeLink) {
+        homeLink.href = `${basePath}/index.html`;
+      }
 
       if (!token) {
         statusEl.textContent = 'Missing verification token.';
