@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger UI access
                         .requestMatchers("/api/owner-payment-info/public/**").permitAll() // Allow tenants to fetch owner QR/UPI
             .requestMatchers("/frontend/**").permitAll() // Allow access to frontend files
+            .requestMatchers("/verify-email").permitAll() // Public email verification landing route
             .requestMatchers("/css/**", "/Javascript/**", "/img/**").permitAll() // static assets
             .requestMatchers("/").permitAll() // Allow access to root
             .requestMatchers("/error", "/favicon.ico").permitAll() // Allow error page and favicon

@@ -10,6 +10,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
@@ -48,6 +49,8 @@ public class DataInitializer implements ApplicationRunner {
         superAdmin.setLastName("Admin");
         superAdmin.setPhoneNumber("0000000000");
         superAdmin.setRoles(Set.of(RoleName.SUPERADMIN, RoleName.ADMIN));
+        superAdmin.setVerified(true);
+        superAdmin.setEmailVerifiedAt(LocalDateTime.now());
 
         userRepository.save(superAdmin);
         log.info("Super admin user created successfully with username: {}", superAdminUsername);

@@ -344,6 +344,8 @@ public class TenantService {
         user.setPhoneNumber(req.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setRoles(Set.of(RoleName.USER));
+        user.setVerified(true);
+        user.setEmailVerifiedAt(java.time.LocalDateTime.now());
         userRepository.save(user);
     }
 

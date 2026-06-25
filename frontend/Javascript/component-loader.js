@@ -76,9 +76,13 @@ class ComponentLoader {
         }
         
         // Check authentication state and update UI
-        if (typeof apiService !== 'undefined' && apiService.isAuthenticated()) {
-            if (typeof updateUIForLoggedInUser === 'function') {
-                updateUIForLoggedInUser();
+        if (typeof apiService !== 'undefined') {
+            if (apiService.isAuthenticated()) {
+                if (typeof updateUIForLoggedInUser === 'function') {
+                    updateUIForLoggedInUser();
+                }
+            } else if (typeof updateUIForLoggedOutUser === 'function') {
+                updateUIForLoggedOutUser();
             }
         }
     }

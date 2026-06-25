@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Email | Flatery</title>
+  <link rel="stylesheet" href="css/style.css?v=5">
+  <style>
+    .verify-wrapper { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f7f9fc; }
+    .verify-card { width: 100%; max-width: 540px; background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 16px 40px rgba(26,39,68,0.12); text-align: center; }
+    .verify-card h1 { color: #1a2744; margin-bottom: 12px; }
+    .verify-card p { color: #5f6b7d; margin-bottom: 20px; }
+    .verify-status { margin: 18px 0; font-weight: 600; }
+    .verify-status.success { color: #1b8f3a; }
+    .verify-status.error { color: #d32f2f; }
+    .verify-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .verify-btn { border: 1px solid #1a2744; color: #1a2744; background: #fff; border-radius: 999px; padding: 10px 18px; text-decoration: none; cursor: pointer; }
+    .verify-btn.primary { background: #1a2744; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="verify-wrapper">
+    <div class="verify-card">
+      <h1>Email Verification</h1>
+      <p id="verifyDescription">Validating your verification link...</p>
+      <div id="verifyStatus" class="verify-status">Please wait...</div>
+      <div class="verify-actions">
+        <a class="verify-btn primary" href="/frontend/index.html">Go to Home</a>
+        <button class="verify-btn" id="resendBtn" style="display:none;" type="button">Resend verification email</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="Javascript/api.js"></script>
+  <script>
+    (async function () {
+      const statusEl = document.getElementById('verifyStatus');
+      const descriptionEl = document.getElementById('verifyDescription');
+      const resendBtn = document.getElementById('resendBtn');
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      if (!token) {
+        statusEl.textContent = 'Missing verification token.';
+        statusEl.classList.add('error');
+        descriptionEl.textContent = 'Please use the verification link from your email.';
+        return;
+      }
+
+      try {
+        const response = await apiService.verifyEmail(token);
+        statusEl.textContent = response?.message || 'Email verified successfully.';
+        statusEl.classList.add('success');
+        descriptionEl.textContent = 'Your account is verified. You can now log in.';
+      } catch (error) {
+        statusEl.textContent = error.message || 'Verification failed. Link is invalid or expired.';
+        statusEl.classList.add('error');
+        descriptionEl.textContent = 'You can request a new verification link from login.';
+
+        const emailFromQuery = params.get('email');
+        if (emailFromQuery) {
+          resendBtn.style.display = 'inline-block';
+          resendBtn.addEventListener('click', async () => {
+            resendBtn.disabled = true;
+            try {
+              await apiService.resendVerificationEmail(emailFromQuery);
+              statusEl.textContent = 'Verification email sent.';
+              statusEl.classList.remove('error');
+              statusEl.classList.add('success');
+            } catch (resendError) {
+              statusEl.textContent = resendError.message || 'Failed to resend verification email.';
+              statusEl.classList.remove('success');
+              statusEl.classList.add('error');
+            } finally {
+              resendBtn.disabled = false;
+            }
+          });
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

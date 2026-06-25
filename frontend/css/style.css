@@ -326,7 +326,9 @@ img
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, transform 0.1s;
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-login:hover {

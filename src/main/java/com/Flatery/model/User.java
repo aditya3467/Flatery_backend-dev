@@ -47,6 +47,12 @@ public class User {
     @Column(nullable=false)
     private String password;
 
+        @Column(nullable = false)
+        private Boolean verified = false;
+
+        @Column
+        private LocalDateTime emailVerifiedAt;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "user_roles",

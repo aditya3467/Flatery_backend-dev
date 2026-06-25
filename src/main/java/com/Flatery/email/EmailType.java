@@ -4,6 +4,7 @@ public enum EmailType {
     // Auth
     PASSWORD_RESET,
     OTP_RESET_PASSWORD,
+    EMAIL_VERIFICATION,
 
     // Tenant Lifecycle
     TENANT_ONBOARDING,

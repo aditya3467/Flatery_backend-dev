@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (apiService.isAuthenticated()) {
     updateUIForLoggedInUser();
   } else {
-    // If not authenticated, ensure logout buttons are hidden
-    document.querySelectorAll('.logout-btn').forEach(btn => btn.style.display = 'none');
+    // If not authenticated, explicitly reset UI to logged-out state
+    updateUIForLoggedOutUser();
   }
 
   // =========================
@@ -243,6 +243,7 @@ window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
 window.updateUIForLoggedInUser = updateUIForLoggedInUser;
+window.updateUIForLoggedOutUser = updateUIForLoggedOutUser;
 
 // Function to set up profile dropdown
 function setupProfileDropdown() {
@@ -627,12 +628,12 @@ window.resendOtp = resendOtp;
  * handleSignup()
  * @param {Event} e - form submit event
  *
- * Registers a new user via apiService, then auto-logs them in.
+ * Registers a new user via apiService and prompts email verification.
  * Steps:
  *  1. Extracts name/email/password
  *  2. Shows loading state
  *  3. Calls apiService.register()
- *  4. On success → calls handleLogin() automatically
+ *  4. On success → ask user to verify email before login
  */
 async function handleSignup(e) {
   const form = e.target;
@@ -680,9 +681,15 @@ async function handleSignup(e) {
 
   try {
     await apiService.register({ firstName, lastName, username, email, phoneNumber, password, roles: [role] });
-    showSuccess('Signup successful! Logging you in...');
-    // Automatically attempt to log in the new user
-    await handleLogin({ target: form, credentials: { username, password } }); // Pass credentials directly
+    showSuccess('Signup successful! Please verify your email before logging in.');
+    document.getElementById('signupModal')?.classList.remove('active');
+    document.getElementById('loginModal')?.classList.add('active');
+
+    // Keep the identifier to make resend-verification easier in login flow
+    const loginUsernameInput = document.querySelector('#loginModal input[name="username"]');
+    if (loginUsernameInput) {
+      loginUsernameInput.value = email;
+    }
   } catch (error) {
     showError(error.message || 'Signup failed. Please check your details and try again.');
   } finally {
@@ -789,6 +796,10 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     return;
     }
   } catch (error) {
+    if (error.status === 403 && (error.message || '').toLowerCase().includes('verify your email')) {
+      showError('Please verify your email. Use the verification link sent to your inbox.');
+      return;
+    }
     showError(error.message || 'Login failed. Please check your username and password.');
   } finally {
     if (form) { // Ensure form exists before trying to hide loading
@@ -941,6 +952,47 @@ function updateUIForLoggedInUser() {
   // Initialize notification manager
   if (window.notificationManager) {
     notificationManager.init();
+  }
+}
+
+/**
+ * updateUIForLoggedOutUser() - Resets navbar UI for guests
+ *  - Shows login buttons
+ *  - Hides profile/notification/logout/dashboard elements
+ */
+function updateUIForLoggedOutUser() {
+  const loginNavItem = document.getElementById('loginNavItem');
+  const profileSection = document.getElementById('profileSection');
+  const notificationSection = document.getElementById('notificationSection');
+  const burgerLoginBtn = document.getElementById('burgerLoginBtn');
+  const logoutBtns = document.querySelectorAll('.logout-btn');
+  const dashboardLinkContainer = document.getElementById('dashboardLinkContainer');
+  const mobileDashboardLinkContainer = document.getElementById('mobileDashboardLinkContainer');
+
+  if (loginNavItem) {
+    loginNavItem.style.display = '';
+  }
+  if (profileSection) {
+    profileSection.style.display = 'none';
+  }
+  if (notificationSection) {
+    notificationSection.style.display = 'none';
+  }
+  if (burgerLoginBtn) {
+    burgerLoginBtn.textContent = 'Login';
+    burgerLoginBtn.classList.remove('logged-in');
+    burgerLoginBtn.style.display = '';
+  }
+
+  logoutBtns.forEach(btn => {
+    btn.style.display = 'none';
+  });
+
+  if (dashboardLinkContainer) {
+    dashboardLinkContainer.style.display = 'none';
+  }
+  if (mobileDashboardLinkContainer) {
+    mobileDashboardLinkContainer.style.display = 'none';
   }
 }
 

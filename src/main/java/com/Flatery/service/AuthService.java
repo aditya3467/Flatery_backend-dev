@@ -3,6 +3,7 @@ package com.Flatery.service;
 import com.Flatery.dto.RegisterRequest;
 import com.Flatery.dto.AuthResponse;
 import com.Flatery.dto.LoginRequest;
+import com.Flatery.exception.EmailNotVerifiedException;
 import com.Flatery.model.User;
 import com.Flatery.model.tenant.Tenant;
 import com.Flatery.repository.UserRepository;
@@ -29,6 +30,7 @@ public class AuthService {
     private final UserService userService;
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
+        private final EmailVerificationService emailVerificationService;
 
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -43,6 +45,10 @@ public class AuthService {
         long expiresIn = jwtService.getExpirationTime();
 
         User user = userRepo.findByUsername(principal.getUsername()).orElseThrow();
+        if (!Boolean.TRUE.equals(user.getVerified())) {
+            throw new EmailNotVerifiedException("Please verify your email.");
+        }
+
         Set<String> roles = user.getRoles().stream().map(Enum::name).collect(Collectors.toSet());
 
         AuthResponse resp = new AuthResponse();
@@ -70,7 +76,8 @@ public class AuthService {
     }
 
     public void signup(RegisterRequest registerRequest) {
-        userService.register(registerRequest);
+                User user = userService.register(registerRequest);
+                emailVerificationService.createAndSendVerification(user);
     }
 
     public UserDetailsResponse getUserFromToken(String token) {

@@ -3,7 +3,10 @@ package com.Flatery.Controller.auth;
 import com.Flatery.dto.AuthResponse;
 import com.Flatery.dto.LoginRequest;
 import com.Flatery.dto.RegisterRequest;
+import com.Flatery.dto.ResendVerificationRequest;
+import com.Flatery.exception.EmailNotVerifiedException;
 import com.Flatery.service.AuthService;
+import com.Flatery.service.EmailVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -15,12 +18,16 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
             AuthResponse authResponse = authService.login(loginRequest);
             return ResponseEntity.ok(authResponse);
+        } catch (EmailNotVerifiedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResponse("Please verify your email."));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse("Invalid credentials"));
@@ -32,9 +39,37 @@ public class AuthController {
         try {
             authService.signup(registerRequest);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new MessageResponse("Registered successfully"));
+                    .body(new MessageResponse("Registered successfully. Please verify your email."));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new ErrorResponse(ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestParam("token") String token) {
+        try {
+            emailVerificationService.verifyEmail(token);
+            return ResponseEntity.ok(new MessageResponse("Email verified successfully."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        try {
+            emailVerificationService.resendVerification(request.getEmail());
+            return ResponseEntity.ok(new MessageResponse("Verification email sent."));
+        } catch (IllegalStateException ex) {
+            HttpStatus status = "Email is already verified.".equals(ex.getMessage())
+                    ? HttpStatus.CONFLICT
+                    : HttpStatus.TOO_MANY_REQUESTS;
+            return ResponseEntity.status(status)
+                    .body(new ErrorResponse(ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(ex.getMessage()));
         }
     }

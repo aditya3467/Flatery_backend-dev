@@ -32,6 +32,12 @@ public class EmailTemplateSeeder implements CommandLineRunner {
                 "Reset your password\n\nHi {{user_name}},\nClick here to reset: {{reset_link}}\n\nIf you didn't request this, ignore this email.",
                 Arrays.asList("user_name", "reset_link")
             ),
+            createTemplate(EmailType.EMAIL_VERIFICATION,
+                "Verify your Flatery account",
+                "<h2>Hello {{user_name}},</h2><p>Thanks for signing up with Flatery.</p><p>Please verify your email by clicking the button below:</p><a href=\"{{verification_link}}\" style=\"background:#007AFF;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Verify Email</a><p>If you did not create this account, you can ignore this email.</p><p>This link expires in {{expiry_hours}} hours.</p>",
+                "Hello {{user_name}},\n\nThanks for signing up with Flatery.\nVerify your email here: {{verification_link}}\n\nThis link expires in {{expiry_hours}} hours.",
+                Arrays.asList("user_name", "verification_link", "expiry_hours")
+            ),
             createTemplate(EmailType.TENANT_ONBOARDING,
                 "Welcome to Flatery - Your Tenant Portal",
                 "<h2>Welcome {{tenant_name}}!</h2><p>Your account has been created successfully. Access your tenant portal to manage your stay, payments, and complaints.</p><a href=\"{{portal_url}}\" style=\"background:#007AFF;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;\">Open Portal</a><p><strong>Property:</strong> {{property_name}}</p><p><strong>Unit:</strong> {{unit_number}}</p><p><strong>Monthly Rent:</strong> {{monthly_rent}}</p>",

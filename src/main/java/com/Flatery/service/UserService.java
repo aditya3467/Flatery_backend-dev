@@ -38,7 +38,7 @@ public class UserService implements UserDetailsService {
 
 
     @Transactional
-    public void register(RegisterRequest req) {
+    public User register(RegisterRequest req) {
         String username = req.getUsername().trim().toLowerCase();
         String email = req.getEmail().trim().toLowerCase();
 
@@ -60,6 +60,8 @@ public class UserService implements UserDetailsService {
         user.setEmail(email);
         user.setPhoneNumber(req.getPhoneNumber() == null ? null : req.getPhoneNumber().trim());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
+        user.setVerified(false);
+        user.setEmailVerifiedAt(null);
 
         Set<RoleName> roleSet = (req.getRoles() == null || req.getRoles().isEmpty())
                 ? Set.of(RoleName.USER)
@@ -68,6 +70,6 @@ public class UserService implements UserDetailsService {
                 .collect(Collectors.toSet());
 
         user.setRoles(roleSet);
-        userRepo.save(user);
+        return userRepo.save(user);
     }
 }

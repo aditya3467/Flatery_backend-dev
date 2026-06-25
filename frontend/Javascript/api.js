@@ -142,6 +142,21 @@ class ApiService {
         }
     }
 
+    async verifyEmail(token) {
+        return await this.makeRequest(`/auth/verify?token=${encodeURIComponent(token)}`, {
+            method: 'GET',
+            includeAuth: false
+        });
+    }
+
+    async resendVerificationEmail(email) {
+        return await this.makeRequest('/auth/resend-verification', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+            includeAuth: false
+        });
+    }
+
     async logout() {
         this.clearToken();
         // You can add a logout API call here if your backend has one

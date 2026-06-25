@@ -51,6 +51,8 @@ public class SetupController {
             
             superAdmin.setCreatedAt(LocalDateTime.now());
             superAdmin.setUpdatedAt(LocalDateTime.now());
+            superAdmin.setVerified(true);
+            superAdmin.setEmailVerifiedAt(LocalDateTime.now());
 
             userRepository.save(superAdmin);
 
