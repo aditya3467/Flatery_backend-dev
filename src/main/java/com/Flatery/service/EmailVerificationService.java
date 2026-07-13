@@ -248,7 +248,7 @@ public class EmailVerificationService {
         }
 
         String encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
-        return baseUrl + "/verify-email?token=" + encodedToken;
+        return baseUrl + "/api/auth/verify-link?token=" + encodedToken;
     }
 
     private <T> T runInTransaction(Supplier<T> action) {

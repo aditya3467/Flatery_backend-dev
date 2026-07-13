@@ -11,8 +11,12 @@ import com.Flatery.service.AuthService;
 import com.Flatery.service.EmailVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriUtils;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,6 +25,19 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+
+    @Value("${flatery.frontend.base-path:/frontend}")
+    private String frontendBasePath;
+
+    private String frontendUrl(String path) {
+        String base = frontendBasePath == null ? "" : frontendBasePath.trim();
+        if (base.isEmpty() || "/".equals(base)) {
+            return path.startsWith("/") ? path : "/" + path;
+        }
+        String normalizedBase = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+        String normalizedPath = path.startsWith("/") ? path : "/" + path;
+        return normalizedBase + normalizedPath;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
@@ -67,6 +84,30 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(new ErrorResponse(ex.getMessage()));
         }
+    }
+
+    @GetMapping("/verify-link")
+    public ResponseEntity<Void> verifyEmailLink(@RequestParam(value = "token", required = false) String token) {
+        if (token == null || token.isBlank()) {
+            return redirectTo(frontendUrl("/verify-email.html?verificationError=Invalid%20or%20expired%20verification%20link."));
+        }
+
+        try {
+            emailVerificationService.verifyEmail(token);
+            return redirectTo(frontendUrl("/verify-email.html?verified=1"));
+        } catch (Exception ex) {
+            String message = ex.getMessage() == null
+                    ? "Verification failed. Link is invalid or expired."
+                    : ex.getMessage();
+            return redirectTo(frontendUrl("/verify-email.html?verificationError=")
+                    + UriUtils.encode(message, "UTF-8"));
+        }
+    }
+
+    private ResponseEntity<Void> redirectTo(String location) {
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(location))
+                .build();
     }
 
     @PostMapping("/resend-verification")
