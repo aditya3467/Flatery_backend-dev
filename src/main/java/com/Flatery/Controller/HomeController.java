@@ -1,5 +1,7 @@
 package com.Flatery.Controller;
 
+import com.Flatery.service.EmailVerificationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.stereotype.Controller;
@@ -7,7 +9,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.util.UriUtils;
 
 @Controller
+@RequiredArgsConstructor
 public class HomeController {
+
+    private final EmailVerificationService emailVerificationService;
 
     @Value("${flatery.frontend.base-path:/frontend}")
     private String frontendBasePath;
@@ -32,8 +37,17 @@ public class HomeController {
         if (token == null || token.isBlank()) {
             return "redirect:" + frontendUrl("/verify-email.html");
         }
-        String encodedToken = UriUtils.encode(token, "UTF-8");
-        return "redirect:" + frontendUrl("/verify-email.html?token=") + encodedToken;
+
+        try {
+            emailVerificationService.verifyEmail(token);
+            return "redirect:" + frontendUrl("/verify-email.html?verified=1");
+        } catch (Exception ex) {
+            String message = ex.getMessage() == null
+                    ? "Verification failed. Link is invalid or expired."
+                    : ex.getMessage();
+            return "redirect:" + frontendUrl("/verify-email.html?verificationError=")
+                    + UriUtils.encode(message, "UTF-8");
+        }
     }
 
     @GetMapping("/unverified-email")

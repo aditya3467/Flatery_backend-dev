@@ -54,6 +54,19 @@ function frontendUrl(path) {
   return `${base}${normalized}`;
 }
 
+function rememberVerificationEmail(email) {
+  try {
+    localStorage.setItem('lastVerificationEmail', email);
+  } catch (error) {
+    // Storage may be unavailable in restricted browser modes.
+  }
+  try {
+    sessionStorage.setItem('pendingVerificationEmail', email);
+  } catch (error) {
+    // Session storage may be unavailable too.
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   /**
    * ✅ Ensure API Service is loaded before proceeding
@@ -66,6 +79,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Call setupLoginButtonListeners early to ensure buttons are functional
   setupLoginButtonListeners();
+
+  const shouldOpenLogin = new URLSearchParams(window.location.search).get('login') === '1';
+  if (shouldOpenLogin) {
+    openLoginFromQuery();
+  }
   
   // Setup list property button listener
   setupListPropertyButton();
@@ -288,11 +306,23 @@ function setupProfileDropdown() {
 }
 
 function openLoginModal(e) {
-    e.preventDefault();
+    e?.preventDefault?.();
     // Only open login modal if user is NOT logged in
-    if (!apiService.isAuthenticated()) {
-        document.getElementById('loginModal').classList.add('active');
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal && !apiService.isAuthenticated()) {
+        loginModal.classList.add('active');
         document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+}
+
+function openLoginFromQuery(attempt = 0) {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+        openLoginModal();
+        return;
+    }
+    if (attempt < 12) {
+        setTimeout(() => openLoginFromQuery(attempt + 1), 150);
     }
 }
 
@@ -754,7 +784,7 @@ async function handleSignup(e) {
 
   try {
     await apiService.register({ firstName, lastName, username, email, phoneNumber, password, roles: [role] });
-    localStorage.setItem('lastVerificationEmail', email);
+    rememberVerificationEmail(email);
     showSuccess('Signup successful! Redirecting to email verification...');
     document.getElementById('signupModal')?.classList.remove('active');
     document.getElementById('loginModal')?.classList.remove('active');

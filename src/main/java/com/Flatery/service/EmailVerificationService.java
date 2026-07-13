@@ -43,9 +43,6 @@ public class EmailVerificationService {
     @Value("${flatery.email-verification.base-url:https://flatery.in}")
     private String verificationBaseUrl;
 
-    @Value("${flatery.frontend.base-path:}")
-    private String frontendBasePath;
-
     @Value("${flatery.email-verification.token-valid-hours:24}")
     private int tokenValidHours;
 
@@ -250,19 +247,8 @@ public class EmailVerificationService {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
 
-        String basePath = frontendBasePath == null ? "" : frontendBasePath.trim();
-        if ("/".equals(basePath)) {
-            basePath = "";
-        }
-        if (!basePath.isEmpty() && !basePath.startsWith("/")) {
-            basePath = "/" + basePath;
-        }
-        while (basePath.endsWith("/")) {
-            basePath = basePath.substring(0, basePath.length() - 1);
-        }
-
         String encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
-        return baseUrl + basePath + "/verify-email.html?token=" + encodedToken;
+        return baseUrl + "/verify-email?token=" + encodedToken;
     }
 
     private <T> T runInTransaction(Supplier<T> action) {
