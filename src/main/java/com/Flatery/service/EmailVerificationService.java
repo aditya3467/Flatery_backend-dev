@@ -2,6 +2,7 @@ package com.Flatery.service;
 
 import com.Flatery.email.EmailType;
 import com.Flatery.email.service.EmailDispatcher;
+import com.Flatery.exception.EmailDeliveryException;
 import com.Flatery.model.EmailVerificationToken;
 import com.Flatery.model.User;
 import com.Flatery.repository.EmailVerificationTokenRepository;
@@ -10,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -21,7 +24,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +33,7 @@ public class EmailVerificationService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final EmailDispatcher emailDispatcher;
+    private final PlatformTransactionManager transactionManager;
 
     @Value("${flatery.email-verification.base-url:https://flatery.in}")
     private String verificationBaseUrl;
@@ -43,64 +46,55 @@ public class EmailVerificationService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Transactional
     public void createAndSendVerification(User user) {
-        createAndSendVerificationInternal(user, false);
+        runInTransaction(() -> {
+            VerificationEmailMessage message = createVerificationMessage(user, false);
+            sendVerificationEmail(message);
+        });
     }
 
-    @Transactional
     public void resendVerification(String email) {
-        String normalizedEmail = email.trim().toLowerCase();
-        User user = userRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User with email not found: " + normalizedEmail));
+        runInTransaction(() -> {
+            String normalizedEmail = email.trim().toLowerCase();
+            User user = userRepository.findByEmail(normalizedEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("User with email not found: " + normalizedEmail));
 
-        if (Boolean.TRUE.equals(user.getVerified())) {
-            throw new IllegalStateException("Email is already verified.");
-        }
+            validateCanSendVerification(user);
 
-        var latestTokenOpt = tokenRepository.findTopByUser_IdOrderByCreatedAtDesc(user.getId());
-        if (latestTokenOpt.isPresent()) {
-            LocalDateTime threshold = LocalDateTime.now().minusMinutes(resendRateLimitMinutes);
-            if (latestTokenOpt.get().getCreatedAt().isAfter(threshold)) {
-                throw new IllegalStateException("Please wait 1 minute before requesting another verification email.");
-            }
-        }
-
-        createAndSendVerificationInternal(user, true);
+            VerificationEmailMessage message = createVerificationMessage(user, true);
+            sendVerificationEmail(message);
+        });
     }
 
-    @Transactional
     public void updateVerificationEmail(String currentEmail, String newEmail) {
-        String normalizedCurrentEmail = currentEmail.trim().toLowerCase();
-        String normalizedNewEmail = newEmail.trim().toLowerCase();
+        runInTransaction(() -> {
+            String normalizedCurrentEmail = currentEmail.trim().toLowerCase();
+            String normalizedNewEmail = newEmail.trim().toLowerCase();
 
-        User user = userRepository.findByEmail(normalizedCurrentEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User with email not found: " + normalizedCurrentEmail));
+            User user = userRepository.findByEmail(normalizedCurrentEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("User with email not found: " + normalizedCurrentEmail));
 
-        if (Boolean.TRUE.equals(user.getVerified())) {
-            throw new IllegalStateException("Email is already verified.");
-        }
-
-
-        if (!normalizedCurrentEmail.equals(normalizedNewEmail)) {
-            var existingOpt = userRepository.findByEmail(normalizedNewEmail);
-            if (existingOpt.isPresent() && !existingOpt.get().getId().equals(user.getId())) {
-                throw new IllegalArgumentException("Email already exists");
+            if (Boolean.TRUE.equals(user.getVerified())) {
+                throw new IllegalStateException("Email is already verified.");
             }
-        }
 
-        if (normalizedCurrentEmail.equals(normalizedNewEmail)) {
-            resendVerification(normalizedCurrentEmail);
-            return;
-        }
+            if (normalizedCurrentEmail.equals(normalizedNewEmail)) {
+                validateCanSendVerification(user);
+            } else {
+                var existingOpt = userRepository.findByEmail(normalizedNewEmail);
+                if (existingOpt.isPresent() && !existingOpt.get().getId().equals(user.getId())) {
+                    throw new IllegalArgumentException("Email already exists");
+                }
 
-        user.setEmail(normalizedNewEmail);
-        user.setVerified(false);
-        user.setEmailVerifiedAt(null);
-        userRepository.save(user);
+                user.setEmail(normalizedNewEmail);
+                user.setVerified(false);
+                user.setEmailVerifiedAt(null);
+                userRepository.save(user);
+            }
 
-        tokenRepository.deleteByUser_Id(user.getId());
-        createAndSendVerificationInternal(user, true);
+            VerificationEmailMessage message = createVerificationMessage(user, true);
+            sendVerificationEmail(message);
+        });
     }
 
     @Transactional
@@ -128,7 +122,7 @@ public class EmailVerificationService {
         tokenRepository.deleteByUser_Id(user.getId());
     }
 
-    private void createAndSendVerificationInternal(User user, boolean resend) {
+    private VerificationEmailMessage createVerificationMessage(User user, boolean resend) {
         String rawToken = generateSecureToken();
         String tokenHash = hashToken(rawToken);
 
@@ -142,21 +136,61 @@ public class EmailVerificationService {
                 .expiresAt(now.plusHours(tokenValidHours))
                 .build();
 
-        tokenRepository.save(Objects.requireNonNull(token));
-        sendVerificationEmail(user, rawToken, resend);
+        tokenRepository.save(token);
+
+        return new VerificationEmailMessage(
+                user.getId(),
+                user.getFirstName(),
+                user.getEmail(),
+                rawToken,
+                resend
+        );
     }
 
-    private void sendVerificationEmail(User user, String rawToken, boolean resend) {
-        String verifyLink = verificationBaseUrl + "/verify-email?token=" + rawToken;
+    private void validateCanSendVerification(User user) {
+        if (Boolean.TRUE.equals(user.getVerified())) {
+            throw new IllegalStateException("Email is already verified.");
+        }
+
+        var latestTokenOpt = tokenRepository.findTopByUser_IdOrderByCreatedAtDesc(user.getId());
+        if (latestTokenOpt.isPresent()) {
+            LocalDateTime threshold = LocalDateTime.now().minusMinutes(resendRateLimitMinutes);
+            if (latestTokenOpt.get().getCreatedAt().isAfter(threshold)) {
+                throw new IllegalStateException("Please wait 1 minute before requesting another verification email.");
+            }
+        }
+    }
+
+    private void sendVerificationEmail(VerificationEmailMessage message) {
+        String verifyLink = verificationBaseUrl + "/verify-email?token=" + message.rawToken();
 
         Map<String, Object> data = new HashMap<>();
-        data.put("user_name", user.getFirstName());
+        data.put("user_name", message.firstName());
         data.put("verification_link", verifyLink);
         data.put("expiry_hours", tokenValidHours);
 
-        emailDispatcher.dispatch(EmailType.EMAIL_VERIFICATION, user.getEmail(), data, null);
-        log.info("Queued {} email verification message for userId={}", resend ? "resend" : "new", user.getId());
+        try {
+            emailDispatcher.dispatch(EmailType.EMAIL_VERIFICATION, message.email(), data, null);
+            log.info("Queued {} email verification message for userId={}",
+                    message.resend() ? "resend" : "new", message.userId());
+        } catch (Exception e) {
+            log.warn("Failed to queue verification email for userId={} email={}: {}",
+                    message.userId(), message.email(), e.getMessage());
+            throw new EmailDeliveryException("Unable to send verification email right now. Please try again later.", e);
+        }
     }
+
+    private void runInTransaction(Runnable action) {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> action.run());
+    }
+
+    private record VerificationEmailMessage(
+            Long userId,
+            String firstName,
+            String email,
+            String rawToken,
+            boolean resend
+    ) {}
 
     private String generateSecureToken() {
         byte[] bytes = new byte[32];

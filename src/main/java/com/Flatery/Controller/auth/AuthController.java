@@ -5,6 +5,7 @@ import com.Flatery.dto.LoginRequest;
 import com.Flatery.dto.RegisterRequest;
 import com.Flatery.dto.ResendVerificationRequest;
 import com.Flatery.dto.UpdateVerificationEmailRequest;
+import com.Flatery.exception.EmailDeliveryException;
 import com.Flatery.exception.EmailNotVerifiedException;
 import com.Flatery.service.AuthService;
 import com.Flatery.service.EmailVerificationService;
@@ -59,6 +60,9 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(ex.getMessage()));
+        } catch (EmailDeliveryException ex) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(new ErrorResponse(ex.getMessage()));
         }
     }
 
@@ -75,6 +79,9 @@ public class AuthController {
                     .body(new ErrorResponse(ex.getMessage()));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(ex.getMessage()));
+        } catch (EmailDeliveryException ex) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(new ErrorResponse(ex.getMessage()));
         }
     }
