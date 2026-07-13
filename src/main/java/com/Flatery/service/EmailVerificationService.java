@@ -1,7 +1,10 @@
 package com.Flatery.service;
 
 import com.Flatery.email.EmailType;
-import com.Flatery.email.service.EmailDispatcher;
+import com.Flatery.email.entity.EmailLog;
+import com.Flatery.email.entity.EmailQueue;
+import com.Flatery.email.repository.EmailLogRepository;
+import com.Flatery.email.repository.EmailQueueRepository;
 import com.Flatery.exception.EmailDeliveryException;
 import com.Flatery.model.EmailVerificationToken;
 import com.Flatery.model.User;
@@ -15,17 +18,16 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.HexFormat;
-import java.util.Map;
 import java.util.function.Supplier;
-import java.net.URLEncoder;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +36,8 @@ public class EmailVerificationService {
 
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
-    private final EmailDispatcher emailDispatcher;
+    private final EmailQueueRepository emailQueueRepository;
+    private final EmailLogRepository emailLogRepository;
     private final PlatformTransactionManager transactionManager;
 
     @Value("${flatery.email-verification.base-url:https://flatery.in}")
@@ -171,20 +174,74 @@ public class EmailVerificationService {
     private void sendVerificationEmail(VerificationEmailMessage message) {
         String verifyLink = buildVerificationLink(message.rawToken());
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("user_name", message.firstName());
-        data.put("verification_link", verifyLink);
-        data.put("expiry_hours", tokenValidHours);
-
         try {
-            emailDispatcher.dispatch(EmailType.EMAIL_VERIFICATION, message.email(), data, null);
+            EmailQueue email = EmailQueue.builder()
+                    .recipient(message.email())
+                    .subject("Verify your Flatery account")
+                    .bodyHtml(buildVerificationHtml(message.firstName(), verifyLink))
+                    .bodyText(buildVerificationText(message.firstName(), verifyLink))
+                    .emailType(EmailType.EMAIL_VERIFICATION)
+                    .status(EmailQueue.Status.PENDING)
+                    .attempts(0)
+                    .scheduledAt(Instant.now())
+                    .build();
+
+            emailQueueRepository.save(email);
+
+            emailLogRepository.save(EmailLog.builder()
+                    .emailId(email.getId())
+                    .recipient(message.email())
+                    .emailType(EmailType.EMAIL_VERIFICATION)
+                    .status("PENDING")
+                    .build());
+
             log.info("Queued {} email verification message for userId={}",
                     message.resend() ? "resend" : "new", message.userId());
         } catch (Exception e) {
-            log.warn("Failed to queue verification email for userId={} email={}: {}",
-                    message.userId(), message.email(), e.getMessage());
-            throw new EmailDeliveryException("Unable to send verification email right now. Please try again later.", e);
+            log.error("Failed to queue verification email for userId={} email={}: {}",
+                    message.userId(), message.email(), e.getMessage(), e);
+            throw new EmailDeliveryException("Unable to queue verification email: " + rootMessage(e), e);
         }
+    }
+
+    private String buildVerificationHtml(String firstName, String verifyLink) {
+        String escapedName = escapeHtml(firstName == null || firstName.isBlank() ? "there" : firstName);
+        String escapedLink = escapeHtml(verifyLink);
+
+        return "<html><body style=\"font-family:Arial,sans-serif;background:#f4f4f4;padding:20px;\">"
+                + "<div style=\"max-width:600px;margin:0 auto;background:#fff;padding:30px;border-radius:8px;\">"
+                + "<h2 style=\"color:#333;\">Welcome to Flatery, " + escapedName + "!</h2>"
+                + "<p style=\"color:#666;line-height:1.6;\">Please verify your email address to activate your account.</p>"
+                + "<p style=\"margin:24px 0;\"><a href=\"" + escapedLink + "\" style=\"background:#007bff;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;display:inline-block;\">Verify Email</a></p>"
+                + "<p style=\"color:#666;line-height:1.6;\">This link is valid for " + tokenValidHours + " hours.</p>"
+                + "<p style=\"color:#999;font-size:12px;\">If you did not create this account, you can ignore this email.</p>"
+                + "</div></body></html>";
+    }
+
+    private String buildVerificationText(String firstName, String verifyLink) {
+        String name = firstName == null || firstName.isBlank() ? "there" : firstName;
+
+        return "Welcome to Flatery, " + name + "!\n\n"
+                + "Please verify your email address using this link:\n"
+                + verifyLink + "\n\n"
+                + "This link is valid for " + tokenValidHours + " hours.";
+    }
+
+    private String escapeHtml(String value) {
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+    private String rootMessage(Exception e) {
+        Throwable root = e;
+        while (root.getCause() != null) {
+            root = root.getCause();
+        }
+        return root.getMessage() == null ? e.getClass().getSimpleName() : root.getMessage();
     }
 
     private String buildVerificationLink(String rawToken) {

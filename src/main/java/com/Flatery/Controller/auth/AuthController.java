@@ -39,12 +39,15 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         try {
-            authService.signupWithNonFatalEmail(registerRequest);
+            authService.signup(registerRequest);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new MessageResponse("Registered successfully. Please verify your email."));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse(ex.getMessage()));
+        } catch (EmailDeliveryException ex) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(new ErrorResponse("Account created, but verification email could not be sent. Please use resend verification."));
         }
         catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
