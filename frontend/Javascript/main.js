@@ -306,8 +306,70 @@ function closeSignupModal() {
     document.body.style.overflow = ''; // Restore scrolling
 }
 
-function openChangePasswordModal() {
-    document.getElementById('changePasswordModal').classList.add('active');
+async function ensureChangePasswordModal() {
+    let modal = document.getElementById('changePasswordModal');
+    if (modal) return modal;
+
+    try {
+        const componentPath = window.location.pathname.includes('/owner/') || window.location.pathname.includes('/tenant/')
+            ? '../components/modals.html'
+            : 'components/modals.html';
+        const response = await fetch(componentPath);
+        if (response.ok) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = await response.text();
+            modal = wrapper.querySelector('#changePasswordModal');
+            if (modal) {
+                document.body.appendChild(modal);
+                return modal;
+            }
+        }
+    } catch (error) {
+        console.warn('Unable to load change password modal component:', error);
+    }
+
+    const fallback = document.createElement('div');
+    fallback.className = 'login-modal';
+    fallback.id = 'changePasswordModal';
+    fallback.innerHTML = `
+        <div class="login-box">
+            <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
+            <div class="modal-header">
+                <h2>Change Your Password</h2>
+                <p class="modal-subtitle">Update your password to keep your account secure.</p>
+            </div>
+            <form class="modal-form" id="changePasswordForm" method="POST" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="current-password">Current Password</label>
+                    <input type="password" id="current-password" name="currentPassword" placeholder="********" required minlength="6" autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" name="newPassword" placeholder="********" required minlength="6" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <input type="password" id="confirm-password" name="confirmPassword" placeholder="********" required minlength="6" autocomplete="new-password">
+                </div>
+                <div id="changePasswordError" class="error-message" style="display:none; color:#f44336; font-size:14px; margin-bottom:12px;"></div>
+                <button type="submit" class="login-btn">Change Password</button>
+            </form>
+            <p class="signup-link">
+                <a href="#" onclick="closeChangePasswordModal(); return false;">Cancel</a>
+            </p>
+        </div>`;
+    document.body.appendChild(fallback);
+    return fallback;
+}
+
+async function openChangePasswordModal() {
+    const modal = await ensureChangePasswordModal();
+    if (!modal) {
+        showError('Unable to open change password form.');
+        return;
+    }
+
+    modal.classList.add('active');
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
     
     // Ensure event listener is attached
@@ -321,9 +383,9 @@ function openChangePasswordModal() {
 }
 
 function closeChangePasswordModal() {
-    document.getElementById('changePasswordModal').classList.remove('active');
+    document.getElementById('changePasswordModal')?.classList.remove('active');
     document.body.style.overflow = ''; // Restore scrolling
-    document.getElementById('changePasswordForm').reset();
+    document.getElementById('changePasswordForm')?.reset();
     const errorDiv = document.getElementById('changePasswordError');
     if (errorDiv) errorDiv.style.display = 'none';
 }
