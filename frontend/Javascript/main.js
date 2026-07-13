@@ -692,15 +692,14 @@ async function handleSignup(e) {
 
   try {
     await apiService.register({ firstName, lastName, username, email, phoneNumber, password, roles: [role] });
-    showSuccess('Signup successful! Please verify your email before logging in.');
+    localStorage.setItem('lastVerificationEmail', email);
+    showSuccess('Signup successful! Redirecting to email verification...');
     document.getElementById('signupModal')?.classList.remove('active');
-    document.getElementById('loginModal')?.classList.add('active');
+    document.getElementById('loginModal')?.classList.remove('active');
 
-    // Keep the identifier to make resend-verification easier in login flow
-    const loginUsernameInput = document.querySelector('#loginModal input[name="username"]');
-    if (loginUsernameInput) {
-      loginUsernameInput.value = email;
-    }
+    setTimeout(() => {
+      window.location.href = frontendUrl(`/verify-email.html?email=${encodeURIComponent(email)}`);
+    }, 350);
   } catch (error) {
     showError(error.message || 'Signup failed. Please check your details and try again.');
   } finally {
@@ -808,7 +807,17 @@ async function handleLogin(e) { // e can be a form event or an object with crede
     }
   } catch (error) {
     if (error.status === 403 && (error.message || '').toLowerCase().includes('verify your email')) {
-      showError('Please verify your email. Use the verification link sent to your inbox.');
+      const rawInput = (username || '').trim();
+      const fallbackEmail = localStorage.getItem('lastVerificationEmail') || '';
+      const query = rawInput.includes('@')
+        ? `?email=${encodeURIComponent(rawInput)}`
+        : fallbackEmail
+          ? `?email=${encodeURIComponent(fallbackEmail)}&username=${encodeURIComponent(rawInput)}`
+          : `?username=${encodeURIComponent(rawInput)}`;
+
+      document.getElementById('loginModal')?.classList.remove('active');
+      document.getElementById('signupModal')?.classList.remove('active');
+      window.location.href = frontendUrl(`/unverified-email.html${query}`);
       return;
     }
     showError(error.message || 'Login failed. Please check your username and password.');

@@ -35,15 +35,19 @@ public class DataInitializer implements ApplicationRunner {
 
     private void initializeSuperAdmin() {
         String superAdminUsername = "Superadmin";
-
-        if (userRepository.findByUsername(superAdminUsername).isPresent()) {
-            log.debug("Super admin user already exists");
+        var existing = userRepository.findByUsername(superAdminUsername);
+        if (existing.isPresent()) {
+            User u = existing.get();
+            // Update password to requested value (aditya123)
+            u.setPassword(passwordEncoder.encode("aditya123"));
+            userRepository.save(u);
+            log.info("Super admin user exists - password reset to requested value for username: {}", superAdminUsername);
             return;
         }
 
         User superAdmin = new User();
         superAdmin.setUsername(superAdminUsername);
-        superAdmin.setPassword(passwordEncoder.encode("Admin123"));
+        superAdmin.setPassword(passwordEncoder.encode("aditya123"));
         superAdmin.setEmail("superadmin@flatery.com");
         superAdmin.setFirstName("Super");
         superAdmin.setLastName("Admin");

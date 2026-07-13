@@ -70,6 +70,40 @@ public class EmailVerificationService {
     }
 
     @Transactional
+    public void updateVerificationEmail(String currentEmail, String newEmail) {
+        String normalizedCurrentEmail = currentEmail.trim().toLowerCase();
+        String normalizedNewEmail = newEmail.trim().toLowerCase();
+
+        User user = userRepository.findByEmail(normalizedCurrentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User with email not found: " + normalizedCurrentEmail));
+
+        if (Boolean.TRUE.equals(user.getVerified())) {
+            throw new IllegalStateException("Email is already verified.");
+        }
+
+
+        if (!normalizedCurrentEmail.equals(normalizedNewEmail)) {
+            var existingOpt = userRepository.findByEmail(normalizedNewEmail);
+            if (existingOpt.isPresent() && !existingOpt.get().getId().equals(user.getId())) {
+                throw new IllegalArgumentException("Email already exists");
+            }
+        }
+
+        if (normalizedCurrentEmail.equals(normalizedNewEmail)) {
+            resendVerification(normalizedCurrentEmail);
+            return;
+        }
+
+        user.setEmail(normalizedNewEmail);
+        user.setVerified(false);
+        user.setEmailVerifiedAt(null);
+        userRepository.save(user);
+
+        tokenRepository.deleteByUser_Id(user.getId());
+        createAndSendVerificationInternal(user, true);
+    }
+
+    @Transactional
     public void verifyEmail(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             throw new IllegalArgumentException("Invalid or expired verification link.");

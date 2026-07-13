@@ -157,6 +157,14 @@ class ApiService {
         });
     }
 
+    async updateVerificationEmail(currentEmail, newEmail) {
+        return await this.makeRequest('/auth/update-verification-email', {
+            method: 'POST',
+            body: JSON.stringify({ currentEmail, newEmail }),
+            includeAuth: false
+        });
+    }
+
     async logout() {
         this.clearToken();
         // You can add a logout API call here if your backend has one

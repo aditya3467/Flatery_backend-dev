@@ -35,4 +35,22 @@ public class HomeController {
         String encodedToken = UriUtils.encode(token, "UTF-8");
         return "redirect:" + frontendUrl("/verify-email.html?token=") + encodedToken;
     }
+
+    @GetMapping("/unverified-email")
+    public String unverifiedEmailPage(@RequestParam(value = "email", required = false) String email,
+                                      @RequestParam(value = "username", required = false) String username) {
+        StringBuilder target = new StringBuilder(frontendUrl("/unverified-email.html"));
+        boolean hasQuery = false;
+
+        if (email != null && !email.isBlank()) {
+            target.append("?email=").append(UriUtils.encode(email, "UTF-8"));
+            hasQuery = true;
+        }
+
+        if (username != null && !username.isBlank()) {
+            target.append(hasQuery ? "&" : "?").append("username=").append(UriUtils.encode(username, "UTF-8"));
+        }
+
+        return "redirect:" + target;
+    }
 }

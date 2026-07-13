@@ -6,28 +6,67 @@
   <title>Verify Email | Flatery</title>
   <link rel="stylesheet" href="css/style.css?v=5">
   <style>
-    .verify-wrapper { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f7f9fc; }
-    .verify-card { width: 100%; max-width: 540px; background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 16px 40px rgba(26,39,68,0.12); text-align: center; }
-    .verify-card h1 { color: #1a2744; margin-bottom: 12px; }
-    .verify-card p { color: #5f6b7d; margin-bottom: 20px; }
-    .verify-status { margin: 18px 0; font-weight: 600; }
+    .verify-wrapper { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%); }
+    .verify-card { width: 100%; max-width: 620px; background: #fff; border-radius: 20px; padding: 32px; box-shadow: 0 18px 44px rgba(26,39,68,0.12); }
+    .verify-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #e8f1ff; color: #2457d6; font-weight: 700; margin-bottom: 18px; }
+    .verify-card h1 { color: #1a2744; margin: 0 0 8px; font-size: 2rem; }
+    .verify-divider { width: 100%; height: 1px; background: #e7ecf3; margin: 20px 0; }
+    .verify-title { color: #1a2744; font-size: 1.35rem; margin: 0 0 10px; }
+    .verify-text { color: #5f6b7d; line-height: 1.7; margin: 0 0 14px; }
+    .verify-email { display: inline-flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; background: #f7f9fc; border: 1px solid #e1e7f0; color: #1a2744; font-weight: 700; word-break: break-all; }
+    .verify-status { margin: 18px 0 0; font-weight: 600; }
     .verify-status.success { color: #1b8f3a; }
     .verify-status.error { color: #d32f2f; }
-    .verify-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .verify-btn { border: 1px solid #1a2744; color: #1a2744; background: #fff; border-radius: 999px; padding: 10px 18px; text-decoration: none; cursor: pointer; }
+    .verify-status.info { color: #2457d6; }
+    .verify-actions { display: flex; gap: 12px; justify-content: flex-start; flex-wrap: wrap; margin-top: 20px; }
+    .verify-btn { border: 1px solid #1a2744; color: #1a2744; background: #fff; border-radius: 999px; padding: 11px 18px; text-decoration: none; cursor: pointer; font-weight: 600; }
     .verify-btn.primary { background: #1a2744; color: #fff; }
+    .verify-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .verify-small { font-size: 0.95rem; color: #8a94a6; margin-top: 12px; }
+    .verify-edit-panel { display: none; margin-top: 18px; padding: 18px; border: 1px solid #e1e7f0; border-radius: 16px; background: #f7f9fc; }
+    .verify-edit-panel.active { display: block; }
+    .verify-field { display: grid; gap: 8px; margin-bottom: 14px; }
+    .verify-field label { font-weight: 700; color: #1a2744; }
+    .verify-field input { width: 100%; padding: 12px 14px; border: 1px solid #cfd6e4; border-radius: 12px; font-size: 1rem; background: #fff; }
+    .verify-edit-actions { display: flex; gap: 10px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
   <div class="verify-wrapper">
     <div class="verify-card">
-      <h1>Email Verification</h1>
-      <p id="verifyDescription">Validating your verification link...</p>
-      <div id="verifyStatus" class="verify-status">Please wait...</div>
+      <div class="verify-badge"><i class="fas fa-envelope-open-text"></i> Signup Success</div>
+      <h1>Verify your email</h1>
+      <p class="verify-text" id="verifyDescription">We've sent a verification link to your email address.</p>
+
+      <div class="verify-divider"></div>
+
+      <h2 class="verify-title">We've sent a verification link to</h2>
+      <div class="verify-email" id="verifyEmailDisplay">Loading email...</div>
+
+      <p class="verify-text" id="verifyHint">Didn't receive it?</p>
+
       <div class="verify-actions">
-        <a class="verify-btn primary" id="homeLink" href="#">Go to Home</a>
-        <button class="verify-btn" id="resendBtn" style="display:none;" type="button">Resend verification email</button>
+        <button class="verify-btn primary" id="resendBtn" type="button">Resend Email</button>
+        <button class="verify-btn" id="changeEmailBtn" type="button">Change Email</button>
       </div>
+
+      <form id="changeEmailForm" class="verify-edit-panel">
+        <div class="verify-field">
+          <label for="currentEmailInput">Current email</label>
+          <input id="currentEmailInput" type="email" name="currentEmail" placeholder="old@example.com" required>
+        </div>
+        <div class="verify-field">
+          <label for="newEmailInput">New email</label>
+          <input id="newEmailInput" type="email" name="newEmail" placeholder="new@example.com" required>
+        </div>
+        <div class="verify-edit-actions">
+          <button class="verify-btn primary" id="updateEmailBtn" type="submit">Update & Send Email</button>
+          <button class="verify-btn" id="cancelChangeBtn" type="button">Cancel</button>
+        </div>
+      </form>
+
+      <div id="verifyStatus" class="verify-status info">Please check your inbox and spam folder.</div>
+      <div class="verify-small" id="verifySmall">You can resend the email after updating your address.</div>
     </div>
   </div>
 
@@ -36,52 +75,151 @@
     (async function () {
       const statusEl = document.getElementById('verifyStatus');
       const descriptionEl = document.getElementById('verifyDescription');
+      const hintEl = document.getElementById('verifyHint');
+      const emailDisplayEl = document.getElementById('verifyEmailDisplay');
+      const smallEl = document.getElementById('verifySmall');
       const resendBtn = document.getElementById('resendBtn');
-      const homeLink = document.getElementById('homeLink');
+      const changeEmailBtn = document.getElementById('changeEmailBtn');
+      const changeEmailForm = document.getElementById('changeEmailForm');
+      const currentEmailInput = document.getElementById('currentEmailInput');
+      const newEmailInput = document.getElementById('newEmailInput');
+      const cancelChangeBtn = document.getElementById('cancelChangeBtn');
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
+      let currentEmail = params.get('email') || localStorage.getItem('lastVerificationEmail') || '';
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-      const basePath = window.location.pathname.startsWith('/frontend') ? '/frontend' : '';
-      if (homeLink) {
-        homeLink.href = `${basePath}/index.html`;
+      const setEmailDisplay = (email) => {
+        currentEmail = (email || '').trim();
+        if (emailDisplayEl) {
+          emailDisplayEl.textContent = currentEmail || 'your email address';
+        }
+        if (currentEmail) {
+          localStorage.setItem('lastVerificationEmail', currentEmail);
+        }
+      };
+
+      const setStatus = (message, type = 'info') => {
+        if (!statusEl) return;
+        statusEl.textContent = message;
+        statusEl.classList.remove('success', 'error', 'info');
+        statusEl.classList.add(type);
+      };
+
+      setEmailDisplay(currentEmail);
+      if (currentEmailInput) currentEmailInput.value = currentEmail;
+
+      if (!token) {
+        descriptionEl.textContent = 'Please verify your email before continuing.';
+        hintEl.textContent = "Didn't receive it?";
+        smallEl.textContent = 'Use Resend Email if the link expired or was not delivered.';
+      } else {
+        resendBtn.style.display = 'none';
+        changeEmailBtn.style.display = 'none';
       }
 
       if (!token) {
-        statusEl.textContent = 'Missing verification token.';
-        statusEl.classList.add('error');
-        descriptionEl.textContent = 'Please use the verification link from your email.';
+        if (!currentEmail) {
+          setStatus('Add your email address to resend the verification link.', 'info');
+        }
+
+        resendBtn.addEventListener('click', async () => {
+          if (!currentEmail || !emailRegex.test(currentEmail)) {
+            const entered = window.prompt('Enter the email address to resend the verification link:', currentEmail || '');
+            if (!entered) return;
+            if (!emailRegex.test(entered.trim())) {
+              setStatus('Please enter a valid email address.', 'error');
+              return;
+            }
+            setEmailDisplay(entered.trim());
+          }
+
+          resendBtn.disabled = true;
+          changeEmailBtn.disabled = true;
+          setStatus('Sending verification email...', 'info');
+
+          try {
+            const response = await apiService.resendVerificationEmail(currentEmail);
+            setStatus(response?.message || 'Verification email sent. Please check your inbox.', 'success');
+            descriptionEl.textContent = 'We have resent the verification link to your email address.';
+          } catch (error) {
+            setStatus(error.message || 'Failed to resend verification email.', 'error');
+          } finally {
+            resendBtn.disabled = false;
+            changeEmailBtn.disabled = false;
+          }
+        });
+
+        changeEmailBtn.addEventListener('click', () => {
+          if (changeEmailForm) changeEmailForm.classList.add('active');
+          if (currentEmailInput) currentEmailInput.value = currentEmail || '';
+          if (newEmailInput) {
+            newEmailInput.value = '';
+            newEmailInput.focus();
+          }
+          setStatus('Update the email address and send a new verification link.', 'info');
+        });
+
+        cancelChangeBtn.addEventListener('click', () => {
+          if (changeEmailForm) changeEmailForm.classList.remove('active');
+          setStatus('You can resend the verification email or update it to a new address.', 'info');
+        });
+
+        changeEmailForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const oldEmail = currentEmailInput.value.trim();
+          const nextEmail = newEmailInput.value.trim();
+
+          if (!emailRegex.test(oldEmail)) {
+            setStatus('Please enter a valid current email address.', 'error');
+            return;
+          }
+          if (!emailRegex.test(nextEmail)) {
+            setStatus('Please enter a valid new email address.', 'error');
+            return;
+          }
+
+          resendBtn.disabled = true;
+          changeEmailBtn.disabled = true;
+          cancelChangeBtn.disabled = true;
+          setStatus('Updating email and sending verification link...', 'info');
+
+          try {
+            const response = await apiService.updateVerificationEmail(oldEmail, nextEmail);
+            setEmailDisplay(nextEmail);
+            if (currentEmailInput) currentEmailInput.value = nextEmail;
+            if (newEmailInput) newEmailInput.value = '';
+            currentEmail = nextEmail;
+            if (changeEmailForm) changeEmailForm.classList.remove('active');
+            setStatus(response?.message || 'Email updated and verification link sent.', 'success');
+            descriptionEl.textContent = 'We have sent a new verification link to your updated email address.';
+            hintEl.textContent = 'Didn’t receive it?';
+            smallEl.textContent = 'You can resend the new verification link below if needed.';
+          } catch (error) {
+            setStatus(error.message || 'Failed to update email.', 'error');
+          } finally {
+            resendBtn.disabled = false;
+            changeEmailBtn.disabled = false;
+            cancelChangeBtn.disabled = false;
+          }
+        });
         return;
       }
 
+      descriptionEl.textContent = 'Validating your verification link...';
+      setStatus('Please wait while we confirm your account.', 'info');
+
       try {
         const response = await apiService.verifyEmail(token);
-        statusEl.textContent = response?.message || 'Email verified successfully.';
-        statusEl.classList.add('success');
+        setStatus(response?.message || 'Email verified successfully.', 'success');
         descriptionEl.textContent = 'Your account is verified. You can now log in.';
+        hintEl.textContent = 'You may close this page or return to the home page.';
+        smallEl.textContent = 'Verification completed successfully.';
       } catch (error) {
-        statusEl.textContent = error.message || 'Verification failed. Link is invalid or expired.';
-        statusEl.classList.add('error');
-        descriptionEl.textContent = 'You can request a new verification link from login.';
-
-        const emailFromQuery = params.get('email');
-        if (emailFromQuery) {
-          resendBtn.style.display = 'inline-block';
-          resendBtn.addEventListener('click', async () => {
-            resendBtn.disabled = true;
-            try {
-              await apiService.resendVerificationEmail(emailFromQuery);
-              statusEl.textContent = 'Verification email sent.';
-              statusEl.classList.remove('error');
-              statusEl.classList.add('success');
-            } catch (resendError) {
-              statusEl.textContent = resendError.message || 'Failed to resend verification email.';
-              statusEl.classList.remove('success');
-              statusEl.classList.add('error');
-            } finally {
-              resendBtn.disabled = false;
-            }
-          });
-        }
+        setStatus(error.message || 'Verification failed. Link is invalid or expired.', 'error');
+        descriptionEl.textContent = 'You can request a new verification link below.';
+        hintEl.textContent = 'Didn't receive it?';
+        smallEl.textContent = 'Use your email address to resend the verification link.';
       }
     })();
   </script>

@@ -4,6 +4,7 @@ import com.Flatery.dto.AuthResponse;
 import com.Flatery.dto.LoginRequest;
 import com.Flatery.dto.RegisterRequest;
 import com.Flatery.dto.ResendVerificationRequest;
+import com.Flatery.dto.UpdateVerificationEmailRequest;
 import com.Flatery.exception.EmailNotVerifiedException;
 import com.Flatery.service.AuthService;
 import com.Flatery.service.EmailVerificationService;
@@ -62,6 +63,23 @@ public class AuthController {
         try {
             emailVerificationService.resendVerification(request.getEmail());
             return ResponseEntity.ok(new MessageResponse("Verification email sent."));
+        } catch (IllegalStateException ex) {
+            HttpStatus status = "Email is already verified.".equals(ex.getMessage())
+                    ? HttpStatus.CONFLICT
+                    : HttpStatus.TOO_MANY_REQUESTS;
+            return ResponseEntity.status(status)
+                    .body(new ErrorResponse(ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/update-verification-email")
+    public ResponseEntity<?> updateVerificationEmail(@Valid @RequestBody UpdateVerificationEmailRequest request) {
+        try {
+            emailVerificationService.updateVerificationEmail(request.getCurrentEmail(), request.getNewEmail());
+            return ResponseEntity.ok(new MessageResponse("Email updated and verification link sent."));
         } catch (IllegalStateException ex) {
             HttpStatus status = "Email is already verified.".equals(ex.getMessage())
                     ? HttpStatus.CONFLICT
