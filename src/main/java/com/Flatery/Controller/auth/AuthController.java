@@ -94,7 +94,7 @@ public class AuthController {
 
         try {
             emailVerificationService.verifyEmail(token);
-            return redirectTo(frontendUrl("/verify-email.html?verified=1"));
+            return redirectTo(frontendUrl("/index.html?login=1&verified=1"));
         } catch (Exception ex) {
             String message = ex.getMessage() == null
                     ? "Verification failed. Link is invalid or expired."

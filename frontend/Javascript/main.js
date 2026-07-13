@@ -80,9 +80,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // Call setupLoginButtonListeners early to ensure buttons are functional
   setupLoginButtonListeners();
 
-  const shouldOpenLogin = new URLSearchParams(window.location.search).get('login') === '1';
+  const queryParams = new URLSearchParams(window.location.search);
+  const shouldOpenLogin = queryParams.get('login') === '1';
+  const emailVerified = queryParams.get('verified') === '1';
   if (shouldOpenLogin) {
     openLoginFromQuery();
+  }
+
+  if (emailVerified) {
+    showSuccess('Verification successful. Please log in.');
   }
   
   // Setup list property button listener
