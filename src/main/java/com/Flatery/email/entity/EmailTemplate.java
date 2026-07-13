@@ -38,7 +38,7 @@ public class EmailTemplate {
     private String textBody;
 
     @Lob
-    @Column(name = "placeholders", columnDefinition = "LONGTEXT")
+    @Column(name = "placeholders_json", columnDefinition = "LONGTEXT")
     private String placeholdersJson; // JSON array of strings
 
     @Column(name = "is_active", nullable = false)

@@ -36,7 +36,7 @@ public class FixOtpTemplateRunner implements CommandLineRunner {
             System.out.println("Deleted " + deleted + " existing OTP template(s)");
 
             // Insert new template with correct column name
-            String sql = "INSERT INTO email_templates (template_key, subject, html_body, text_body, placeholders, is_active, created_at, updated_at, last_updated_by) " +
+            String sql = "INSERT INTO email_templates (template_key, subject, html_body, text_body, placeholders_json, is_active, created_at, updated_at, last_updated_by) " +
                     "VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)";
 
             String htmlBody = "<html>" +

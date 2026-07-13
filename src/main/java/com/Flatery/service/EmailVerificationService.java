@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -47,27 +48,29 @@ public class EmailVerificationService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public void createAndSendVerification(User user) {
-        runInTransaction(() -> {
-            VerificationEmailMessage message = createVerificationMessage(user, false);
-            sendVerificationEmail(message);
+        VerificationEmailMessage message = runInTransaction(() -> {
+            User managedUser = userRepository.findById(user.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("User with id not found: " + user.getId()));
+            return createVerificationMessage(managedUser, false);
         });
+        sendVerificationEmail(message);
     }
 
     public void resendVerification(String email) {
-        runInTransaction(() -> {
+        VerificationEmailMessage message = runInTransaction(() -> {
             String normalizedEmail = email.trim().toLowerCase();
             User user = userRepository.findByEmail(normalizedEmail)
                     .orElseThrow(() -> new IllegalArgumentException("User with email not found: " + normalizedEmail));
 
             validateCanSendVerification(user);
 
-            VerificationEmailMessage message = createVerificationMessage(user, true);
-            sendVerificationEmail(message);
+            return createVerificationMessage(user, true);
         });
+        sendVerificationEmail(message);
     }
 
     public void updateVerificationEmail(String currentEmail, String newEmail) {
-        runInTransaction(() -> {
+        VerificationEmailMessage message = runInTransaction(() -> {
             String normalizedCurrentEmail = currentEmail.trim().toLowerCase();
             String normalizedNewEmail = newEmail.trim().toLowerCase();
 
@@ -92,9 +95,9 @@ public class EmailVerificationService {
                 userRepository.save(user);
             }
 
-            VerificationEmailMessage message = createVerificationMessage(user, true);
-            sendVerificationEmail(message);
+            return createVerificationMessage(user, true);
         });
+        sendVerificationEmail(message);
     }
 
     @Transactional
@@ -180,8 +183,8 @@ public class EmailVerificationService {
         }
     }
 
-    private void runInTransaction(Runnable action) {
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> action.run());
+    private <T> T runInTransaction(Supplier<T> action) {
+        return new TransactionTemplate(transactionManager).execute(status -> action.get());
     }
 
     private record VerificationEmailMessage(

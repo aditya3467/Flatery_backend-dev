@@ -100,6 +100,9 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(ex.getMessage()));
+        } catch (EmailDeliveryException ex) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(new ErrorResponse(ex.getMessage()));
         }
     }
 

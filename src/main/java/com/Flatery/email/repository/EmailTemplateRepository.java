@@ -9,5 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface EmailTemplateRepository extends JpaRepository<EmailTemplate, Long> {
+    Optional<EmailTemplate> findFirstByTemplateKey(EmailType type);
+
     Optional<EmailTemplate> findFirstByTemplateKeyAndActiveTrue(EmailType type);
 }

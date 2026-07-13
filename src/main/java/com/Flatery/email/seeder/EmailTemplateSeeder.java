@@ -89,10 +89,19 @@ public class EmailTemplateSeeder implements CommandLineRunner {
         );
 
         int created = 0;
+        int repaired = 0;
         for (EmailTemplate template : templates) {
-            boolean exists = templateRepository.findFirstByTemplateKeyAndActiveTrue(template.getTemplateKey()).isPresent();
-            if (exists) {
-                log.debug("Template {} already present, skipping", template.getTemplateKey());
+            var existingOpt = templateRepository.findFirstByTemplateKey(template.getTemplateKey());
+            if (existingOpt.isPresent()) {
+                EmailTemplate existing = existingOpt.get();
+                boolean changed = ensureTemplateUsable(existing, template);
+                if (changed) {
+                    templateRepository.save(existing);
+                    repaired++;
+                    log.info("Repaired email template {}", template.getTemplateKey());
+                } else {
+                    log.debug("Template {} already present, skipping", template.getTemplateKey());
+                }
                 continue;
             }
             templateRepository.save(template);
@@ -100,7 +109,7 @@ public class EmailTemplateSeeder implements CommandLineRunner {
             log.info("Created email template {}", template.getTemplateKey());
         }
 
-        log.info("Email template seeding complete. New templates added: {}", created);
+        log.info("Email template seeding complete. New templates added: {}, repaired: {}", created, repaired);
         } catch (Exception e) {
             log.error("Email template seeding failed: {}. Emails will not be sent until templates are created.", e.getMessage());
             // Don't fail app startup if email templates can't be created
@@ -117,5 +126,36 @@ public class EmailTemplateSeeder implements CommandLineRunner {
                 .active(true)
                 .lastUpdatedBy("system")
                 .build();
+    }
+
+    private boolean ensureTemplateUsable(EmailTemplate existing, EmailTemplate defaults) {
+        boolean changed = false;
+
+        if (!existing.isActive()) {
+            existing.setActive(true);
+            changed = true;
+        }
+        if (existing.getSubject() == null || existing.getSubject().isBlank()) {
+            existing.setSubject(defaults.getSubject());
+            changed = true;
+        }
+        if (existing.getHtmlBody() == null || existing.getHtmlBody().isBlank()) {
+            existing.setHtmlBody(defaults.getHtmlBody());
+            changed = true;
+        }
+        if (existing.getTextBody() == null || existing.getTextBody().isBlank()) {
+            existing.setTextBody(defaults.getTextBody());
+            changed = true;
+        }
+        if (existing.getPlaceholdersJson() == null || existing.getPlaceholdersJson().isBlank()) {
+            existing.setPlaceholdersJson(defaults.getPlaceholdersJson());
+            changed = true;
+        }
+        if (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().isBlank()) {
+            existing.setLastUpdatedBy("system");
+            changed = true;
+        }
+
+        return changed;
     }
 }
