@@ -32,7 +32,7 @@ public class AuthService {
     private final UserService userService;
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
-        private final EmailVerificationService emailVerificationService;
+    private final EmailVerificationService emailVerificationService;
 
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -82,7 +82,6 @@ public class AuthService {
                 emailVerificationService.createAndSendVerification(user);
     }
 
-    @Transactional
     public void signupWithNonFatalEmail(RegisterRequest registerRequest) {
         User user = userService.register(registerRequest);
         try {

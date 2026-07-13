@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -44,7 +43,7 @@ public class EmailVerificationService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void createAndSendVerification(User user) {
         createAndSendVerificationInternal(user, false);
     }
