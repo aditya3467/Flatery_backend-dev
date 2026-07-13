@@ -29,9 +29,26 @@
     .verify-field label { font-weight: 700; color: #1a2744; }
     .verify-field input { width: 100%; padding: 12px 14px; border: 1px solid #cfd6e4; border-radius: 12px; font-size: 1rem; background: #fff; }
     .verify-edit-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .success-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; grid-place-items: center; }
+    .success-modal-overlay.active { display: grid; }
+    .success-modal { background: #fff; border-radius: 20px; padding: 40px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); text-align: center; max-width: 500px; width: 90%; }
+    .success-modal-icon { font-size: 4rem; color: #1b8f3a; margin-bottom: 16px; }
+    .success-modal h2 { color: #1b8f3a; font-size: 1.8rem; margin: 0 0 12px; }
+    .success-modal p { color: #5f6b7d; font-size: 1rem; line-height: 1.6; margin: 0 0 28px; }
+    .success-modal-btn { display: inline-block; background: #1b8f3a; color: #fff; padding: 14px 32px; border-radius: 999px; border: none; cursor: pointer; font-weight: 700; font-size: 1rem; text-decoration: none; transition: background 0.3s; }
+    .success-modal-btn:hover { background: #157a2e; }
   </style>
 </head>
 <body>
+  <div id="successModal" class="success-modal-overlay">
+    <div class="success-modal">
+      <div class="success-modal-icon">✓</div>
+      <h2>Email Verified!</h2>
+      <p>Your email has been verified successfully. You can now log in to your account.</p>
+      <button class="success-modal-btn" id="loginNowBtn">Login Now</button>
+    </div>
+  </div>
+
   <div class="verify-wrapper">
     <div class="verify-card">
       <div class="verify-badge"><i class="fas fa-envelope-open-text"></i> Signup Success</div>
@@ -206,6 +223,14 @@
         return;
       }
 
+      const basePath = window.location.pathname.startsWith('/frontend') ? '/frontend' : '';
+      const loginNowBtn = document.getElementById('loginNowBtn');
+      if (loginNowBtn) {
+        loginNowBtn.addEventListener('click', () => {
+          window.location.href = basePath + '/index.html';
+        });
+      }
+
       descriptionEl.textContent = 'Validating your verification link...';
       setStatus('Please wait while we confirm your account.', 'info');
 
@@ -215,6 +240,13 @@
         descriptionEl.textContent = 'Your account is verified. You can now log in.';
         hintEl.textContent = 'You may close this page or return to the home page.';
         smallEl.textContent = 'Verification completed successfully.';
+        
+        setTimeout(() => {
+          const successModalEl = document.getElementById('successModal');
+          if (successModalEl) {
+            successModalEl.classList.add('active');
+          }
+        }, 1000);
       } catch (error) {
         setStatus(error.message || 'Verification failed. Link is invalid or expired.', 'error');
         descriptionEl.textContent = 'You can request a new verification link below.';

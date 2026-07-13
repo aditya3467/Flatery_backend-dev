@@ -12,6 +12,7 @@ import com.Flatery.security.JwtService;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final AuthenticationManager authenticationManager;
@@ -78,6 +80,18 @@ public class AuthService {
     public void signup(RegisterRequest registerRequest) {
                 User user = userService.register(registerRequest);
                 emailVerificationService.createAndSendVerification(user);
+    }
+
+    @Transactional
+    public void signupWithNonFatalEmail(RegisterRequest registerRequest) {
+        User user = userService.register(registerRequest);
+        try {
+            emailVerificationService.createAndSendVerification(user);
+        } catch (Exception e) {
+            // Log the error but don't fail signup - user is already created
+            log.warn("Failed to send verification email for user {} ({}), but user was created. Error: {}", 
+                    user.getId(), user.getEmail(), e.getMessage());
+        }
     }
 
     public UserDetailsResponse getUserFromToken(String token) {

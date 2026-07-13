@@ -38,12 +38,16 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         try {
-            authService.signup(registerRequest);
+            authService.signupWithNonFatalEmail(registerRequest);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new MessageResponse("Registered successfully. Please verify your email."));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse(ex.getMessage()));
+        }
+        catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Registration failed: " + ex.getMessage()));
         }
     }
 
