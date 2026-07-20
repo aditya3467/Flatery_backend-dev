@@ -5,6 +5,7 @@ import com.Flatery.dto.property.PropertySummary;
 import com.Flatery.model.property.Property;
 import com.Flatery.model.property.enums.BhkType;
 import com.Flatery.model.property.enums.Furnishing;
+import com.Flatery.model.property.enums.PropertyStatus;
 import com.Flatery.model.property.enums.PropertyType;
 import com.Flatery.repository.property.PropertyRepository;
 import com.Flatery.service.property.mapper.PropertyMapper;
@@ -53,6 +54,7 @@ public class PropertyQueryService {
         // Skip city/location filters when doing radius search (lat/lng provided)
         boolean isRadiusSearch = (lat != null && lng != null);
         List<Property> filtered = all.stream()
+                .filter(p -> p.getStatus() == PropertyStatus.ACTIVE)
                 .filter(p -> isRadiusSearch || city == null || equalsIgnoreCase(p.getCity(), city))
                 .filter(p -> isRadiusSearch || location == null || containsIgnoreCase(p.getLocation(), location))
                 .filter(p -> type == null || type == p.getType())
@@ -137,9 +139,10 @@ public class PropertyQueryService {
 
     @Transactional(readOnly = true)
     public List<PropertySummary> getRecommendedProperties() {
-        // Simple: return 3 latest properties
+        // Simple: return 3 latest ACTIVE properties
         List<Property> properties = propertyRepository.findTop3ByOrderByPostedOnDesc();
         return properties.stream()
+                .filter(p -> p.getStatus() == PropertyStatus.ACTIVE)
                 .map(p -> mapper.toSummary(p, imageService.getPrimaryImageUrl(p.getId())))
                 .toList();
     }
@@ -157,6 +160,7 @@ public class PropertyQueryService {
         
         // Maintain order from input list
         Map<Long, Property> propertyMap = properties.stream()
+                .filter(p -> p.getStatus() == PropertyStatus.ACTIVE)
                 .collect(Collectors.toMap(Property::getId, p -> p));
         
         return propertyIds.stream()

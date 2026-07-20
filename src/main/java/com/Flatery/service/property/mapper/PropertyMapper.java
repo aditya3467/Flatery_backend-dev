@@ -34,8 +34,12 @@ public class PropertyMapper {
         p.setCity(req.getLocality().getCity());
         p.setLocation(req.getLocality().getLocation());
         p.setLandmark(req.getLocality().getLandmark());
-        p.setLatitude(req.getLocality().getLatitude());
-        p.setLongitude(req.getLocality().getLongitude());
+        
+        // Use coordinates from locality if available, otherwise from top-level fields
+        Double lat = req.getLocality().getLatitude() != null ? req.getLocality().getLatitude() : req.getLatitude();
+        Double lng = req.getLocality().getLongitude() != null ? req.getLocality().getLongitude() : req.getLongitude();
+        p.setLatitude(lat);
+        p.setLongitude(lng);
 
         p.setExpectedRent(req.getRental().getExpectedRent());
         p.setExpectedDeposit(req.getRental().getExpectedDeposit());

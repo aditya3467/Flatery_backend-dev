@@ -61,4 +61,8 @@ public class CreatePropertyRequest {
     private ShowingDto showing;
 
     private ScheduleDto schedule;
-}
+
+    // Geographic coordinates from map (will be merged into locality)
+    private Double latitude;
+    
+    private Double longitude;}
