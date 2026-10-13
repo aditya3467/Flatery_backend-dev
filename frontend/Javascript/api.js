@@ -165,9 +165,45 @@ class ApiService {
         });
     }
 
+    async getGoogleConfig() {
+        try {
+            return await this.get('/auth/google-config', { includeAuth: false });
+        } catch (error) {
+            console.error('Failed to load Google config:', error);
+            throw error;
+        }
+    }
+
     async logout() {
         this.clearToken();
         // You can add a logout API call here if your backend has one
+    }
+
+    async googleLogin(idToken) {
+        try {
+            const response = await this.makeRequest('/auth/google', {
+                method: 'POST',
+                body: JSON.stringify({ idToken }),
+                includeAuth: false
+            });
+            if (response.token) {
+                this.setToken(response.token);
+            }
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateProfile(profileData) {
+        try {
+            return await this.makeRequest('/auth/profile', {
+                method: 'PUT',
+                body: JSON.stringify(profileData)
+            });
+        } catch (error) {
+            throw error;
+        }
     }
 
     // User API methods

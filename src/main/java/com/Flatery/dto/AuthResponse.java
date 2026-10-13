@@ -9,4 +9,5 @@ public class AuthResponse {
     private long expiresIn;
     private Set<String> roles;
     private boolean requiresPasswordChange;
+    private boolean requiresProfileCompletion;
 }

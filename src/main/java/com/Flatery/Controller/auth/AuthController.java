@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -25,6 +26,9 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
 
     @Value("${flatery.frontend.base-path:/frontend}")
     private String frontendBasePath;
@@ -163,6 +167,34 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<?> googleSignIn(@RequestBody GoogleTokenRequest req) {
+        try {
+            var resp = authService.googleLogin(req.idToken());
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Google sign-in failed: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/google-config")
+    public ResponseEntity<?> getGoogleConfig() {
+        return ResponseEntity.ok(Map.of("clientId", googleClientId));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestHeader("Authorization") String token, @RequestBody com.Flatery.dto.UpdateProfileRequest req) {
+        try {
+            String jwt = token.substring(7);
+            authService.updateProfile(jwt, req);
+            return ResponseEntity.ok(new MessageResponse("Profile updated"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Profile update failed: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
             @RequestHeader("Authorization") String token,
@@ -182,4 +214,7 @@ public class AuthController {
 
     record ErrorResponse(String error) {}
     record MessageResponse(String message) {}
+
+    // Simple request record for google token
+    public static record GoogleTokenRequest(String idToken) {}
 }

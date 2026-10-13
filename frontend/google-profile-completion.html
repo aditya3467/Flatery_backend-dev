@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - Flatery</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="navbar-container" data-component="components/navbar.html"></div>
+
+    <section class="form-page-section" style="min-height: calc(100vh - 200px); padding: 60px 0;">
+        <div class="container" style="max-width: 680px; margin: 0 auto;">
+            <div class="form-header" style="text-align: center; margin-bottom: 2rem;">
+                <h1>Complete Your Profile</h1>
+                <p>Please finish the required details to complete your account setup. Your Google email is already verified.</p>
+            </div>
+
+            <form id="googleProfileForm" class="auth-form" style="background:#fff; padding:2rem; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.08);">
+                <div class="form-group">
+                    <label for="google-email">Email</label>
+                    <input type="email" id="google-email" name="email" readonly disabled placeholder="Email" style="background:#f5f6f7;" />
+                </div>
+                <div class="form-group">
+                    <label for="google-username">Username <span class="required">*</span></label>
+                    <input type="text" id="google-username" name="username" placeholder="Choose a username" required />
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1; margin-right: 0.75rem;">
+                        <label for="google-firstname">First Name <span class="required">*</span></label>
+                        <input type="text" id="google-firstname" name="firstName" placeholder="First Name" required />
+                    </div>
+                    <div class="form-group" style="flex:1; margin-left: 0.75rem;">
+                        <label for="google-lastname">Last Name <span class="required">*</span></label>
+                        <input type="text" id="google-lastname" name="lastName" placeholder="Last Name" required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="google-phone">Phone Number</label>
+                    <input type="tel" id="google-phone" name="phoneNumber" placeholder="Optional phone number" />
+                </div>
+                <div id="googleProfileError" class="error-message" style="display:none; margin-bottom: 1rem; color:#f44336;"></div>
+                <button type="submit" class="btn-primary" style="width:100%; padding: 0.95rem;">Complete Profile</button>
+            </form>
+        </div>
+    </section>
+
+    <div id="footer-container" data-component="components/footer.html"></div>
+
+    <script src="Javascript/api.js"></script>
+    <script src="Javascript/component-loader.js"></script>
+    <script src="Javascript/notifications.js"></script>
+    <script src="Javascript/main.js"></script>
+    <script src="Javascript/google-profile.js"></script>
+</body>
+</html>

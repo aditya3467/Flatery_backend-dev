@@ -745,6 +745,10 @@ window.resendOtp = resendOtp;
  *  4. On success → ask user to verify email before login
  */
 async function handleSignup(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+
   const form = e.target;
   const firstName = form.querySelector('input[name="firstName"]').value.trim();
   const lastName = form.querySelector('input[name="lastName"]').value.trim();
@@ -817,6 +821,10 @@ async function handleSignup(e) {
  *  4. Closes modal and updates UI
  */
 async function handleLogin(e) { // e can be a form event or an object with credentials
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+
   let username, password, form;
   
   // Determine the source of credentials and the form to use for UI feedback
@@ -1236,37 +1244,214 @@ async function handleChangePassword(e) {
   }
 }
 
-// Google OAuth2 Sign-In
-function loginWithGoogle() {
-  // Redirect to backend OAuth2 authorization endpoint
-  window.location.href = window.location.origin + '/oauth2/authorization/google';
+let googleClientId = null;
+let googleAuthMode = null;
+let googleAccounts = null;
+let googleAccountsInitialized = false;
+
+async function getGoogleClientId() {
+    if (googleClientId) {
+        return googleClientId;
+    }
+
+    if (typeof apiService === 'undefined' || !apiService.getGoogleConfig) {
+        console.error('API service is unavailable or missing getGoogleConfig()');
+        return null;
+    }
+
+    try {
+        const config = await apiService.getGoogleConfig();
+        googleClientId = config?.clientId || config?.client_id || null;
+        return googleClientId;
+    } catch (error) {
+        console.error('Unable to fetch Google client ID from backend:', error);
+        return null;
+    }
 }
 
-// Handle OAuth2 callback (token in URL)
-function handleOAuth2Callback() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  const username = urlParams.get('username');
-  const email = urlParams.get('email');
+function loadGoogleIdentityScript() {
+    return new Promise((resolve, reject) => {
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+            resolve(window.google.accounts.id);
+            return;
+        }
 
-  if (token && username && email) {
-    // Store authentication data
-    localStorage.setItem('token', token);
-    localStorage.setItem('username', username);
-    localStorage.setItem('email', email);
+        const existing = document.getElementById('googleIdentityScript');
+        if (existing) {
+            existing.addEventListener('load', () => {
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    resolve(window.google.accounts.id);
+                } else {
+                    reject(new Error('Google Identity script loaded, but google.accounts.id is unavailable'));
+                }
+            });
+            existing.addEventListener('error', () => reject(new Error('Failed to load Google Identity script')));
+            return;
+        }
 
-    // Clean URL (remove query parameters)
-    window.history.replaceState({}, document.title, window.location.pathname);
-
-    // Update UI for logged-in user
-    updateUIForLoggedInUser();
-
-    // Show success message
-    showSuccess('Successfully signed in with Google!');
-  }
+        const script = document.createElement('script');
+        script.id = 'googleIdentityScript';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                resolve(window.google.accounts.id);
+            } else {
+                reject(new Error('Google Identity script loaded, but google.accounts.id is unavailable'));
+            }
+        };
+        script.onerror = () => reject(new Error('Failed to load Google Identity script'));
+        document.head.appendChild(script);
+    });
 }
 
-// Call OAuth2 callback handler on page load
-document.addEventListener('DOMContentLoaded', function() {
-  handleOAuth2Callback();
-});
+async function startGoogleSignIn(mode) {
+    if (!googleClientId) {
+        googleClientId = await getGoogleClientId();
+    }
+
+    if (!googleClientId) {
+        showError('Google Sign-In is not configured. Please contact the system administrator.');
+        return;
+    }
+
+    try {
+        const accounts = await loadGoogleIdentityScript();
+        googleAccounts = accounts;
+        googleAuthMode = mode;
+
+        console.info('Initializing Google Sign-In', {
+            clientId: googleClientId,
+            origin: window.location.origin,
+            pathname: window.location.pathname,
+        });
+
+        if (!googleAccountsInitialized) {
+            googleAccounts.initialize({
+                client_id: googleClientId,
+                callback: handleGoogleCredentialResponse,
+            });
+            googleAccountsInitialized = true;
+        }
+
+        googleAccounts.prompt();
+    } catch (error) {
+        console.error('Google sign-in initialization failed:', error);
+        showError(
+            'Google Sign-In could not be started. Please verify that your OAuth client ID and authorized JavaScript origin match this site (' +
+            window.location.origin + ').'
+        );
+    }
+}
+
+async function handleGoogleCredentialResponse(response) {
+    if (!response || !response.credential) {
+        showError('Google sign-in was not completed.');
+        return;
+    }
+
+    await handleGoogleLogin(response.credential, googleAuthMode);
+}
+
+async function loginWithGoogle() {
+    await startGoogleSignIn('login');
+}
+
+async function signupWithGoogle() {
+    await startGoogleSignIn('signup');
+}
+
+async function handleGoogleLogin(idToken, mode) {
+    try {
+        const authResponse = await apiService.googleLogin(idToken);
+        const userDetails = await apiService.getCurrentUser();
+
+        localStorage.setItem('username', userDetails.username);
+        localStorage.setItem('firstName', userDetails.fullName ? userDetails.fullName.split(' ')[0] : userDetails.username);
+        localStorage.setItem('roles', JSON.stringify(authResponse.roles || []));
+
+        if (authResponse.requiresProfileCompletion) {
+            window.location.href = frontendUrl('/google-profile-completion.html');
+            return;
+        }
+
+        updateUIForLoggedInUser();
+        showSuccess('Successfully signed in with Google!');
+
+        const roles = authResponse.roles || [];
+        if (roles.includes('SUPERADMIN')) {
+            window.location.href = frontendUrl('/superadmin-dashboard.html');
+        } else if (roles.includes('ADMIN')) {
+            window.location.href = frontendUrl('/owner/owner-dashboard.html');
+        } else {
+            window.location.href = frontendUrl('/tenant.html');
+        }
+    } catch (error) {
+        console.error('Google login failed:', error);
+        showError(error.message || 'Google sign-in failed.');
+    }
+}
+
+function openGoogleProfileModal(userDetails) {
+    const modal = document.getElementById('googleProfileModal');
+    if (!modal) {
+        showError('Google profile completion modal not found.');
+        return;
+    }
+
+    document.getElementById('google-firstname').value = userDetails.fullName ? userDetails.fullName.split(' ')[0] : '';
+    document.getElementById('google-lastname').value = userDetails.fullName ? userDetails.fullName.split(' ').slice(1).join(' ') : '';
+    document.getElementById('google-phone').value = userDetails.phoneNumber || '';
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    const form = document.getElementById('googleProfileForm');
+    if (form) {
+        form.removeEventListener('submit', submitGoogleProfileCompletion);
+        form.addEventListener('submit', submitGoogleProfileCompletion);
+    }
+}
+
+function closeGoogleProfileModal() {
+    const modal = document.getElementById('googleProfileModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+async function submitGoogleProfileCompletion(event) {
+    event.preventDefault();
+    const firstName = document.getElementById('google-firstname').value.trim();
+    const lastName = document.getElementById('google-lastname').value.trim();
+    const phoneNumber = document.getElementById('google-phone').value.trim();
+
+    if (!firstName || !lastName) {
+        showError('Please provide both first and last name.');
+        return;
+    }
+
+    try {
+        await apiService.updateProfile({ firstName, lastName, phoneNumber });
+        localStorage.setItem('firstName', firstName);
+        closeGoogleProfileModal();
+        updateUIForLoggedInUser();
+        showSuccess('Profile completed successfully.');
+        const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+        if (roles.includes('ADMIN')) {
+            window.location.href = frontendUrl('/owner/owner-dashboard.html');
+        } else if (roles.includes('SUPERADMIN')) {
+            window.location.href = frontendUrl('/superadmin-dashboard.html');
+        } else {
+            window.location.href = frontendUrl('/tenant.html');
+        }
+    } catch (error) {
+        console.error('Error completing profile:', error);
+        showError(error.message || 'Could not complete profile.');
+    }
+}
+
+window.loginWithGoogle = loginWithGoogle;
+window.signupWithGoogle = signupWithGoogle;
+window.closeGoogleProfileModal = closeGoogleProfileModal;
